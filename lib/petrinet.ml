@@ -128,5 +128,20 @@ module PetriNet = struct
     let output = outputs_of_event e n in
     n.marking <- PlaceSet.union (PlaceSet.diff n.marking input) output
 
-  let list_of_marking n = PlaceSet.elements n.marking 
+  (* Fire a sequence of events, ignoring those not enabled *)
+  let fire_sequence es n =
+    List.fold_left (fun _ e -> fire e n) () es
+
+  let list_of_marking n = PlaceSet.elements n.marking
+
+  let is_occurrence_sequence es n =
+    let rec helper elist m = match elist with
+      [] -> true
+    | e::es' ->
+        let input = inputs_of_event e n in
+        let output = outputs_of_event e n in
+        let m' = PlaceSet.union (PlaceSet.diff m input) output in
+        enables m e n && helper es' m'
+
+    in helper es n.marking 
 end

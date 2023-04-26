@@ -31,3 +31,9 @@ fire "e3" n;; (* {p1,p4} ---> {p1,p2} = m0 *)
 
 fire "e1" n;; (* not enabled *)
 fire "e9" n;; (* not an event in n *)
+
+assert (is_occurrence_sequence ["e2";"e1";"e3"] n = true);;
+assert (is_occurrence_sequence ["e2";"e3";"e1"] n = true);;
+assert (is_occurrence_sequence ["e1"] n = false);;
+assert (is_occurrence_sequence ["e2";"e3";"e2"] n = false);;
+assert (is_occurrence_sequence ["e2";"e2"] n = false);;
