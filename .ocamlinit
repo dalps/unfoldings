@@ -1,24 +1,33 @@
 open Unfoldings.Petrinet;;
+open PetriNet;;
 
-(* Example net *)
+(* Example net from EH fig. 2.3 p. 9 *)
+
 let places = PlaceSet.of_list ["p1";"p2";"p3";"p4"];;
 let events = EventSet.of_list ["e1";"e2";"e3"];;
-let m0 = PlaceSet.remove "p4" (PlaceSet.remove "p3" places);;
+let m0 = PlaceSet.of_list ["p1";"p2"];;
+let n = empty;;
 
-let n = PetriNet.empty;;
-PetriNet.add_places places n;;
-PetriNet.add_events events n;;
-PetriNet.set_init_marking m0 n;;
+add_places places n;;
+add_events events n;;
+init_marking m0 n;;
 
-PetriNet.add_arc (P "p1") "a1" (E "e2") n;;
-PetriNet.add_arc (P "p2") "a2" (E "e2") n;;
-PetriNet.add_arc (P "p3") "a3" (E "e1") n;;
-PetriNet.add_arc (P "p4") "a4" (E "e3") n;;
-PetriNet.add_arc (E "e1") "a5" (P "p1") n;;
-PetriNet.add_arc (E "e2") "a6" (P "p3") n;;
-PetriNet.add_arc (E "e2") "a7" (P "p4") n;;
-PetriNet.add_arc (E "e3") "a8" (P "p2") n;;
+add_arc (P "p1") "a1" (E "e2") n;;
+add_arc (P "p2") "a2" (E "e2") n;;
+add_arc (P "p3") "a3" (E "e1") n;;
+add_arc (P "p4") "a4" (E "e3") n;;
+add_arc (E "e1") "a5" (P "p1") n;;
+add_arc (E "e2") "a6" (P "p3") n;;
+add_arc (E "e2") "a7" (P "p4") n;;
+add_arc (E "e3") "a8" (P "p2") n;;
 
-let in_e2 = PetriNet.inputs_of_event "e2" n;;
-let in_p1 = PetriNet.inputs_of_place "p1" n;;
-let out_e2 = PetriNet.outputs_of_event "e2" n;;
+let in_e2 = inputs_of_event "e2" n;;
+let in_p1 = inputs_of_place "p1" n;;
+let out_e2 = outputs_of_event "e2" n;;
+
+fire "e2" n;; (* {p1,p2} ---> m1 := {p3,p4} *)
+fire "e1" n;; (* {p3,p4} ---> m2 := {p1,p4} *)
+fire "e3" n;; (* {p1,p4} ---> {p1,p2} = m0 *)
+
+fire "e1" n;; (* not enabled *)
+fire "e9" n;; (* not an event in n *)

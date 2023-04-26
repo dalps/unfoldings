@@ -36,14 +36,14 @@ module PetriNet = struct
     mutable places: PlaceSet.t;
     mutable events: EventSet.t;
     mutable flow: FlowSet.t;
-    mutable init_marking: PlaceSet.t
+    mutable marking: PlaceSet.t
   }
 
   let empty = {
     places = PlaceSet.empty;
     events = EventSet.empty;
     flow = FlowSet.empty;
-    init_marking = PlaceSet.empty
+    marking = PlaceSet.empty
   }
 
   exception IllegalFlow
@@ -65,7 +65,7 @@ module PetriNet = struct
     else
       raise IllegalFlow
         
-  let set_init_marking m n = n.init_marking <- if PlaceSet.subset m n.places then m else n.init_marking
+  let init_marking m n = n.marking <- if PlaceSet.subset m n.places then m else n.marking
 
   let inputs_of x n = 
     let flows = FlowSet.filter (fun f -> f.target = x) n.flow in
@@ -119,4 +119,14 @@ module PetriNet = struct
       (fun f acc -> PlaceSet.add (match f.target with E _ -> raise IllegalFlow | P p -> p) acc) 
       flows
       PlaceSet.empty
+
+  let enables m e n = PlaceSet.subset (inputs_of_event e n) m
+
+  (* If the current marking of n enables e, fires e and updates n's marking *)
+  let fire e n = if enables n.marking e n then
+    let input = inputs_of_event e n in
+    let output = outputs_of_event e n in
+    n.marking <- PlaceSet.union (PlaceSet.diff n.marking input) output
+
+  let list_of_marking n = PlaceSet.elements n.marking 
 end
