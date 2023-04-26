@@ -15,6 +15,14 @@ end
 
 type node = P of Place.t | E of Event.t
 
+module Node = struct
+  type t = node
+
+  let compare = compare
+  let is_place = function P _ -> true | E _ -> false
+  let is_event = function P _ -> false | E _ -> true
+end
+
 module Flow = struct
   type t = {source: node; label: string; target: node} 
 
@@ -24,12 +32,7 @@ end
 module PlaceSet = Set.Make(Place)
 module EventSet = Set.Make(Event)
 module FlowSet = Set.Make(Flow)
-
-module NodeSets = struct
-  type t = PS of PlaceSet.t | ES of EventSet.t
-
-  let compare = compare
-end
+module NodeSet = Set.Make(Node)
 
 module PetriNet = struct
   type t = {
@@ -67,31 +70,16 @@ module PetriNet = struct
         
   let init_marking m n = n.marking <- if PlaceSet.subset m n.places then m else n.marking
 
-  let inputs_of x n = 
-    let flows = FlowSet.filter (fun f -> f.target = x) n.flow in
-    match x with
-      P _ -> NodeSets.ES (FlowSet.fold 
-      (fun f acc -> EventSet.add (match f.source with P _ -> raise IllegalFlow | E e -> e) acc) 
-      flows
-      EventSet.empty)
-    | E _ -> NodeSets.PS (FlowSet.fold 
-      (fun f acc -> PlaceSet.add (match f.source with E _ -> raise IllegalFlow | P p -> p) acc) 
-      flows
-      PlaceSet.empty)
+  let inputs_of x n = FlowSet.fold 
+    (fun f acc -> NodeSet.add f.source acc) 
+    (FlowSet.filter (fun f -> f.target = x) n.flow)
+    NodeSet.empty
 
-    let outputs_of x n = 
-      let flows = FlowSet.filter (fun f -> f.source = x) n.flow in
-      match x with
-        P _ -> NodeSets.ES (FlowSet.fold 
-        (fun f acc -> EventSet.add (match f.target with P _ -> raise IllegalFlow | E e -> e) acc) 
-        flows
-        EventSet.empty)
-      | E _ -> NodeSets.PS (FlowSet.fold 
-        (fun f acc -> PlaceSet.add (match f.target with E _ -> raise IllegalFlow | P p -> p) acc) 
-        flows
-        PlaceSet.empty)
-    
-      
+  let outputs_of x n = FlowSet.fold 
+    (fun f acc -> NodeSet.add f.target acc) 
+    (FlowSet.filter (fun f -> f.source = x) n.flow)
+    NodeSet.empty
+
   let inputs_of_place p n = 
     let flows = FlowSet.filter (fun f -> f.target = P p) n.flow in
     FlowSet.fold 
@@ -143,5 +131,41 @@ module PetriNet = struct
         let m' = PlaceSet.union (PlaceSet.diff m input) output in
         enables m e n && helper es' m'
 
-    in helper es n.marking 
+    in helper es n.marking
+    
+  let predecessors x n =
+    let rec helper p parents =
+      let inputs_of_p = inputs_of p n in (* get the immediate predecessors *)
+      (* add each parent IF NOT already present in the accumulator *)
+      (NodeSet.fold 
+        (fun parent acc -> 
+          if NodeSet.mem parent acc then acc 
+          else helper parent (NodeSet.add parent acc))
+        inputs_of_p
+        parents)
+
+    in helper x NodeSet.empty
+          
+  let is_predecessor x y n = NodeSet.mem x (predecessors y n)
+
+  let is_causally_related x y n = is_predecessor x y n || is_predecessor y x n
+
+  (* let rec is_predecessor x y n =
+    let inputs_of_y = inputs_of y n in
+    if 
+    NodeSet.fold
+      (fun x' acc -> if x = x' then true else is_predecessor x x' n && acc)
+      inputs_of_y
+      true
+  *)
+
+  (* conflicts x y n checks whether nodes x and y are in conflict in net n,
+     that is, they are not causally related but they have common predecessors.
+     Holds iff n is acyclic. *)
+  let conflicts x y n = 
+    let pred_x = predecessors x n in
+    let pred_y = predecessors y n in
+    not (NodeSet.mem x pred_y) &&
+    not (NodeSet.mem y pred_x) &&
+    not (NodeSet.is_empty (NodeSet.inter pred_x pred_y))
 end
