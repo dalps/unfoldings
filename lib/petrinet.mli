@@ -28,6 +28,9 @@ module Flow :
     val to_event : Place.t -> Event.t -> t
   end
 
+val (-->@) : Event.t -> Place.t -> Flow.t
+val (@-->) : Place.t -> Event.t -> Flow.t
+
 type t
 val empty : unit -> t
 val build : Place.t list -> Event.t list -> Flow.t list -> Place.t list -> t

@@ -29,6 +29,9 @@ module Flow = struct
   let to_event p e = {source = Node.of_place p; target = Node.of_event e}
 end
 
+let (@-->) = Flow.to_event
+let (-->@) = Flow.to_place
+
 module PlaceSet = Set.Make(Place)
 module EventSet = Set.Make(Event)
 module FlowSet = Set.Make(Flow)
