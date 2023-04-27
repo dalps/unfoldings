@@ -4,17 +4,17 @@
 
 open Unfoldings.Petrinet
 
-let n1 = PetriNet.build
+let n1 = build
   ["p1";"p2";"p3";"p4"]
   ["e1";"e2";"e3"]
   [
-    {source = (P "p1"); target = (E "e2")};
-    {source = (P "p2"); target = (E "e2")};
-    {source = (P "p3"); target = (E "e1")};
-    {source = (P "p4"); target = (E "e3")};
-    {source = (E "e1"); target = (P "p1")};
-    {source = (E "e2"); target = (P "p3")};
-    {source = (E "e2"); target = (P "p4")};
-    {source = (E "e3"); target = (P "p2")}
+    Flow.to_event "p1" "e2";
+    Flow.to_event "p2" "e2";
+    Flow.to_event "p3" "e1";
+    Flow.to_event "p4" "e3";
+    Flow.to_place "e1" "p1";
+    Flow.to_place "e2" "p3";
+    Flow.to_place "e2" "p4";
+    Flow.to_place "e3" "p2";
   ]
   ["p1";"p2"]

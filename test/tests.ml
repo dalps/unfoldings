@@ -1,4 +1,4 @@
-open Unfoldings.Petrinet.PetriNet;;
+open Unfoldings.Petrinet;;
 
 open Examples.N1;;
 
@@ -23,12 +23,12 @@ assert (is_occurrence_sequence ["e1";"u1";"t1";"e2"] n2 = true);;
 assert (is_occurrence_sequence ["e1";"u1";"e2"] n2 = false);;
 assert (is_occurrence_sequence ["e2";"t1";"u1";"e1"] n2 = false);;
 
-assert (is_predecessor (E "e1") (E "e2") n2 = true);;
-assert (is_predecessor (E "t1") (E "u1") n2 = false);;
-assert (is_predecessor (P "s2") (E "u1") n2 = false);;
+assert (is_predecessor (Node.of_event "e1") (Node.of_event "e2") n2 = true);;
+assert (is_predecessor (Node.of_event "t1") (Node.of_event "u1") n2 = false);;
+assert (is_predecessor (Node.of_place"s2") (Node.of_event "u1") n2 = false);;
  
-assert (conflicts (P "s2") (P "r2") n2 = false);;
-assert (conflicts (E "t1") (E "u1") n2 = false);;
+assert (conflicts (Node.of_place"s2") (Node.of_place"r2") n2 = false);;
+assert (conflicts (Node.of_event "t1") (Node.of_event "u1") n2 = false);;
 
-assert (is_concurrent (E "t1") (E "u1") n2 = true);;
-assert (is_concurrent (E "e1") (E "u1") n2 = false);;
+assert (is_concurrent (Node.of_event "t1") (Node.of_event "u1") n2 = true);;
+assert (is_concurrent (Node.of_event "e1") (Node.of_event "u1") n2 = false);;

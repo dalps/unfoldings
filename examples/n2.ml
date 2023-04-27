@@ -7,21 +7,21 @@
 
 open Unfoldings.Petrinet
 
-let n2 = PetriNet.build
+let n2 = build
   ["s1";"s2";"s3";"s4";"r1";"r2";"r3";"r4"]
   ["t1";"u1";"e1";"e2"]
   [
-    {source = (P "s1"); target = (E "e1")};
-    {source = (P "r1"); target = (E "e1")};
-    {source = (E "e1"); target = (P "s2")};
-    {source = (E "e1"); target = (P "r2")};
-    {source = (P "s2"); target = (E "t1")};
-    {source = (P "r2"); target = (E "u1")};
-    {source = (E "t1"); target = (P "s3")};
-    {source = (E "u1"); target = (P "r3")};
-    {source = (P "s3"); target = (E "e2")};
-    {source = (P "r3"); target = (E "e2")};
-    {source = (E "e2"); target = (P "s4")};
-    {source = (E "e2"); target = (P "r4")}
+    Flow.to_event "s1" "e1";
+    Flow.to_event "r1" "e1";
+    Flow.to_place "e1" "s2";
+    Flow.to_place "e1" "r2";
+    Flow.to_event "s2" "t1";
+    Flow.to_event "r2" "u1";
+    Flow.to_place "t1" "s3";
+    Flow.to_place "u1" "r3";
+    Flow.to_event "s3" "e2";
+    Flow.to_event "r3" "e2";
+    Flow.to_place "e2" "s4";
+    Flow.to_place "e2" "r4";
   ]
   ["s1";"r1"]

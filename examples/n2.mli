@@ -1,3 +1,3 @@
 open Unfoldings.Petrinet
 
-val n2 : PetriNet.t
+val n2 : t
