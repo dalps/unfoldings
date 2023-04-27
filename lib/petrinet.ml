@@ -24,7 +24,7 @@ module Node = struct
 end
 
 module Flow = struct
-  type t = {source: node; label: string; target: node} 
+  type t = {source: node; target: node} 
 
   let compare = compare
 end
@@ -42,12 +42,20 @@ module PetriNet = struct
     mutable marking: PlaceSet.t
   }
 
-  let empty = {
+  let empty () = {
     places = PlaceSet.empty;
     events = EventSet.empty;
     flow = FlowSet.empty;
     marking = PlaceSet.empty
   }
+
+  let build ps es fs im =
+    let n = empty () in
+    n.places <- PlaceSet.of_list ps;
+    n.events <- EventSet.of_list es;
+    n.flow <- FlowSet.of_list fs;
+    n.marking <- PlaceSet.of_list im;
+    n
 
   exception IllegalFlow
 
@@ -59,12 +67,12 @@ module PetriNet = struct
 
   let add_events es n = n.events <- EventSet.union es n.events
 
-  let add_arc src_node lbl tgt_node n = n.flow <-
+  let add_arc src_node tgt_node n = n.flow <-
     if (match src_node,tgt_node with
       P p, E e | E e, P p -> PlaceSet.mem p n.places && EventSet.mem e n.events
     | _ -> false)
     then
-      FlowSet.add {source = src_node; label = lbl; target = tgt_node} n.flow
+      FlowSet.add {source = src_node; target = tgt_node} n.flow
     else
       raise IllegalFlow
         
