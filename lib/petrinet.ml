@@ -18,15 +18,40 @@ module Node = struct
   let is_event = function P _ -> false | E _ -> true
   let of_place p = P p
   let of_event e = E e
+
+  exception NotAPlace
+  exception NotAnEvent
+  
+  let place_of = function P p -> p | _ -> raise NotAPlace
+  let event_of = function E e -> e | _ -> raise NotAnEvent
 end
 
 module Flow = struct
   type t = {source: Node.t; target: Node.t} 
 
+  exception IllegalFlow
+
   let compare = compare
-  let build src tgt = {source = src; target = tgt}
+
+  let build src tgt =
+    if
+      Node.is_place src && Node.is_event tgt ||
+      Node.is_event src && Node.is_place tgt
+    then
+      {source = src; target = tgt}
+    else
+      raise IllegalFlow
+
+  let source f = f.source
+  let target f = f.target
+      
   let to_place e p = {source = Node.of_event e; target = Node.of_place p}
   let to_event p e = {source = Node.of_place p; target = Node.of_event e}
+
+  let target_event f = Node.event_of f.target
+  let source_event f = Node.event_of f.source
+  let target_place f = Node.place_of f.target
+  let source_place f = Node.place_of f.source
 end
 
 let (@-->) = Flow.to_event
@@ -59,8 +84,6 @@ let build ps es fs im =
   n.marking <- PlaceSet.of_list im;
   n
 
-exception IllegalFlow
-
 let add_place p n = n.places <- PlaceSet.add p n.places
 
 let add_event e n = n.events <- EventSet.add e n.events
@@ -69,17 +92,20 @@ let add_places ps n = n.places <- PlaceSet.union ps n.places
 
 let add_events es n = n.events <- EventSet.union es n.events
 
-let add_arc src_node tgt_node n = n.flow <-
+let add_arc src_node tgt_node n = 
   if (match src_node,tgt_node with
-    Node.P p, Node.E e 
-  | Node.E e, Node.P p -> PlaceSet.mem p n.places && EventSet.mem e n.events
-  | _ -> false)
+      p,e when Node.is_place p && Node.is_event e ->
+        PlaceSet.mem (Node.place_of p) n.places &&
+        EventSet.mem (Node.event_of e) n.events
+    | e,p when Node.is_event e && Node.is_place p ->
+        PlaceSet.mem (Node.place_of p) n.places &&
+        EventSet.mem (Node.event_of e) n.events
+    | _ -> false)
   then
-    FlowSet.add (Flow.build src_node tgt_node) n.flow
-  else
-    raise IllegalFlow
+    n.flow <- FlowSet.add (Flow.build src_node tgt_node) n.flow
       
-let set_marking m n = n.marking <- if PlaceSet.subset m n.places then m else n.marking
+let set_marking m n =
+  n.marking <- if PlaceSet.subset m n.places then m else n.marking
 
 let inputs_of x n = FlowSet.fold 
   (fun f acc -> NodeSet.add f.source acc) 
@@ -92,30 +118,30 @@ let outputs_of x n = FlowSet.fold
   NodeSet.empty
 
 let inputs_of_place p n = 
-  let flows = FlowSet.filter (fun f -> f.target = P p) n.flow in
+  let flows = FlowSet.filter (fun f -> Node.of_place p = f.target) n.flow in
   FlowSet.fold 
-    (fun f acc -> EventSet.add (match f.source with P _ -> raise IllegalFlow | E e -> e) acc) 
+    (fun f acc -> EventSet.add (Flow.source_event f) acc) 
     flows
     EventSet.empty
 
 let outputs_of_place p n = 
-  let flows = FlowSet.filter (fun f -> f.source = P p) n.flow in
+  let flows = FlowSet.filter (fun f -> Node.of_place p = f.source) n.flow in
   FlowSet.fold 
-    (fun f acc -> EventSet.add (match f.target with P _ -> raise IllegalFlow | E e -> e) acc) 
+    (fun f acc -> EventSet.add (Flow.target_event f) acc) 
     flows
     EventSet.empty
 
 let inputs_of_event e n =
-  let flows = FlowSet.filter (fun f -> f.target = E e) n.flow in
+  let flows = FlowSet.filter (fun f -> Node.of_event e = f.target) n.flow in
   FlowSet.fold 
-    (fun f acc -> PlaceSet.add (match f.source with E _ -> raise IllegalFlow | P p -> p) acc) 
+    (fun f acc -> PlaceSet.add (Flow.source_place f) acc) 
     flows
     PlaceSet.empty
 
 let outputs_of_event e n =
-  let flows = FlowSet.filter (fun f -> f.source = E e) n.flow in
+  let flows = FlowSet.filter (fun f -> Node.of_event e = f.source) n.flow in
   FlowSet.fold 
-    (fun f acc -> PlaceSet.add (match f.target with E _ -> raise IllegalFlow | P p -> p) acc) 
+    (fun f acc -> PlaceSet.add (Flow.target_place f) acc) 
     flows
     PlaceSet.empty
 

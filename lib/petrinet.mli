@@ -26,6 +26,8 @@ module Flow :
     val compare : 'a -> 'a -> int
     val to_place : Event.t -> Place.t -> t
     val to_event : Place.t -> Event.t -> t
+    val source : t -> Node.t
+    val target : t -> Node.t
   end
 
 val (-->@) : Event.t -> Place.t -> Flow.t
