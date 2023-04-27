@@ -160,12 +160,34 @@ module PetriNet = struct
   *)
 
   (* conflicts x y n checks whether nodes x and y are in conflict in net n,
-     that is, they are not causally related but they have common predecessors.
+     i.e. they cannot be fired in the same execuiton (in case of events).
      Holds iff n is acyclic. *)
   let conflicts x y n = 
     let pred_x = predecessors x n in
     let pred_y = predecessors y n in
-    not (NodeSet.mem x pred_y) &&
-    not (NodeSet.mem y pred_x) &&
-    not (NodeSet.is_empty (NodeSet.inter pred_x pred_y))
+    let pred_x_only = NodeSet.diff pred_x pred_y in
+    let pred_y_only = NodeSet.diff pred_y pred_x in
+    let pred_places_in_common = 
+      NodeSet.filter (Node.is_place) (NodeSet.inter pred_x pred_y) in
+
+    NodeSet.exists
+    (fun p -> let es = outputs_of p n in
+      NodeSet.fold
+      (fun e acc -> acc ||
+        if NodeSet.mem e pred_x_only then
+          NodeSet.exists (fun e' -> e <> e' && NodeSet.mem e' pred_y_only) es
+        else
+          if NodeSet.mem e pred_y_only then
+            NodeSet.exists (fun e' -> e <> e' && NodeSet.mem e' pred_x_only) es
+          else
+            false
+      )
+      es
+      false
+    )
+    pred_places_in_common
+
+  let is_concurrent x y n =
+    not (is_causally_related x y n) && not (conflicts x y n) 
+    
 end
