@@ -64,7 +64,7 @@ val is_occurrence_sequence : Event.t list -> t -> bool
 val predecessors : Node.t -> t -> Set.Make(Node).t
 val is_predecessor : Node.t -> Node.t -> t -> bool
 val is_causally_related : Node.t -> Node.t -> t -> bool
-val conflicts : Node.t -> Node.t -> t -> bool
+val is_conflict : Node.t -> Node.t -> t -> bool
 val is_concurrent : Node.t -> Node.t -> t -> bool
 val concurrencies : t -> Set.Make(NodePair).t
 val is_reachable : Set.Make(Place).t -> t -> bool
