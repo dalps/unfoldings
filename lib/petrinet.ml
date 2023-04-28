@@ -233,3 +233,67 @@ let conflicts x y n =
 
 let is_concurrent x y n =
   not (is_causally_related x y n) && not (conflicts x y n)
+
+
+module NodePair = struct
+  type t = Node.t * Node.t
+  let compare = compare
+end
+
+module NodePairSet = Set.Make(NodePair)
+
+let nodes_of_places ps = PlaceSet.fold
+    (fun p acc -> NodeSet.add (Node.of_place p) acc)
+    ps
+    NodeSet.empty
+
+let nodes_of_events es = EventSet.fold
+  (fun e acc -> NodeSet.add (Node.of_event e) acc)
+  es
+  NodeSet.empty
+
+let concurrencies n =
+  let nodes = 
+    NodeSet.union (nodes_of_places n.places) (nodes_of_events n.events)
+  in
+
+  (* Pseudocode:
+
+    map := NodeMap.empty()
+
+    for each node x in nodes
+      for each node y in nodes
+        if x co y then map.add x y
+  *)
+  NodeSet.fold
+  (fun x map ->
+    (NodeSet.fold
+    (fun y map_x -> 
+      if is_concurrent x y n 
+      then NodePairSet.add (x,y) map_x else map_x)
+    nodes
+    map))
+  nodes
+  NodePairSet.empty
+
+let is_reachable m n =
+  let co = concurrencies n in
+  let nodes = nodes_of_places m in
+
+  (* Pseudocode:
+     
+    is_reachable := true
+    
+    for each node x in nodes
+      for each node y in nodes
+        if (x,y) is not in co_of_nodes then is_reachable := false
+        (break)   
+  *)
+  NodeSet.fold
+  (fun x b -> b &&
+    NodeSet.fold
+    (fun y c -> c && NodePairSet.mem (x,y) co)
+    nodes
+    b)
+  nodes
+  true

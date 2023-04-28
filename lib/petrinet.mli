@@ -34,6 +34,12 @@ module Flow :
 val (-->@) : Event.t -> Place.t -> Flow.t
 val (@-->) : Place.t -> Event.t -> Flow.t
 
+module NodePair :
+  sig
+    type t = Node.t * Node.t
+    val compare : 'a -> 'a -> int
+  end
+
 type t
 val empty : unit -> t
 val build : Place.t list -> Event.t list -> Flow.t list -> Place.t list -> t
@@ -60,4 +66,5 @@ val is_predecessor : Node.t -> Node.t -> t -> bool
 val is_causally_related : Node.t -> Node.t -> t -> bool
 val conflicts : Node.t -> Node.t -> t -> bool
 val is_concurrent : Node.t -> Node.t -> t -> bool
-val co_rel : t -> Node.t Map.Make(Node).t
+val concurrencies : t -> Set.Make(NodePair).t
+val is_reachable : Set.Make(Place).t -> t -> bool

@@ -19,6 +19,8 @@ assert (is_occurrence_sequence ["e2";"e2"] n1 = false);;
 open Examples.N2;;
 open Node;;
 
+module PlaceSet = Set.Make(Place);;
+
 assert (is_occurrence_sequence ["e1";"t1";"u1";"e2"] n2 = true);;
 assert (is_occurrence_sequence ["e1";"u1";"t1";"e2"] n2 = true);;
 assert (is_occurrence_sequence ["e1";"u1";"e2"] n2 = false);;
@@ -33,3 +35,14 @@ assert (conflicts (of_event "t1") (of_event "u1") n2 = false);;
 
 assert (is_concurrent (of_event "t1") (of_event "u1") n2 = true);;
 assert (is_concurrent (of_event "e1") (of_event "u1") n2 = false);;
+
+assert (is_reachable (PlaceSet.of_list ["s1";"r1"]) n2 = true);;
+assert (is_reachable (PlaceSet.of_list ["s2";"r2"]) n2 = true);;
+assert (is_reachable (PlaceSet.of_list ["s3";"r3"]) n2 = true);;
+assert (is_reachable (PlaceSet.of_list ["s4";"r4"]) n2 = true);;
+assert (is_reachable (PlaceSet.of_list ["s4";"r4";"s3"]) n2 = false);;
+assert (is_reachable (PlaceSet.of_list ["s3";"r2"]) n2 = true);;
+assert (is_reachable (PlaceSet.of_list ["r2";"s3"]) n2 = true);;
+assert (is_reachable (PlaceSet.of_list ["r1";"r2"]) n2 = false);;
+assert (is_reachable (PlaceSet.of_list ["r1"]) n2 = true);; (* questionable *)
+assert (is_reachable (PlaceSet.of_list ["s1";"s4"]) n2 = false);;
