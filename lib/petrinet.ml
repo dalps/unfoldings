@@ -92,17 +92,24 @@ let add_places ps n = n.places <- PlaceSet.union ps n.places
 
 let add_events es n = n.events <- EventSet.union es n.events
 
-let add_arc src_node tgt_node n = 
-  if (match src_node,tgt_node with
-      p,e when Node.is_place p && Node.is_event e ->
-        PlaceSet.mem (Node.place_of p) n.places &&
-        EventSet.mem (Node.event_of e) n.events
-    | e,p when Node.is_event e && Node.is_place p ->
-        PlaceSet.mem (Node.place_of p) n.places &&
-        EventSet.mem (Node.event_of e) n.events
-    | _ -> false)
+exception UnknownPlace of Place.t
+exception UnknownEvent of Event.t
+
+let add_to_place_arc e p n = 
+  if PlaceSet.mem p n.places 
   then
-    n.flow <- FlowSet.add (Flow.build src_node tgt_node) n.flow
+    if EventSet.mem e n.events
+    then n.flow <- FlowSet.add (Flow.to_place e p) n.flow
+    else raise (UnknownEvent e)
+  else raise (UnknownPlace p)
+
+let add_to_event_arc p e n = 
+  if PlaceSet.mem p n.places 
+  then
+    if EventSet.mem e n.events
+    then n.flow <- FlowSet.add (Flow.to_event p e) n.flow
+    else raise (UnknownEvent e)
+  else raise (UnknownPlace p)
       
 let set_marking m n =
   n.marking <- if PlaceSet.subset m n.places then m else n.marking

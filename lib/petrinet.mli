@@ -24,6 +24,7 @@ module Flow :
   sig
     type t
     val compare : 'a -> 'a -> int
+    val build : Node.t -> Node.t -> t
     val to_place : Event.t -> Place.t -> t
     val to_event : Place.t -> Event.t -> t
     val source : t -> Node.t
@@ -40,7 +41,8 @@ val add_place : Place.t -> t -> unit
 val add_event : Event.t -> t -> unit
 val add_places : Set.Make(Place).t -> t -> unit
 val add_events : Set.Make(Event).t -> t -> unit
-val add_arc : Node.t -> Node.t -> t -> unit
+val add_to_place_arc : Event.t -> Place.t -> t -> unit
+val add_to_event_arc : Place.t -> Event.t -> t -> unit
 val set_marking : Set.Make(Place).t -> t -> unit
 val inputs_of : Node.t -> t -> Set.Make(Node).t
 val outputs_of : Node.t -> t -> Set.Make(Node).t
@@ -58,3 +60,4 @@ val is_predecessor : Node.t -> Node.t -> t -> bool
 val is_causally_related : Node.t -> Node.t -> t -> bool
 val conflicts : Node.t -> Node.t -> t -> bool
 val is_concurrent : Node.t -> Node.t -> t -> bool
+val co_rel : t -> Node.t Map.Make(Node).t
