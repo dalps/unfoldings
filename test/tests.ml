@@ -73,3 +73,15 @@ assert (is_concurrent (of_event "t2") (of_event "u1") n2 = true);;
 assert (is_concurrent (of_event "t3") (of_event "e2") n2 = false);;
 assert (is_concurrent (of_event "t2") (of_event "e2") n2 = false);;
 assert (is_concurrent (of_event "t3") (of_event "t1") n2 = false);;
+
+
+
+open Examples.S1;;
+open Unfoldings.Lts;;
+
+assert (is_computation ["t1";"t2"] s1 = false);;
+assert (is_computation ["t1";"t3";"t4"] s1 = false);;
+assert (is_computation ["t3";"t5";"t1"] s1 = true);;
+assert (is_history ["t3";"t5";"t1"] s1 = false);;
+assert (is_history ["t1";"t3";"t5";"t2";"t4";"t5"] s1 = true);;
+assert (is_history ["t1";"t3";"t5";"t2";"t4";"t1"] s1 = false);;
