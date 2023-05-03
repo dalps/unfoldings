@@ -160,10 +160,6 @@ let fire e n = if enables n.marking e n then
   let output = outputs_of_event e n in
   n.marking <- PlaceSet.union (PlaceSet.diff n.marking input) output
 
-(* Fire a sequence of events, ignoring those not enabled *)
-let fire_sequence es n =
-  List.fold_left (fun _ e -> fire e n) () es
-
 let list_of_marking n = PlaceSet.elements n.marking
 
 let is_occurrence_sequence es n =
@@ -176,6 +172,10 @@ let is_occurrence_sequence es n =
       enables m e n && helper es' m'
 
   in helper es n.marking
+
+let fire_sequence es n =
+  assert (is_occurrence_sequence es n);
+  List.fold_left (fun _ e -> fire e n) () es
   
 let predecessors x n =
   let rec helper p parents =
