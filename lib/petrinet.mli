@@ -68,3 +68,4 @@ val is_conflict : Node.t -> Node.t -> t -> bool
 val is_concurrent : Node.t -> Node.t -> t -> bool
 val concurrencies : t -> Set.Make(NodePair).t
 val is_reachable : Set.Make(Place).t -> t -> bool
+val product : t -> t -> (Event.t option * Event.t option) list -> t

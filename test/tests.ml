@@ -85,3 +85,19 @@ assert (is_computation ["t3";"t5";"t1"] s1 = true);;
 assert (is_history ["t3";"t5";"t1"] s1 = false);;
 assert (is_history ["t1";"t3";"t5";"t2";"t4";"t5"] s1 = true);;
 assert (is_history ["t1";"t3";"t5";"t2";"t4";"t1"] s1 = false);;
+
+
+
+open Examples.Prod;;
+
+assert (is_occurrence_sequence ["t1";"u1";"t3u2";"t5"] n);;
+assert (is_occurrence_sequence ["u1";"t1";"t3u2";"u3"] n);;
+assert (is_occurrence_sequence ["u1";"t3u2"] n = false);;
+assert (is_occurrence_sequence ["t1";"u1";"t4u2";"u3"] n = false);;
+assert (is_occurrence_sequence ["t1";"u1";"t4u2";"u3"] n = false);;
+assert (is_occurrence_sequence ["t2";"u1";"t4u2";"u3"] n);;
+assert (is_occurrence_sequence ["u1";"t2";"t4u2";"u3";"t5"] n);;
+assert (is_occurrence_sequence ["u1";"t2";"t4u2";"t5";"u3";"u1"] n);;
+assert (is_occurrence_sequence ["u1";"t2";"t4u2";"t5";"u3";"u1";"t4u2"] n = false);;
+assert (is_occurrence_sequence ["u1";"t2";"t4u2";"t5";"u3";"t2";"u1";"t4u2"] n);;
+assert (is_occurrence_sequence ["u1";"t2";"t4u2";"t5";"u3";"t1";"u1";"t3u2"] n);;

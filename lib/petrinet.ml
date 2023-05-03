@@ -162,14 +162,19 @@ let fire e n = if enables n.marking e n then
 
 let list_of_marking n = PlaceSet.elements n.marking
 
+exception NotANode of string
+
 let is_occurrence_sequence es n =
   let rec helper elist m = match elist with
     [] -> true
   | e::es' ->
-      let input = inputs_of_event e n in
-      let output = outputs_of_event e n in
-      let m' = PlaceSet.union (PlaceSet.diff m input) output in
-      enables m e n && helper es' m'
+      if EventSet.mem e n.events then
+        let input = inputs_of_event e n in
+        let output = outputs_of_event e n in
+        let m' = PlaceSet.union (PlaceSet.diff m input) output in
+        enables m e n && helper es' m'
+      else
+        raise (NotANode e)
 
   in helper es n.marking
 
@@ -331,3 +336,88 @@ let is_reachable m n =
     b)
   nodes
   true
+
+(* Product of two nets given a synchronization constraint **on the events**.
+   The synchronization constraint is represented as a list of pairs of event
+   options. The first (second) component of a pair is an event of the lhs (rhs)
+   operand or None if that operand doesn't participate in the new transition.
+   *)
+let product (n1 : t) (n2 : t) (sync : (Event.t option * Event.t option) list) =
+  {
+    places = PlaceSet.union n1.places n2.places;
+
+    events = List.fold_left
+      (fun eset (e1,e2) -> match e1,e2 with
+        | None, None -> eset
+        | Some e, None
+        | None, Some e -> EventSet.add e eset                                   (* The new event will carry the same label as the only participant event *)
+        | Some e1, Some e2 -> EventSet.add (e1 ^ e2) eset                       (* The new event label is a function of the two participant's labels - concatenation suffices for now *)
+      )
+      EventSet.empty
+      sync;
+      
+    flow = List.fold_left
+      (fun fset (e1,e2) -> (match e1,e2 with
+        | None, None -> fset
+        
+        | Some e, None ->
+            let pre_e = inputs_of_event e n1 in
+            let post_e = outputs_of_event e n1 in
+            FlowSet.union
+              (FlowSet.union
+                (PlaceSet.fold
+                  (fun p acc -> FlowSet.add (p @--> e) acc)
+                  pre_e
+                  FlowSet.empty)
+                (PlaceSet.fold
+                  (fun p acc -> FlowSet.add (e -->@ p) acc)
+                  post_e
+                  FlowSet.empty))
+              fset
+
+        | None, Some e -> 
+            let pre_e = inputs_of_event e n2 in
+            let post_e = outputs_of_event e n2 in
+            FlowSet.union
+              (FlowSet.union 
+                (PlaceSet.fold
+                  (fun p acc -> FlowSet.add (p @--> e) acc)
+                  pre_e
+                  FlowSet.empty)
+                (PlaceSet.fold
+                  (fun p acc -> FlowSet.add (e -->@ p) acc)
+                  post_e
+                  FlowSet.empty))
+              fset
+
+        | Some e1, Some e2 ->
+            FlowSet.union
+              (let pre_e1 = inputs_of_event e1 n1 in
+              let post_e1 = outputs_of_event e1 n1 in
+              FlowSet.union 
+                (PlaceSet.fold
+                  (fun p acc -> FlowSet.add (p @--> (e1 ^ e2)) acc)
+                  pre_e1
+                  FlowSet.empty)
+                (PlaceSet.fold
+                  (fun p acc -> FlowSet.add ((e1 ^ e2) -->@ p) acc)
+                  post_e1
+                  FlowSet.empty))
+              (FlowSet.union
+                (let pre_e2 = inputs_of_event e2 n2 in
+                let post_e2 = outputs_of_event e2 n2 in
+                FlowSet.union 
+                  (PlaceSet.fold
+                    (fun p acc -> FlowSet.add (p @--> (e1 ^ e2)) acc)
+                    pre_e2
+                    FlowSet.empty)
+                  (PlaceSet.fold
+                    (fun p acc -> FlowSet.add ((e1 ^ e2) -->@ p) acc)
+                    post_e2
+                    FlowSet.empty))
+                fset)  
+      ))
+      FlowSet.empty
+      sync;
+    marking = PlaceSet.union n1.marking n2.marking;
+  }
