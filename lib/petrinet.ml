@@ -57,6 +57,9 @@ end
 let (@-->) = Flow.to_event
 let (-->@) = Flow.to_place
 
+let __EVENT_SEPARATOR__ = ','
+let __IDLE__ = '_'
+
 module PlaceSet = Set.Make(Place)
 module EventSet = Set.Make(Event)
 module FlowSet = Set.Make(Flow)
@@ -77,6 +80,10 @@ let empty () = {
 }
 
 let build ps es fs im =
+  assert (List.exists (fun e ->
+    not (String.contains e __EVENT_SEPARATOR__) &&
+    not (String.contains e __IDLE__)
+  ) es);
   let n = empty () in
   n.places <- PlaceSet.of_list ps;
   n.events <- EventSet.of_list es;
@@ -86,11 +93,20 @@ let build ps es fs im =
 
 let add_place p n = n.places <- PlaceSet.add p n.places
 
-let add_event e n = n.events <- EventSet.add e n.events
+let add_event e n = 
+  assert (
+    not (String.contains e __EVENT_SEPARATOR__) &&
+    not (String.contains e __IDLE__));
+  n.events <- EventSet.add e n.events
 
 let add_places ps n = n.places <- PlaceSet.union ps n.places
 
-let add_events es n = n.events <- EventSet.union es n.events
+let add_events es n =
+  assert (List.exists (fun e ->
+    not (String.contains e __EVENT_SEPARATOR__) &&
+    not (String.contains e __IDLE__)
+  ) es);
+  n.events <- EventSet.union (EventSet.of_list es) n.events
 
 exception UnknownPlace of Place.t
 exception UnknownEvent of Event.t
@@ -337,87 +353,64 @@ let is_reachable m n =
   nodes
   true
 
+exception IllegalGlobalEvent
+
 (* Product of two nets given a synchronization constraint **on the events**.
    The synchronization constraint is represented as a list of pairs of event
    options. The first (second) component of a pair is an event of the lhs (rhs)
    operand or None if that operand doesn't participate in the new transition.
    *)
 let product (n1 : t) (n2 : t) (sync : (Event.t option * Event.t option) list) =
+  let parse_event = function
+    | None, None -> raise IllegalGlobalEvent
+    | Some e, None -> e ^ Char.escaped __EVENT_SEPARATOR__ ^ Char.escaped __IDLE__
+    | None, Some e -> Char.escaped __IDLE__ ^ Char.escaped __EVENT_SEPARATOR__ ^ e
+    | Some e1, Some e2 -> e1 ^ Char.escaped __EVENT_SEPARATOR__ ^ e2
+  in
+
+  let parse_preflow epair =
+    (* Gather all input places of the global transition *)
+    let preset = match epair with
+      | None, None -> raise IllegalGlobalEvent
+      | Some e, None -> inputs_of_event e n1
+      | None, Some e -> inputs_of_event e n2
+      | Some e1, Some e2 -> 
+          PlaceSet.union (inputs_of_event e1 n1) (inputs_of_event e2 n2)
+
+    in PlaceSet.fold
+      (fun p acc -> FlowSet.add (p @--> parse_event epair) acc)
+      preset
+      FlowSet.empty
+  in
+
+  let parse_postflow epair =
+    (* Gather all output places of the global transition *)
+    let postset = match epair with
+      | None, None -> raise IllegalGlobalEvent
+      | Some e, None -> outputs_of_event e n1
+      | None, Some e -> outputs_of_event e n2
+      | Some e1, Some e2 -> 
+          PlaceSet.union (outputs_of_event e1 n1) (outputs_of_event e2 n2)
+
+    in PlaceSet.fold
+      (fun p acc -> FlowSet.add (parse_event epair -->@ p) acc)
+      postset
+      FlowSet.empty
+  in
+
   {
     places = PlaceSet.union n1.places n2.places;
 
     events = List.fold_left
-      (fun eset (e1,e2) -> match e1,e2 with
-        | None, None -> eset
-        | Some e, None
-        | None, Some e -> EventSet.add e eset                                   (* The new event will carry the same label as the only participant event *)
-        | Some e1, Some e2 -> EventSet.add (e1 ^ e2) eset                       (* The new event label is a function of the two participant's labels - concatenation suffices for now *)
-      )
+      (fun eset epair -> EventSet.add (parse_event epair) eset)
       EventSet.empty
       sync;
       
     flow = List.fold_left
-      (fun fset (e1,e2) -> (match e1,e2 with
-        | None, None -> fset
-        
-        | Some e, None ->
-            let pre_e = inputs_of_event e n1 in
-            let post_e = outputs_of_event e n1 in
-            FlowSet.union
-              (FlowSet.union
-                (PlaceSet.fold
-                  (fun p acc -> FlowSet.add (p @--> e) acc)
-                  pre_e
-                  FlowSet.empty)
-                (PlaceSet.fold
-                  (fun p acc -> FlowSet.add (e -->@ p) acc)
-                  post_e
-                  FlowSet.empty))
-              fset
-
-        | None, Some e -> 
-            let pre_e = inputs_of_event e n2 in
-            let post_e = outputs_of_event e n2 in
-            FlowSet.union
-              (FlowSet.union 
-                (PlaceSet.fold
-                  (fun p acc -> FlowSet.add (p @--> e) acc)
-                  pre_e
-                  FlowSet.empty)
-                (PlaceSet.fold
-                  (fun p acc -> FlowSet.add (e -->@ p) acc)
-                  post_e
-                  FlowSet.empty))
-              fset
-
-        | Some e1, Some e2 ->
-            FlowSet.union
-              (let pre_e1 = inputs_of_event e1 n1 in
-              let post_e1 = outputs_of_event e1 n1 in
-              FlowSet.union 
-                (PlaceSet.fold
-                  (fun p acc -> FlowSet.add (p @--> (e1 ^ e2)) acc)
-                  pre_e1
-                  FlowSet.empty)
-                (PlaceSet.fold
-                  (fun p acc -> FlowSet.add ((e1 ^ e2) -->@ p) acc)
-                  post_e1
-                  FlowSet.empty))
-              (FlowSet.union
-                (let pre_e2 = inputs_of_event e2 n2 in
-                let post_e2 = outputs_of_event e2 n2 in
-                FlowSet.union 
-                  (PlaceSet.fold
-                    (fun p acc -> FlowSet.add (p @--> (e1 ^ e2)) acc)
-                    pre_e2
-                    FlowSet.empty)
-                  (PlaceSet.fold
-                    (fun p acc -> FlowSet.add ((e1 ^ e2) -->@ p) acc)
-                    post_e2
-                    FlowSet.empty))
-                fset)  
-      ))
+      (fun fset epair -> FlowSet.union
+          (FlowSet.union (parse_preflow epair) (parse_postflow epair)) fset)
       FlowSet.empty
       sync;
+
     marking = PlaceSet.union n1.marking n2.marking;
   }

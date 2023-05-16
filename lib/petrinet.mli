@@ -46,7 +46,7 @@ val build : Place.t list -> Event.t list -> Flow.t list -> Place.t list -> t
 val add_place : Place.t -> t -> unit
 val add_event : Event.t -> t -> unit
 val add_places : Set.Make(Place).t -> t -> unit
-val add_events : Set.Make(Event).t -> t -> unit
+val add_events : Event.t list -> t -> unit
 val add_to_place_arc : Event.t -> Place.t -> t -> unit
 val add_to_event_arc : Place.t -> Event.t -> t -> unit
 val set_marking : Set.Make(Place).t -> t -> unit
