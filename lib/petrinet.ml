@@ -7,6 +7,28 @@ end
 module Event = struct
   type t = string
 
+  let __SEPARATOR__ = ','
+  let __IDLE__ = '_'
+
+  let sep = Char.escaped __SEPARATOR__
+  let idle = Char.escaped __IDLE__
+
+  let is_local e = 
+    not (String.contains e __SEPARATOR__) &&
+    not (String.contains e __IDLE__)
+
+  let is_idle = (=) idle
+
+  let explode = String.split_on_char __SEPARATOR__
+
+  let participates i e = List.nth (explode e) i <> Char.escaped __IDLE__
+
+  let projection i h = List.filter (participates i) h
+
+  let is_independent e1 e2 = List.for_all
+    (fun (le1,le2) -> is_idle le1 <> is_idle le2)
+    (List.combine (explode e1) (explode e2))
+
   let compare = compare
 end
 
@@ -57,9 +79,6 @@ end
 let (@-->) = Flow.to_event
 let (-->@) = Flow.to_place
 
-let __EVENT_SEPARATOR__ = ','
-let __IDLE__ = '_'
-
 module PlaceSet = Set.Make(Place)
 module EventSet = Set.Make(Event)
 module FlowSet = Set.Make(Flow)
@@ -80,10 +99,7 @@ let empty () = {
 }
 
 let build ps es fs im =
-  assert (List.exists (fun e ->
-    not (String.contains e __EVENT_SEPARATOR__) &&
-    not (String.contains e __IDLE__)
-  ) es);
+  assert (List.for_all Event.is_local es);
   let n = empty () in
   n.places <- PlaceSet.of_list ps;
   n.events <- EventSet.of_list es;
@@ -94,18 +110,13 @@ let build ps es fs im =
 let add_place p n = n.places <- PlaceSet.add p n.places
 
 let add_event e n = 
-  assert (
-    not (String.contains e __EVENT_SEPARATOR__) &&
-    not (String.contains e __IDLE__));
+  assert (Event.is_local e);
   n.events <- EventSet.add e n.events
 
 let add_places ps n = n.places <- PlaceSet.union ps n.places
 
 let add_events es n =
-  assert (List.exists (fun e ->
-    not (String.contains e __EVENT_SEPARATOR__) &&
-    not (String.contains e __IDLE__)
-  ) es);
+  assert (List.for_all Event.is_local es);
   n.events <- EventSet.union (EventSet.of_list es) n.events
 
 exception UnknownPlace of Place.t
@@ -363,9 +374,9 @@ exception IllegalGlobalEvent
 let product (n1 : t) (n2 : t) (sync : (Event.t option * Event.t option) list) =
   let parse_event = function
     | None, None -> raise IllegalGlobalEvent
-    | Some e, None -> e ^ Char.escaped __EVENT_SEPARATOR__ ^ Char.escaped __IDLE__
-    | None, Some e -> Char.escaped __IDLE__ ^ Char.escaped __EVENT_SEPARATOR__ ^ e
-    | Some e1, Some e2 -> e1 ^ Char.escaped __EVENT_SEPARATOR__ ^ e2
+    | Some e, None -> e ^ Event.sep ^ Event.idle
+    | None, Some e -> Event.idle ^ Event.sep ^ e
+    | Some e1, Some e2 -> e1 ^ Event.sep ^ e2
   in
 
   let parse_preflow epair =

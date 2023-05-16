@@ -7,6 +7,10 @@ module Place :
 module Event :
   sig
     type t = string (* not abstract for now *)
+    val idle : string
+    val participates : int -> t -> bool
+    val projection : int -> t list -> t list
+    val is_independent : t -> t -> bool
     val compare : 'a -> 'a -> int
   end
 

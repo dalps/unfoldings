@@ -101,3 +101,7 @@ assert (is_occurrence_sequence ["_,u1";"t2,_";"t4,u2";"t5,_";"_,u3";"_,u1"] n);;
 assert (is_occurrence_sequence ["_,u1";"t2,_";"t4,u2";"t5,_";"_,u3";"_,u1";"t4,u2"] n = false);;
 assert (is_occurrence_sequence ["_,u1";"t2,_";"t4,u2";"t5,_";"_,u3";"t2,_";"_,u1";"t4,u2"] n);;
 assert (is_occurrence_sequence ["_,u1";"t2,_";"t4,u2";"t5,_";"_,u3";"t1,_";"_,u1";"t3,u2"] n);;
+
+assert (Event.is_independent "t1,_" "_,u1");;
+assert (Event.is_independent "t1,_" "t5,_" = false);;
+assert (Event.is_independent "t3,u2" "t4,u2" = false);;
