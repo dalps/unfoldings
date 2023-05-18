@@ -5,7 +5,7 @@
    events where S and Q synchronize are denoted ei. 
 *)
 
-open Unfoldings.Petrinet
+open Unfoldings.Product_pretrinet.PNet
 
 let n2 = build
   ["s1";"s2";"s3";"s4";"r1";"r2";"r3";"r4"]

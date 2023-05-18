@@ -1,92 +1,56 @@
-module Place :
-  sig
-    type t = string
-    val compare : 'a -> 'a -> int
-  end
+module Make :
+  functor (P : Set.OrderedType) (T : Set.OrderedType) -> sig
+    module Node : sig
+      type t
+      
+      val is_place : t -> bool
+      val is_trans : t -> bool
+      val of_place : P.t -> t
+      val of_trans : T.t -> t
+      val place_of : t -> P.t
+      val trans_of : t -> T.t
+      val compare : t -> t -> int
+    end
 
-module TransLabel :
-  sig
-    type t = string
+    module Flow : sig
+      type t
 
-    val sep : string
-    val idle : string
-    val represents_local_transition : string -> bool
-    val is_idle : string -> bool
-    val explode : string -> string list
-    val is_well_formed : string -> bool
-    val participates : int -> string -> bool
-    val projection : int -> string list -> string list
-    val is_independent : string -> string -> bool
-    val is_equivalent : string list -> string list -> bool
-  end
+      val build : Node.t -> Node.t -> t
+      val source : t -> Node.t
+      val target : t -> Node.t
+      val to_place : T.t -> P.t -> t
+      val to_trans : P.t -> T.t -> t
+      val target_trans : t -> T.t
+      val source_trans : t -> T.t
+      val target_place : t -> P.t
+      val source_place : t -> P.t
+      val compare : t -> t -> int
+    end
 
-module Event :
-  sig
+    val ( @--> ) : P.t -> T.t -> Flow.t
+    val ( -->@ ) : T.t -> P.t -> Flow.t
+
     type t
-
-    val build : int -> string -> t
-    val build_anon : string -> t
-    val name_of : t -> int
-    val label_of : t -> string
-    val compare : 'a -> 'a -> int
+    val empty : unit -> t
+    val build : P.t list -> T.t list -> Flow.t list -> P.t list -> t
+    val build2 : Set.Make(P).t -> Set.Make(T).t -> Set.Make(Flow).t -> Set.Make(P).t -> t
+    val places : t -> Set.Make(P).t
+    val transitions : t -> Set.Make(T).t
+    val flow : t -> Set.Make(Flow).t
+    val marking : t -> Set.Make(P).t
+    val add_place : P.t -> t -> unit
+    val add_trans : T.t -> t -> unit
+    val add_places : Set.Make(P).t -> t -> unit
+    val add_transs : T.t list -> t -> unit
+    val add_to_place_arc : T.t -> P.t -> t -> unit
+    val add_to_trans_arc : P.t -> T.t -> t -> unit
+    val set_marking : Set.Make(P).t -> t -> unit
+    val nodes_of_places : Set.Make(P).t -> Set.Make(Node).t 
+    val nodes_of_transs : Set.Make(T).t -> Set.Make(Node).t 
+    val inputs_of : Node.t -> t -> Set.Make(Node).t
+    val outputs_of : Node.t -> t -> Set.Make(Node).t
+    val inputs_of_place : P.t -> t -> Set.Make(T).t
+    val outputs_of_place : P.t -> t -> Set.Make(T).t
+    val inputs_of_trans : T.t -> t -> Set.Make(P).t
+    val outputs_of_trans : T.t -> t -> Set.Make(P).t
   end
-
-module Node :
-  sig
-    type t
-    val compare : 'a -> 'a -> int
-    val is_place : t -> bool
-    val is_event : t -> bool
-    val of_place : Place.t -> t
-    val of_event : Event.t -> t
-  end
-
-module Flow :
-  sig
-    type t
-    val compare : 'a -> 'a -> int
-    val build : Node.t -> Node.t -> t
-    val to_place : Event.t -> Place.t -> t
-    val to_event : Place.t -> Event.t -> t
-    val source : t -> Node.t
-    val target : t -> Node.t
-  end
-
-val (-->@) : Event.t -> Place.t -> Flow.t
-val (@-->) : Place.t -> Event.t -> Flow.t
-
-module NodePair :
-  sig
-    type t = Node.t * Node.t
-    val compare : 'a -> 'a -> int
-  end
-
-type t
-val empty : unit -> t
-val build : Place.t list -> Event.t list -> Flow.t list -> Place.t list -> t
-val add_place : Place.t -> t -> unit
-val add_event : Event.t -> t -> unit
-val add_places : Set.Make(Place).t -> t -> unit
-val add_events : Event.t list -> t -> unit
-val add_to_place_arc : Event.t -> Place.t -> t -> unit
-val add_to_event_arc : Place.t -> Event.t -> t -> unit
-val set_marking : Set.Make(Place).t -> t -> unit
-val inputs_of : Node.t -> t -> Set.Make(Node).t
-val outputs_of : Node.t -> t -> Set.Make(Node).t
-val inputs_of_place : Place.t -> t -> Set.Make(Event).t
-val outputs_of_place : Place.t -> t -> Set.Make(Event).t
-val inputs_of_event : Event.t -> t -> Set.Make(Place).t
-val outputs_of_event : Event.t -> t -> Set.Make(Place).t
-val enables : Set.Make(Place).t -> Place.t -> t -> bool
-val fire : Event.t -> t -> unit
-val fire_sequence : Event.t list -> t -> unit
-val list_of_marking : t -> Place.t list
-val is_occurrence_sequence : Event.t list -> t -> bool
-val predecessors : Node.t -> t -> Set.Make(Node).t
-val is_predecessor : Node.t -> Node.t -> t -> bool
-val is_causally_related : Node.t -> Node.t -> t -> bool
-val is_conflict : Node.t -> Node.t -> t -> bool
-val is_concurrent : Node.t -> Node.t -> t -> bool
-val concurrencies : t -> Set.Make(NodePair).t
-val is_reachable : Set.Make(Place).t -> t -> bool
-val product : t -> t -> (Event.t option * Event.t option) list -> t

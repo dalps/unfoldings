@@ -2,7 +2,7 @@
    Not a prefix of an unfolding: contains two cycles.
 *)
 
-open Unfoldings.Petrinet
+open Unfoldings.Product_pretrinet.PNet
 
 let n1 = build
   ["p1";"p2";"p3";"p4"]

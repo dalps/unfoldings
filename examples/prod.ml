@@ -1,4 +1,5 @@
-open Unfoldings.Petrinet
+open Unfoldings.Product_pretrinet
+open Unfoldings.Product_pretrinet.PNet
 
 let s = build
   ["s1";"s2";"s3";"s4"]
