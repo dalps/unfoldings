@@ -7,19 +7,43 @@ end
 module Event = struct
   type t = string
 
-  let __SEPARATOR__ = ','
+  exception IllegalGlobalEvent
+
+  let __ID__ = '#' 
+  let __SEP__ = ','
   let __IDLE__ = '_'
 
-  let sep = Char.escaped __SEPARATOR__
+  let id = Char.escaped __ID__
+  let sep = Char.escaped __SEP__
   let idle = Char.escaped __IDLE__
 
-  let is_local e = 
-    not (String.contains e __SEPARATOR__) &&
+  let has_id e = String.contains e __ID__
+
+  let set_id i e = 
+    assert (not (has_id e)); (* Event argument must not be identified already *)
+    e ^ id ^ (Int.to_string i)
+
+  let get_id e =
+    assert (has_id e);
+    let i = String.index e __ID__ in
+    int_of_string (String.sub e (i+1) ((String.length e)-i-1))
+
+  let label_of e =
+    if has_id e then
+      let i = String.index e __ID__ in
+      String.sub e 0 i
+
+    else e
+
+  let is_transition e =
+    not (has_id e) &&
+    not (String.contains e __SEP__) &&
     not (String.contains e __IDLE__)
 
   let is_idle = (=) idle
 
-  let explode = String.split_on_char __SEPARATOR__
+  let explode e =
+    String.split_on_char __SEP__ (label_of e)
 
   let participates i e = List.nth (explode e) i <> Char.escaped __IDLE__
 
@@ -28,6 +52,12 @@ module Event = struct
   let is_independent e1 e2 = List.for_all
     (fun (le1,le2) -> is_idle le1 <> is_idle le2)
     (List.combine (explode e1) (explode e2))
+
+  let of_pair = function
+    | None, None -> raise IllegalGlobalEvent
+    | Some e, None -> e ^ sep ^ idle
+    | None, Some e -> idle ^ sep ^ e
+    | Some e1, Some e2 -> e1 ^ sep ^ e2
 
   let compare = compare
 end
@@ -99,7 +129,7 @@ let empty () = {
 }
 
 let build ps es fs im =
-  assert (List.for_all Event.is_local es);
+  assert (List.for_all Event.is_transition es);
   let n = empty () in
   n.places <- PlaceSet.of_list ps;
   n.events <- EventSet.of_list es;
@@ -110,13 +140,13 @@ let build ps es fs im =
 let add_place p n = n.places <- PlaceSet.add p n.places
 
 let add_event e n = 
-  assert (Event.is_local e);
+  assert (Event.is_transition e);
   n.events <- EventSet.add e n.events
 
 let add_places ps n = n.places <- PlaceSet.union ps n.places
 
 let add_events es n =
-  assert (List.for_all Event.is_local es);
+  assert (List.for_all Event.is_transition es);
   n.events <- EventSet.union (EventSet.of_list es) n.events
 
 exception UnknownPlace of Place.t
@@ -372,13 +402,6 @@ exception IllegalGlobalEvent
    operand or None if that operand doesn't participate in the new transition.
    *)
 let product (n1 : t) (n2 : t) (sync : (Event.t option * Event.t option) list) =
-  let parse_event = function
-    | None, None -> raise IllegalGlobalEvent
-    | Some e, None -> e ^ Event.sep ^ Event.idle
-    | None, Some e -> Event.idle ^ Event.sep ^ e
-    | Some e1, Some e2 -> e1 ^ Event.sep ^ e2
-  in
-
   let parse_preflow epair =
     (* Gather all input places of the global transition *)
     let preset = match epair with
@@ -389,7 +412,7 @@ let product (n1 : t) (n2 : t) (sync : (Event.t option * Event.t option) list) =
           PlaceSet.union (inputs_of_event e1 n1) (inputs_of_event e2 n2)
 
     in PlaceSet.fold
-      (fun p acc -> FlowSet.add (p @--> parse_event epair) acc)
+      (fun p acc -> FlowSet.add (p @--> Event.of_pair epair) acc)
       preset
       FlowSet.empty
   in
@@ -404,7 +427,7 @@ let product (n1 : t) (n2 : t) (sync : (Event.t option * Event.t option) list) =
           PlaceSet.union (outputs_of_event e1 n1) (outputs_of_event e2 n2)
 
     in PlaceSet.fold
-      (fun p acc -> FlowSet.add (parse_event epair -->@ p) acc)
+      (fun p acc -> FlowSet.add (Event.of_pair epair -->@ p) acc)
       postset
       FlowSet.empty
   in
@@ -413,7 +436,7 @@ let product (n1 : t) (n2 : t) (sync : (Event.t option * Event.t option) list) =
     places = PlaceSet.union n1.places n2.places;
 
     events = List.fold_left
-      (fun eset epair -> EventSet.add (parse_event epair) eset)
+      (fun eset epair -> EventSet.add (Event.of_pair epair) eset)
       EventSet.empty
       sync;
       

@@ -7,6 +7,9 @@ module Place :
 module Event :
   sig
     type t = string (* not abstract for now *)
+    val set_id : int -> t -> t
+    val get_id : t -> int
+    val label_of : t -> t
     val idle : string
     val participates : int -> t -> bool
     val projection : int -> t list -> t list
