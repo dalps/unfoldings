@@ -4,54 +4,41 @@ module Place = struct
   let compare = compare
 end
 
-module Event = struct
+module TransLabel = struct
   type t = string
 
-  exception IllegalGlobalEvent
+  exception IllegalGlobalTransition
 
-  let __ID__ = '#' 
   let __SEP__ = ','
   let __IDLE__ = '_'
 
-  let id = Char.escaped __ID__
   let sep = Char.escaped __SEP__
   let idle = Char.escaped __IDLE__
 
-  let has_id e = String.contains e __ID__
-
-  let set_id i e = 
-    assert (not (has_id e)); (* Event argument must not be identified already *)
-    e ^ id ^ (Int.to_string i)
-
-  let get_id e =
-    assert (has_id e);
-    let i = String.index e __ID__ in
-    int_of_string (String.sub e (i+1) ((String.length e)-i-1))
-
-  let label_of e =
-    if has_id e then
-      let i = String.index e __ID__ in
-      String.sub e 0 i
-
-    else e
-
-  let is_transition e =
-    not (has_id e) &&
-    not (String.contains e __SEP__) &&
-    not (String.contains e __IDLE__)
+  let represents_local_transition l =
+    not (String.contains l __SEP__) &&
+    not (String.contains l __IDLE__)
 
   let is_idle = (=) idle
 
-  let explode e =
-    String.split_on_char __SEP__ (label_of e)
+  let explode = String.split_on_char __SEP__
 
-  let participates i e = List.nth (explode e) i <> Char.escaped __IDLE__
+  let is_well_formed t =
+    let rec helper l = match l with
+        [] -> false
+      | s::ss -> if String.contains s __IDLE__ 
+          then s = idle && helper ss 
+          else helper ss
+
+    in helper (explode t)
+
+  let participates i t = List.nth (explode t) i <> Char.escaped __IDLE__
 
   let projection i h = List.filter (participates i) h
 
-  let is_independent e1 e2 = List.for_all
+  let is_independent t1 t2 = List.for_all
     (fun (le1,le2) -> is_idle le1 <> is_idle le2)
-    (List.combine (explode e1) (explode e2))
+    (List.combine (explode t1) (explode t2))
 
   (* Two transition words are equivalent if on can be obtained from the other
      by swapping consecutive indepentent transitions.
@@ -62,13 +49,22 @@ module Event = struct
   | t1::u1::w1', u2::t2::w2' when t1 = t2 && u1 = u2 -> 
       is_independent t1 u1 && is_equivalent w1' w2'
   | a1::w1', a2::w2' -> a1 = a2 && is_equivalent w1' w2'
+end
 
-  let of_pair = function
-    | None, None -> raise IllegalGlobalEvent
-    | Some e, None -> e ^ sep ^ idle
-    | None, Some e -> idle ^ sep ^ e
-    | Some e1, Some e2 -> e1 ^ sep ^ e2
+module Event = struct
+  type t = {
+    mutable name : int; (*  Has a meaningful value only in the context on an unfoling. *)
+    mutable label : TransLabel.t
+  }
 
+  let build name lbl = {name = name; label = lbl}
+
+  let build_anon lbl = {name = 0; label = lbl} 
+
+  let name_of e = e.name
+
+  let label_of e = e.label
+    
   let compare = compare
 end
 
@@ -139,10 +135,11 @@ let empty () = {
 }
 
 let build ps es fs im =
-  assert (List.for_all Event.is_transition es);
+  assert (List.for_all TransLabel.represents_local_transition es);
+  let events = List.map (fun lbl -> Event.build_anon lbl) es in
   let n = empty () in
   n.places <- PlaceSet.of_list ps;
-  n.events <- EventSet.of_list es;
+  n.events <- EventSet.of_list events;
   n.flow <- FlowSet.of_list fs;
   n.marking <- PlaceSet.of_list im;
   n
@@ -150,13 +147,11 @@ let build ps es fs im =
 let add_place p n = n.places <- PlaceSet.add p n.places
 
 let add_event e n = 
-  assert (Event.is_transition e);
   n.events <- EventSet.add e n.events
 
 let add_places ps n = n.places <- PlaceSet.union ps n.places
 
 let add_events es n =
-  assert (List.for_all Event.is_transition es);
   n.events <- EventSet.union (EventSet.of_list es) n.events
 
 exception UnknownPlace of Place.t
@@ -241,7 +236,7 @@ let is_occurrence_sequence es n =
         let m' = PlaceSet.union (PlaceSet.diff m input) output in
         enables m e n && helper es' m'
       else
-        raise (NotANode e)
+        raise (NotANode (Event.label_of e))
 
   in helper es n.marking
 
@@ -412,6 +407,15 @@ exception IllegalGlobalEvent
    operand or None if that operand doesn't participate in the new transition.
    *)
 let product (n1 : t) (n2 : t) (sync : (Event.t option * Event.t option) list) =
+  let event_of_pair (e1,e2) = Event.build_anon
+    (match e1,e2 with
+      | None, None -> raise TransLabel.IllegalGlobalTransition
+      | Some e, None -> Event.label_of e ^ TransLabel.sep ^ TransLabel.idle
+      | None, Some e -> TransLabel.idle ^ TransLabel.sep ^ Event.label_of e
+      | Some e1', Some e2' -> 
+          Event.label_of e1' ^ TransLabel.sep ^ Event.label_of e2')
+  in
+
   let parse_preflow epair =
     (* Gather all input places of the global transition *)
     let preset = match epair with
@@ -422,7 +426,7 @@ let product (n1 : t) (n2 : t) (sync : (Event.t option * Event.t option) list) =
           PlaceSet.union (inputs_of_event e1 n1) (inputs_of_event e2 n2)
 
     in PlaceSet.fold
-      (fun p acc -> FlowSet.add (p @--> Event.of_pair epair) acc)
+      (fun p acc -> FlowSet.add (p @--> event_of_pair epair) acc)
       preset
       FlowSet.empty
   in
@@ -437,7 +441,7 @@ let product (n1 : t) (n2 : t) (sync : (Event.t option * Event.t option) list) =
           PlaceSet.union (outputs_of_event e1 n1) (outputs_of_event e2 n2)
 
     in PlaceSet.fold
-      (fun p acc -> FlowSet.add (Event.of_pair epair -->@ p) acc)
+      (fun p acc -> FlowSet.add (event_of_pair epair -->@ p) acc)
       postset
       FlowSet.empty
   in
@@ -446,7 +450,7 @@ let product (n1 : t) (n2 : t) (sync : (Event.t option * Event.t option) list) =
     places = PlaceSet.union n1.places n2.places;
 
     events = List.fold_left
-      (fun eset epair -> EventSet.add (Event.of_pair epair) eset)
+      (fun eset epair -> EventSet.add (event_of_pair epair) eset)
       EventSet.empty
       sync;
       

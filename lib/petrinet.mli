@@ -1,20 +1,33 @@
 module Place :
   sig
-    type t = string (* not abstract for now *)
+    type t = string
     val compare : 'a -> 'a -> int
+  end
+
+module TransLabel :
+  sig
+    type t = string
+
+    val sep : string
+    val idle : string
+    val represents_local_transition : string -> bool
+    val is_idle : string -> bool
+    val explode : string -> string list
+    val is_well_formed : string -> bool
+    val participates : int -> string -> bool
+    val projection : int -> string list -> string list
+    val is_independent : string -> string -> bool
+    val is_equivalent : string list -> string list -> bool
   end
 
 module Event :
   sig
-    type t = string (* not abstract for now *)
-    val set_id : int -> t -> t
-    val get_id : t -> int
-    val label_of : t -> t
-    val idle : string
-    val participates : int -> t -> bool
-    val projection : int -> t list -> t list
-    val is_independent : t -> t -> bool
-    val is_equivalent : t list -> t list -> bool
+    type t
+
+    val build : int -> string -> t
+    val build_anon : string -> t
+    val name_of : t -> int
+    val label_of : t -> string
     val compare : 'a -> 'a -> int
   end
 
