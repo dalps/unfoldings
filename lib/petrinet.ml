@@ -53,6 +53,16 @@ module Event = struct
     (fun (le1,le2) -> is_idle le1 <> is_idle le2)
     (List.combine (explode e1) (explode e2))
 
+  (* Two transition words are equivalent if on can be obtained from the other
+     by swapping consecutive indepentent transitions.
+     Transition words are lists of string-encoded Events. *)
+  let rec is_equivalent w1 w2 = match w1,w2 with
+  | [], [] -> true
+  | [], _::_ | _::_, [] -> false 
+  | t1::u1::w1', u2::t2::w2' when t1 = t2 && u1 = u2 -> 
+      is_independent t1 u1 && is_equivalent w1' w2'
+  | a1::w1', a2::w2' -> a1 = a2 && is_equivalent w1' w2'
+
   let of_pair = function
     | None, None -> raise IllegalGlobalEvent
     | Some e, None -> e ^ sep ^ idle

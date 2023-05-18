@@ -105,3 +105,11 @@ assert (is_occurrence_sequence ["_,u1";"t2,_";"t4,u2";"t5,_";"_,u3";"t1,_";"_,u1
 assert (Event.is_independent "t1,_" "_,u1");;
 assert (Event.is_independent "t1,_" "t5,_" = false);;
 assert (Event.is_independent "t3,u2" "t4,u2" = false);;
+
+assert (Event.is_equivalent ["t1,_";"_,u1";"t3,u2";"t5,_";"_,u3"] ["_,u1";"t1,_";"t3,u2";"_,u3";"t5,_"]);;
+assert (Event.is_equivalent ["t1,_";"_,u1";"t3,u2";"t5,_";"_,u3"] ["_,u1";"t1,_";"t3,u2";"t5,_";"_,u3"]);;
+assert (Event.is_equivalent ["_,u1";"t1,_";"t3,u2";"t5,_";"_,u3"] ["_,u1";"t1,_";"t3,u2";"_,u3";"t5,_"]);;
+assert (Event.is_equivalent ["_,u1";"t1,_";"t3,u2";"t5,_";"_,u3"] ["_,u1";"t1,_";"t3,u2";"t5,_";"_,u3"]);;
+assert (Event.is_equivalent ["_,u1";"t1,_";"t3,u2";"t5,_";"_,u3"] ["_,u1";"t1,_";"t3,u2";"t4,_";"_,u3"] = false);;
+assert (Event.is_equivalent ["_,u1";"t1,_";"t3,u2";"t5,_";"_,u3"] ["_,u1";"t1,_";"t3,u2";"t4,_"] = false);;
+assert (Event.is_equivalent ["_,u1";"t1,_";"t3,u2";"t5,_";"_,u3"] ["_,u1";"t1,_";"t3,u2";"t5,_";"t4,u2"] = false);;

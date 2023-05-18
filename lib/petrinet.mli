@@ -14,6 +14,7 @@ module Event :
     val participates : int -> t -> bool
     val projection : int -> t list -> t list
     val is_independent : t -> t -> bool
+    val is_equivalent : t list -> t list -> bool
     val compare : 'a -> 'a -> int
   end
 
