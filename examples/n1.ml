@@ -3,8 +3,9 @@
 *)
 
 open Unfoldings.Product_pretrinet.PNet
+open Flow
 
-let n1 = build
+let n1 = of_lists
   ["p1";"p2";"p3";"p4"]
   ["e1";"e2";"e3"]
   [

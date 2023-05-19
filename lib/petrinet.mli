@@ -3,10 +3,10 @@ module Make :
     module Node : sig
       type t
       
-      val is_place : t -> bool
-      val is_trans : t -> bool
       val of_place : P.t -> t
       val of_trans : T.t -> t
+      val is_place : t -> bool
+      val is_trans : t -> bool
       val place_of : t -> P.t
       val trans_of : t -> T.t
       val compare : t -> t -> int
@@ -15,11 +15,12 @@ module Make :
     module Flow : sig
       type t
 
-      val build : Node.t -> Node.t -> t
-      val source : t -> Node.t
-      val target : t -> Node.t
       val to_place : T.t -> P.t -> t
       val to_trans : P.t -> T.t -> t
+      val ( -->@ ) : T.t -> P.t -> t
+      val ( @--> ) : P.t -> T.t -> t
+      val source : t -> Node.t
+      val target : t -> Node.t
       val target_trans : t -> T.t
       val source_trans : t -> T.t
       val target_place : t -> P.t
@@ -27,13 +28,11 @@ module Make :
       val compare : t -> t -> int
     end
 
-    val ( @--> ) : P.t -> T.t -> Flow.t
-    val ( -->@ ) : T.t -> P.t -> Flow.t
-
     type t
+
     val empty : unit -> t
-    val build : P.t list -> T.t list -> Flow.t list -> P.t list -> t
-    val build2 : Set.Make(P).t -> Set.Make(T).t -> Set.Make(Flow).t -> Set.Make(P).t -> t
+    val of_lists : P.t list -> T.t list -> Flow.t list -> P.t list -> t
+    val of_sets : Set.Make(P).t -> Set.Make(T).t -> Set.Make(Flow).t -> Set.Make(P).t -> t
     val places : t -> Set.Make(P).t
     val transitions : t -> Set.Make(T).t
     val flow : t -> Set.Make(Flow).t
@@ -53,4 +52,8 @@ module Make :
     val outputs_of_place : P.t -> t -> Set.Make(T).t
     val inputs_of_trans : T.t -> t -> Set.Make(P).t
     val outputs_of_trans : T.t -> t -> Set.Make(P).t
+    val enables : Set.Make(P).t -> T.t -> t -> bool
+    val fire : T.t -> t -> unit
+    val is_occurrence_sequence : T.t list -> t -> bool
+    val fire_sequence : T.t list -> t -> unit
   end

@@ -5,40 +5,15 @@ module StateSet = Set.Make(State)
 module TransSet = Set.Make(Product_transition)
 module FlowSet = Set.Make(Flow)
 
-exception NotANode of string
 
-let enables m e n = StateSet.subset (inputs_of_trans e n) m
-    
-(* If the current marking of n enables e, fires e and updates n's marking *)
-let fire e n = if enables (marking n) e n then
-  let input = inputs_of_trans e n in
-  let output = outputs_of_trans e n in
-  set_marking (StateSet.union (StateSet.diff (marking n) input) output) n
-
-let is_occurrence_sequence es n =
-  let rec helper elist m = match elist with
-    [] -> true
-  | e::es' ->
-      if TransSet.mem e (transitions n) then
-        let input = inputs_of_trans e n in
-        let output = outputs_of_trans e n in
-        let m' = StateSet.union (StateSet.diff m input) output in
-        enables m e n && helper es' m'
-      else
-        raise (NotANode e)
-
-  in helper es (marking n)
-
-let fire_sequence es n =
-  assert (is_occurrence_sequence es n);
-  List.fold_left (fun _ e -> fire e n) () es
-    
 (* Product of two nets given a synchronization constraint **on the transs**.
   The synchronization constraint is represented as a list of pairs of trans
   options. The first (second) component of a pair is an trans of the lhs (rhs)
   operand or None if that operand doesn't participate in the new transition.
   *)
 let product (n1 : t) (n2 : t) (sync : (Product_transition.t option * Product_transition.t option) list) =
+  let open Flow in
+
   let trans_of_pair = function
     | None, None -> raise Product_transition.IllegalGlobalTransition
     | Some e, None -> e ^ Product_transition.sep ^ Product_transition.idle
@@ -76,7 +51,7 @@ let product (n1 : t) (n2 : t) (sync : (Product_transition.t option * Product_tra
       FlowSet.empty
   in
 
-  build2
+  of_sets
     (StateSet.union (places n1) (places n2))
 
     (List.fold_left

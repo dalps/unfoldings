@@ -1,7 +1,8 @@
 open Unfoldings.Product_pretrinet
-open Unfoldings.Product_pretrinet.PNet
+open PNet
+open Flow
 
-let s = build
+let s = of_lists
   ["s1";"s2";"s3";"s4"]
   ["t1";"t2";"t3";"t4";"t5"]
   [
@@ -18,7 +19,7 @@ let s = build
   ]
   ["s1"]
 
-let r = build
+let r = of_lists
   ["r1";"r2";"r3"]
   ["u1";"u2";"u3"]
   [

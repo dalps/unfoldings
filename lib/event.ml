@@ -1,14 +1,12 @@
 type t = {
   name : int;
-  label : string
+  label : Product_transition.t
 }
 
 let build name lbl = {name = name; label = lbl}
 
-let build_anon lbl = {name = 0; label = lbl} 
+let name e = e.name
 
-let name_of e = e.name
-
-let label_of e = e.label
+let label e = e.label
   
 let compare = compare

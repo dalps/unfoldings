@@ -33,14 +33,13 @@ let is_independent t1 t2 = List.for_all
   (fun (le1,le2) -> is_idle le1 <> is_idle le2)
   (List.combine (explode t1) (explode t2))
 
-(* Two transition words are equivalent if on can be obtained from the other
-    by swapping consecutive indepentent transitions.
-    Transition words are lists of string-encoded Events. *)
-let rec is_equivalent w1 w2 = match w1,w2 with
+(* Two transition words are equivalent if one can be obtained from the other
+   by swapping consecutive indepentent transitions. *)
+let rec tword_equiv w1 w2 = match w1,w2 with
 | [], [] -> true
 | [], _::_ | _::_, [] -> false 
 | t1::u1::w1', u2::t2::w2' when t1 = t2 && u1 = u2 -> 
-    is_independent t1 u1 && is_equivalent w1' w2'
-| a1::w1', a2::w2' -> a1 = a2 && is_equivalent w1' w2'
+    is_independent t1 u1 && tword_equiv w1' w2'
+| a1::w1', a2::w2' -> a1 = a2 && tword_equiv w1' w2'
 
 let compare = compare
