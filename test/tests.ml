@@ -120,3 +120,43 @@ assert (tword_equiv ["_,u1";"t1,_";"t3,u2";"t5,_";"_,u3"] ["_,u1";"t1,_";"t3,u2"
 assert (tword_equiv ["_,u1";"t1,_";"t3,u2";"t5,_";"_,u3"] ["_,u1";"t1,_";"t3,u2";"t4,_";"_,u3"] = false);;
 assert (tword_equiv ["_,u1";"t1,_";"t3,u2";"t5,_";"_,u3"] ["_,u1";"t1,_";"t3,u2";"t4,_"] = false);;
 assert (tword_equiv ["_,u1";"t1,_";"t3,u2";"t5,_";"_,u3"] ["_,u1";"t1,_";"t3,u2";"t5,_";"t4,u2"] = false);;
+assert (tword_equiv ["a,_,_";"_,b,_";"_,_,c"] ["_,b,_";"a,_,_";"_,_,c"]);;
+assert (tword_equiv ["a,_,_";"_,b,_";"_,_,c"] ["a,_,_";"_,_,c";"_,b,_"]);;
+assert (tword_equiv ["_,b,_";"a,_,_";"_,_,c"] ["a,_,_";"_,_,c";"_,b,_"]);;
+assert (tword_equiv ["a,_,_";"_,b,_";"_,_,c"] ["a,_,_";"_,_,c1";"_,b,_"] = false);;
+assert (tword_equiv ["a,_,_";"_,b,_";"_,_,c"] ["_,_,c";"_,b,_";"a,_,_"] = false);;
+
+(* --- *)
+
+let h1 = ["t1,_";"_,u1";"t3,u2";"t5,_";"_,u3"];;
+let h21 = ["a,_,_";"_,b,_";"_,_,c"];;
+let h22 = ["d,_,_";"_,e,f";"g,_,c"];;
+let h3 = ["t1,_";"_,u1";"t5,_";"_,u3";"t1,_";"_,u1";"t3,u2";"t5,_";"_,u3";"t4,u4"];;
+let h4 = ["t"];;
+
+let check_trace t = List.fold_left
+  (fun b v -> List.fold_left (fun c w -> tword_equiv w v && c) b t)
+  true 
+  t
+;;
+
+assert (check_trace (trace h1));;
+assert (check_trace (trace h21));;
+assert (check_trace (trace h22));;
+assert (check_trace (trace h3));;
+assert (check_trace (trace h4));;
+
+let combine ws vs =
+  List.fold_left
+  (fun traces w ->
+    (List.fold_left
+    (fun traces v -> [w @ v] @ traces)
+    []
+    vs) @ traces)
+  []
+  ws;;
+
+assert (combine (trace h1) (trace h3) <> trace (h1 @ h3));; (* rhs is larger *)
+assert (combine (trace h21) (trace h22) <> trace (h21 @ h22));; (* rhs is larger *)
+
+
