@@ -14,4 +14,9 @@ val is_independent : t -> t -> bool
 val tword_equiv : t list -> t list -> bool
 val trace : t list -> t list list
 val concat_traces : t list -> t list -> t list list
+val to_alpha : t -> t
+val to_alpha_word : t list -> t
+val sl_compare : t list -> t list -> int
+val projections : t list -> t list list
+val d_compare : (t list -> t list -> int) -> t list -> t list -> int
 val compare : t -> t -> int

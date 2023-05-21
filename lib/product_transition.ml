@@ -8,11 +8,11 @@ let __IDLE__ = '_'
 let sep = Char.escaped __SEP__
 let idle = Char.escaped __IDLE__
 
-let represents_local_transition l =
-  not (String.contains l __SEP__) &&
-  not (String.contains l __IDLE__)
+let represents_local_transition t =
+  not (String.contains t __SEP__) &&
+  not (String.contains t __IDLE__)
 
-let is_idle = (=) idle
+let is_idle t = String.contains t __IDLE__
 
 let explode = String.split_on_char __SEP__
 
@@ -74,4 +74,35 @@ let trace w =
 
 let concat_traces w w' = trace (w @ w')
 
+let to_alpha t = String.concat "" (List.filter (fun u -> not (is_idle u)) (explode t))
+
+let to_alpha_word w = String.concat "" (List.map to_alpha w)
+
+let sl_compare w w' =
+  let len_diff = List.length w - List.length w' in
+  if len_diff = 0 then
+    String.compare (to_alpha_word w) (to_alpha_word w')
+  else len_diff
+
+let projections w =
+  let len = List.length (explode (List.hd w)) in
+  assert(List.for_all (fun t -> List.length (explode t) = len) w);
+
+  let rec helper i projs =
+    if i = len then projs
+    else helper (i+1) (projs @ [(projection i w)])
+
+  in helper 0 []
+
+let d_compare cmp w w' =
+  List.fold_left2
+    (fun res wk wk' ->
+      let diff = cmp wk wk' in
+      (* Compute the difference between the k-th projections, with k in 1..n;
+         once it is not 0, carry it over the next steps as the final result. *)
+      if res <> 0 then res else diff)
+    0
+    (projections w)
+    (projections w')
+    
 let compare = compare

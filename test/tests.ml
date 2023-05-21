@@ -134,19 +134,24 @@ let h22 = ["d,_,_";"_,e,f";"g,_,c"];;
 let h3 = ["t1,_";"_,u1";"t5,_";"_,u3";"t1,_";"_,u1";"t3,u2";"t5,_";"_,u3";"t4,u4"];;
 let h4 = ["t"];;
 
-let check_trace t = List.fold_left
+let traceh3 = trace h3;;
+let traceh21 = trace h21;;
+let traceh22 = trace h22;;
+
+let test_trace_equiv t = List.fold_left
   (fun b v -> List.fold_left (fun c w -> tword_equiv w v && c) b t)
   true 
   t
 ;;
 
-assert (check_trace (trace h1));;
-assert (check_trace (trace h21));;
-assert (check_trace (trace h22));;
-assert (check_trace (trace h3));;
-assert (check_trace (trace h4));;
+let test_trace_proj i t = List.fold_left
+  (fun b v -> List.fold_left 
+    (fun c w -> projection i w = projection i v && c) b t)
+  true 
+  t
+;;
 
-let combine ws vs =
+let naive_concat ws vs =
   List.fold_left
   (fun traces w ->
     (List.fold_left
@@ -156,7 +161,36 @@ let combine ws vs =
   []
   ws;;
 
-assert (combine (trace h1) (trace h3) <> trace (h1 @ h3));; (* rhs is larger *)
-assert (combine (trace h21) (trace h22) <> trace (h21 @ h22));; (* rhs is larger *)
+assert (test_trace_equiv (trace h1));;
+assert (test_trace_equiv (trace h21));;
+assert (test_trace_equiv traceh22);;
+assert (test_trace_equiv traceh3);;
+assert (test_trace_equiv (trace h4));;
 
+assert (test_trace_proj 0 traceh3);;
+assert (test_trace_proj 1 traceh3);;
 
+assert (test_trace_proj 0 traceh21);;
+assert (test_trace_proj 1 traceh21);;
+assert (test_trace_proj 2 traceh21);;
+
+assert (test_trace_proj 0 traceh22);;
+assert (test_trace_proj 1 traceh22);;
+assert (test_trace_proj 2 traceh22);;
+
+assert (naive_concat (trace h1) (trace h3) <> trace (h1 @ h3));; (* rhs is larger *)
+assert (naive_concat (trace h21) (trace h22) <> trace (h21 @ h22));; (* rhs is larger *)
+
+(* --- *)
+
+let e1 = ["_,u1"];;
+let e2 = ["t1,_"];;
+let e6 = ["_,u1";"t1,_";"t3,u2";"_,u3";"_,u1"];;
+let e7 = ["t2,_";"_,u1";"t4,u2"];;
+
+assert(d_compare sl_compare e1 e2 < 0);;
+assert(d_compare sl_compare e6 e7 < 0);;
+assert(d_compare sl_compare e1 e6 < 0);;
+assert(d_compare sl_compare e2 e6 < 0);;
+assert(d_compare sl_compare e1 e7 < 0);;
+assert(d_compare sl_compare e2 e7 < 0);;
