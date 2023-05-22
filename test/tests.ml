@@ -34,42 +34,43 @@ assert (is_occurrence_sequence [e2;t1;u1;e1] n2 = false);;
 
 assert (is_predecessor (of_trans e1) (of_trans e2) n2 = true);;
 assert (is_predecessor (of_trans t1) (of_trans u1) n2 = false);;
-assert (is_predecessor (of_place "s2") (of_trans u1) n2 = false);;
+assert (is_predecessor (of_place s2) (of_trans u1) n2 = false);;
  
-assert (is_conflict (of_place "s2") (of_place "r2") n2 = false);;
+assert (is_conflict (of_place s2) (of_place r2) n2 = false);;
 assert (is_conflict (of_trans t1) (of_trans u1) n2 = false);;
 
 assert (is_concurrent (of_trans t1) (of_trans u1) n2 = true);;
 assert (is_concurrent (of_trans e1) (of_trans u1) n2 = false);;
 
-assert (is_reachable (PlaceSet.of_list ["s1";"r1"]) n2 = true);;
-assert (is_reachable (PlaceSet.of_list ["s2";"r2"]) n2 = true);;
-assert (is_reachable (PlaceSet.of_list ["s3";"r3"]) n2 = true);;
-assert (is_reachable (PlaceSet.of_list ["s4";"r4"]) n2 = true);;
-assert (is_reachable (PlaceSet.of_list ["s4";"r4";"s3"]) n2 = false);;
-assert (is_reachable (PlaceSet.of_list ["s3";"r2"]) n2 = true);;
-assert (is_reachable (PlaceSet.of_list ["r2";"s3"]) n2 = true);;
-assert (is_reachable (PlaceSet.of_list ["r1";"r2"]) n2 = false);;
-assert (is_reachable (PlaceSet.of_list ["r1"]) n2 = true);; (* questionable *)
-assert (is_reachable (PlaceSet.of_list ["s1";"s4"]) n2 = false);;
+assert (is_reachable (PlaceSet.of_list [s1;r1]) n2 = true);;
+assert (is_reachable (PlaceSet.of_list [s2;r2]) n2 = true);;
+assert (is_reachable (PlaceSet.of_list [s3;r3]) n2 = true);;
+assert (is_reachable (PlaceSet.of_list [s4;r4]) n2 = true);;
+assert (is_reachable (PlaceSet.of_list [s4;r4;s3]) n2 = false);;
+assert (is_reachable (PlaceSet.of_list [s3;r2]) n2 = true);;
+assert (is_reachable (PlaceSet.of_list [r2;s3]) n2 = true);;
+assert (is_reachable (PlaceSet.of_list [r1;r2]) n2 = false);;
+assert (is_reachable (PlaceSet.of_list [r1]) n2 = true);; (* questionable *)
+assert (is_reachable (PlaceSet.of_list [s1;s4]) n2 = false);;
 
 let t2 = Unfoldings.Event.build 5 "t2";;
 let t3 = Unfoldings.Event.build 6 "t3";;
+let s2_4 = Unfoldings.Labelled_place.build 9 "s2_4";;
 
 add_trans t2 n2;;
 add_trans t3 n2;;
-add_place "s2_4" n2;;
+add_place s2_4 n2;;
 
-add_to_trans_arc "s2" t2 n2;;
-add_to_place_arc t2 "s2_4" n2;;
-add_to_trans_arc "s2_4" t3 n2;;
-add_to_place_arc t3 "s4" n2;;
+add_to_trans_arc s2 t2 n2;;
+add_to_place_arc t2 s2_4 n2;;
+add_to_trans_arc s2_4 t3 n2;;
+add_to_place_arc t3 s4 n2;;
 
-assert (is_conflict (of_place "s2_4") (of_place "r3") n2 = false);;
-assert (is_conflict (of_place "s2_4") (of_place "s4") n2 = false);;
-assert (is_conflict (of_place "s2_4") (of_place "s3") n2 = true);;
+assert (is_conflict (of_place s2_4) (of_place r3) n2 = false);;
+assert (is_conflict (of_place s2_4) (of_place s4) n2 = false);;
+assert (is_conflict (of_place s2_4) (of_place s3) n2 = true);;
 assert (is_conflict (of_trans t1) (of_trans t2) n2 = true);;
-assert (is_conflict (of_trans e2) (of_place "s2_4") n2 = true);;
+assert (is_conflict (of_trans e2) (of_place s2_4) n2 = true);;
 assert (is_conflict (of_trans t3) (of_trans e2) n2 = true);;
 assert (is_conflict (of_trans t2) (of_trans e2) n2 = true);;
 

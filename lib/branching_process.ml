@@ -1,7 +1,7 @@
-module BPNet = Petrinet.Make(State)(Event)
+module BPNet = Petrinet.Make(Labelled_place)(Event)
 open BPNet
 
-module StateSet = Set.Make(State)
+module PlaceSet = Set.Make(Labelled_place)
 module EventSet = Set.Make(Event)
 module NodeSet = Set.Make(Node)
   
@@ -22,7 +22,7 @@ let predecessors x n =
   (* always comprises independent events, because an input place may
      only have no more than one causing events (hence they cannot be shared) *)
   let inputs_of_e = inputs_of_trans e n in
-  StateSet.fold
+  PlaceSet.fold
     (fun p acc -> EventSet.union (inputs_of_place p n) acc)
     inputs_of_e
     EventSet.empty
