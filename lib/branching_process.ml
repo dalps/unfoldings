@@ -17,6 +17,35 @@ let predecessors x n =
       parents)
 
   in helper x NodeSet.empty
+
+  let parents_of_event e n = (* can be generalized to Petrinets *)
+  (* always comprises independent events, because an input place may
+     only have no more than one causing events (hence they cannot be shared) *)
+  let inputs_of_e = inputs_of_trans e n in
+  StateSet.fold
+    (fun p acc -> EventSet.union (inputs_of_place p n) acc)
+    inputs_of_e
+    EventSet.empty
+
+let past e n =
+  let rec helper p word =
+    let parents_of_p = parents_of_event p n in (* get the immediate predecessors *)
+    (* add each parent IF NOT already present in the result *)
+    (EventSet.fold 
+      (fun parent acc -> 
+        if List.mem parent acc then acc 
+        else helper parent ((EventSet.elements parents_of_p) @ acc))
+      parents_of_p
+      word)
+
+  in helper e []
+
+let past_word e n = List.map Event.label (past e n)
+
+let past_conf e n = EventSet.add e (NodeSet.fold
+  (fun x acc -> EventSet.add (Node.trans_of x) acc)
+  (NodeSet.filter Node.is_trans (predecessors (Node.of_trans e) n))
+  EventSet.empty)
         
 let is_predecessor x y n = NodeSet.mem x (predecessors y n)
 
