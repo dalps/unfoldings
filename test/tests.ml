@@ -195,3 +195,34 @@ assert(d_compare sl_compare e1 e6 < 0);;
 assert(d_compare sl_compare e2 e6 < 0);;
 assert(d_compare sl_compare e1 e7 < 0);;
 assert(d_compare sl_compare e2 e7 < 0);;
+
+(* --- *)
+
+open Unfoldings.Unfold;;
+open Examples.Prod;;
+let p = n;;
+
+let n0 = unfold_init p;;
+
+let n1s = unfold_1 n0 1 p sl_compare;;
+assert (List.length n1s = 3);;
+let n1 = let _,n = List.hd n1s in n;;
+
+let n2s = unfold_1 n1 2 p sl_compare;;
+assert (List.length n2s = 1);;
+let n2 = let _,n =  List.nth n2s 0 in n;;
+
+let n3s = unfold_1 n2 3 p sl_compare;;
+assert (List.length n3s = 1);;
+let n3 = let _,n =  List.nth n3s 0 in n;;
+
+let n4s = unfold_1 n3 4 p sl_compare;;
+assert (List.length n4s = 2);;
+let n4 = let _,n =  List.nth n4s 1 in n;;
+
+let n5s = unfold_1 n4 5 p sl_compare;;
+assert (List.length n5s = 2);;
+let n5 = let _,n =  List.nth n5s 0 in n;;
+
+let n6s = unfold_1 n5 6 p sl_compare;;
+assert (List.length n6s = 3);;

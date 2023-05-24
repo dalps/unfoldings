@@ -3,6 +3,7 @@ open BPNet
 
 module PlaceSet = Set.Make(Labelled_place)
 module EventSet = Set.Make(Event)
+module BPFlowSet = Set.Make(Flow)
 module NodeSet = Set.Make(Node)
   
 let predecessors x n =
@@ -38,7 +39,7 @@ let past e n =
       parents_of_p
       word)
 
-  in helper e []
+  in (helper e []) @ [e] (* e itself is part of its past *)
 
 let past_word e n = List.map Event.label (past e n)
 
@@ -169,3 +170,8 @@ let is_reachable m n =
     b)
   nodes
   true
+
+let place_offset n = 
+  Labelled_place.name (List.hd (List.rev (PlaceSet.elements (places n))))
+  
+let fresh_place n lbl = Labelled_place.build (place_offset n) lbl

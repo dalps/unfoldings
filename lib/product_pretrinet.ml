@@ -3,7 +3,7 @@ open PNet
 
 module StateSet = Set.Make(State)
 module TransSet = Set.Make(Product_transition)
-module FlowSet = Set.Make(Flow)
+module PFlowSet = Set.Make(Flow)
 
 
 (* Product of two nets given a synchronization constraint **on the transs**.
@@ -31,9 +31,9 @@ let product (n1 : t) (n2 : t) (sync : (Product_transition.t option * Product_tra
           StateSet.union (inputs_of_trans e1 n1) (inputs_of_trans e2 n2)
 
     in StateSet.fold
-      (fun p acc -> FlowSet.add (p @--> trans_of_pair epair) acc)
+      (fun p acc -> PFlowSet.add (p @--> trans_of_pair epair) acc)
       preset
-      FlowSet.empty
+      PFlowSet.empty
   in
 
   let parse_postflow epair =
@@ -46,9 +46,9 @@ let product (n1 : t) (n2 : t) (sync : (Product_transition.t option * Product_tra
           StateSet.union (outputs_of_trans e1 n1) (outputs_of_trans e2 n2)
 
     in StateSet.fold
-      (fun p acc -> FlowSet.add (trans_of_pair epair -->@ p) acc)
+      (fun p acc -> PFlowSet.add (trans_of_pair epair -->@ p) acc)
       postset
-      FlowSet.empty
+      PFlowSet.empty
   in
 
   of_sets
@@ -60,9 +60,9 @@ let product (n1 : t) (n2 : t) (sync : (Product_transition.t option * Product_tra
       sync)
       
     (List.fold_left
-      (fun fset epair -> FlowSet.union
-          (FlowSet.union (parse_preflow epair) (parse_postflow epair)) fset)
-      FlowSet.empty
+      (fun fset epair -> PFlowSet.union
+          (PFlowSet.union (parse_preflow epair) (parse_postflow epair)) fset)
+      PFlowSet.empty
       sync)
 
     (StateSet.union (marking n1) (marking n2))
