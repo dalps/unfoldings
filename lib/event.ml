@@ -9,4 +9,4 @@ let name e = e.name
 
 let label e = e.label
   
-let compare e1 e2 = compare e1.name e2.name
+let compare e1 e2 = e1.name - e2.name

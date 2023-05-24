@@ -69,6 +69,8 @@ module Make(P : Set.OrderedType) (T : Set.OrderedType) =
       marking = im
     }
 
+    let copy n = of_sets n.places n.transitions n.flow n.marking
+
     let places n = n.places
     let transitions n = n.transitions
     let flow n = n.flow

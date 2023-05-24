@@ -1,6 +1,9 @@
-type t
+type t = {
+  name : int;
+  label : State.t
+}
 
-val build : int -> Product_transition.t -> t
+val build : int -> State.t -> t
 val name : t -> int
-val label : t -> Product_transition.t
+val label : t -> State.t
 val compare : t -> t -> int

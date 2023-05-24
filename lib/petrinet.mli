@@ -33,6 +33,7 @@ module Make :
     val empty : unit -> t
     val of_lists : P.t list -> T.t list -> Flow.t list -> P.t list -> t
     val of_sets : Set.Make(P).t -> Set.Make(T).t -> Set.Make(Flow).t -> Set.Make(P).t -> t
+    val copy : t -> t
     val places : t -> Set.Make(P).t
     val transitions : t -> Set.Make(T).t
     val flow : t -> Set.Make(Flow).t

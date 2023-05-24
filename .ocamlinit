@@ -1,33 +1,9 @@
-open Unfoldings.Petrinet;;
-open Unfoldings.Product_transition;;
+open Unfoldings;;
+open Unfoldings.Branching_process;;
+open Unfoldings.Product_pretrinet;;
+open Unfoldings.Unfold;;
+open Unfoldings.Labelled_place;;
 
-let tw = [
-  ["a,_";"_,b";"c,_"];
-  ["_,b";"a,_";"c,_"];
-  ["a,_";"c,_";"_,b"]
-]
-
-let tw' = [
-  ["d,_";"_,e"];
-  ["_,e";"d,_"];
-]
-
-let combine ws vs =
-  List.fold_left
-  (fun traces w ->
-    (List.fold_left
-    (fun traces v -> [w @ v] @ traces)
-    []
-    vs) @ traces)
-  []
-  ws;;
-
-let h1 = ["t1,_";"_,u1";"t3,u2";"t5,_";"_,u3"];;
-let h21 = ["a,_,_";"_,b,_";"_,_,c"];;
-let h22 = ["d,_,_";"_,e,f";"g,_,c"];;
-let h23 = ["d,_,_";"_,e,f";"_,h,_";"g,_,c"];;
-let h3 = ["t1,_";"_,u1";"t5,_";"_,u3";"t1,_";"_,u1";"t3,u2";"t5,_";"_,u3";"t4,u4"];;
-let h4 = ["t"];;
-
-let t = combine (trace h21) (trace h23);; (* 3*4 *)
-let t' = trace (h21@h23);; (* 3*4 + 4 extra *)
+let sts = ["s1";"s3";"r5";"r5";"s3";"r5"]
+let ps = label_states sts;;
+let lbl_as st = PlaceSet.elements (places_labeled_as st ps);;
