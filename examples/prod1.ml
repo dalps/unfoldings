@@ -32,12 +32,13 @@ let r = of_lists
   ]
   ["r1"]
 
-let n = product s r [
-    (Some "t1", None);
-    (Some "t2", None);
-    (Some "t3", Some "u2");
-    (Some "t4", Some "u2");
-    (Some "t5", None);
-    (None, Some "u1");
-    (None, Some "u3");
+let prod1 = product [s;r]
+  [
+    [Some "t1"; None];
+    [Some "t2"; None];
+    [Some "t3"; Some "u2"];
+    [Some "t4"; Some "u2"];
+    [Some "t5"; None];
+    [None; Some "u1"];
+    [None; Some "u3"];
   ]

@@ -94,21 +94,21 @@ assert (is_history ["t1";"t3";"t5";"t2";"t4";"t1"] s1 = false);;
 
 (* --- *)
 
-open Examples.Prod;;
+open Examples.Prod1;;
 open Unfoldings.Product_transition;;
 open Unfoldings.Product_pretrinet.PNet;;
 
-assert (is_occurrence_sequence ["t1,_";"_,u1";"t3,u2";"t5,_"] n);;
-assert (is_occurrence_sequence ["_,u1";"t1,_";"t3,u2";"_,u3"] n);;
-assert (is_occurrence_sequence ["_,u1";"t3,u2"] n = false);;
-assert (is_occurrence_sequence ["t1,_";"_,u1";"t4,u2";"_,u3"] n = false);;
-assert (is_occurrence_sequence ["t1,_";"_,u1";"t4,u2";"_,u3"] n = false);;
-assert (is_occurrence_sequence ["t2,_";"_,u1";"t4,u2";"_,u3"] n);;
-assert (is_occurrence_sequence ["_,u1";"t2,_";"t4,u2";"_,u3";"t5,_"] n);;
-assert (is_occurrence_sequence ["_,u1";"t2,_";"t4,u2";"t5,_";"_,u3";"_,u1"] n);;
-assert (is_occurrence_sequence ["_,u1";"t2,_";"t4,u2";"t5,_";"_,u3";"_,u1";"t4,u2"] n = false);;
-assert (is_occurrence_sequence ["_,u1";"t2,_";"t4,u2";"t5,_";"_,u3";"t2,_";"_,u1";"t4,u2"] n);;
-assert (is_occurrence_sequence ["_,u1";"t2,_";"t4,u2";"t5,_";"_,u3";"t1,_";"_,u1";"t3,u2"] n);;
+assert (is_occurrence_sequence ["t1,_";"_,u1";"t3,u2";"t5,_"] prod1);;
+assert (is_occurrence_sequence ["_,u1";"t1,_";"t3,u2";"_,u3"] prod1);;
+assert (is_occurrence_sequence ["_,u1";"t3,u2"] prod1 = false);;
+assert (is_occurrence_sequence ["t1,_";"_,u1";"t4,u2";"_,u3"] prod1 = false);;
+assert (is_occurrence_sequence ["t1,_";"_,u1";"t4,u2";"_,u3"] prod1 = false);;
+assert (is_occurrence_sequence ["t2,_";"_,u1";"t4,u2";"_,u3"] prod1);;
+assert (is_occurrence_sequence ["_,u1";"t2,_";"t4,u2";"_,u3";"t5,_"] prod1);;
+assert (is_occurrence_sequence ["_,u1";"t2,_";"t4,u2";"t5,_";"_,u3";"_,u1"] prod1);;
+assert (is_occurrence_sequence ["_,u1";"t2,_";"t4,u2";"t5,_";"_,u3";"_,u1";"t4,u2"] prod1 = false);;
+assert (is_occurrence_sequence ["_,u1";"t2,_";"t4,u2";"t5,_";"_,u3";"t2,_";"_,u1";"t4,u2"] prod1);;
+assert (is_occurrence_sequence ["_,u1";"t2,_";"t4,u2";"t5,_";"_,u3";"t1,_";"_,u1";"t3,u2"] prod1);;
 
 assert (is_independent "t1,_" "_,u1");;
 assert (is_independent "t1,_" "t5,_" = false);;
@@ -199,30 +199,29 @@ assert(d_compare sl_compare e2 e7 < 0);;
 (* --- *)
 
 open Unfoldings.Unfold;;
-open Examples.Prod;;
-let p = n;;
+open Examples.Prod1;;
 
-let n0 = unfold_init p;;
+let n0 = unfold_init prod1;;
 
-let n1s = unfold_1 n0 1 p sl_compare;;
+let n1s = unfold_1 n0 1 prod1 sl_compare;;
 assert (List.length n1s = 3);;
-let n1 = let _,n = List.hd n1s in n;;
+let n1 = snd (List.hd n1s);;
 
-let n2s = unfold_1 n1 2 p sl_compare;;
+let n2s = unfold_1 n1 2 prod1 sl_compare;;
 assert (List.length n2s = 1);;
-let n2 = let _,n =  List.nth n2s 0 in n;;
+let n2 = snd (List.nth n2s 0);;
 
-let n3s = unfold_1 n2 3 p sl_compare;;
+let n3s = unfold_1 n2 3 prod1 sl_compare;;
 assert (List.length n3s = 1);;
-let n3 = let _,n =  List.nth n3s 0 in n;;
+let n3 = snd (List.nth n3s 0);;
 
-let n4s = unfold_1 n3 4 p sl_compare;;
+let n4s = unfold_1 n3 4 prod1 sl_compare;;
 assert (List.length n4s = 2);;
-let n4 = let _,n =  List.nth n4s 1 in n;;
+let n4 = snd (List.nth n4s 1);;
 
-let n5s = unfold_1 n4 5 p sl_compare;;
+let n5s = unfold_1 n4 5 prod1 sl_compare;;
 assert (List.length n5s = 2);;
-let n5 = let _,n =  List.nth n5s 0 in n;;
+let n5 = snd (List.nth n5s 0);;
 
-let n6s = unfold_1 n5 6 p sl_compare;;
+let n6s = unfold_1 n5 6 prod1 sl_compare;;
 assert (List.length n6s = 3);;
