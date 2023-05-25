@@ -1,9 +1,3 @@
-module State = struct
-  type t = string
-
-  let compare = compare
-end
-
 module Trans = struct
   type t = {source : State.t; label : string; target : State.t}
   
@@ -84,3 +78,24 @@ let is_computation (ts : string list) sys =
 let is_history (ts : string list) sys =
   let first_t = Hashtbl.find sys.transitions (List.hd ts)
   in first_t.source = sys.initialState && is_computation ts sys
+
+let product_component_of lts (* component_name *) =
+  Product_pretrinet.PNet.of_sets
+    lts.states
+
+    (Hashtbl.fold
+      (fun t _ acc -> Product_pretrinet.TransSet.add t acc)
+      lts.transitions
+      Product_pretrinet.TransSet.empty)
+
+    (Hashtbl.fold
+      (fun t (trans : Trans.t) acc -> 
+        let open Product_pretrinet.PNet.Flow in
+          Product_pretrinet.PFlowSet.add (trans.source @--> t)
+          (Product_pretrinet.PFlowSet.add (t -->@ trans.target) acc))
+      lts.transitions
+      Product_pretrinet.PFlowSet.empty)
+
+    (StateSet.of_list [lts.initialState])
+
+    (* [ component_name ] *)
