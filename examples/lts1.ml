@@ -1,7 +1,8 @@
-(* Example transition system from EH fig. 2.1 p. 6 *)
+(* Transition system of Fig. 2.1 p. 6 *)
 
 open Unfoldings.Lts
-let s1 = build
+
+let lts1 = build
   ["s1";"s2";"s3";"s4"]
   [
     ("s1" --> "s2") "t1";

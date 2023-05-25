@@ -1,8 +1,7 @@
-(* A net modelling a product of length 2, without cycles. 
-   si are the states of transition system S,
-   qi are the states of transition system Q,
-   events where S and Q take a step singularly are denoted ti and ui respectively,
-   events where S and Q synchronize are denoted ei. 
+(* A Petri net modelling the unfolding of a product of two components S and Q. 
+   si are the states of transition system S, qi are the states of transition 
+   system Q. Events where S and Q take a step singularly are denoted ti and ui 
+   respectively, while events where S and Q synchronize are denoted ei.
 *)
 
 open Unfoldings.Event
@@ -25,7 +24,7 @@ let r2 = build 6 "r2"
 let r3 = build 7 "r3"
 let r4 = build 8 "r4"
 
-let n2 = of_lists
+let bp1 = of_lists
   [s1;s2;s3;s4;r1;r2;r3;r4]
   [t1;u1;e1;e2]
   [
