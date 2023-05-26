@@ -12,6 +12,12 @@ let label_states states start =
 let places_labeled_as st places =
   PlaceSet.filter (fun p -> Labelled_place.label p = st) places
 
+(* get the labels of a set of places *)
+let labels_of_places ps = PlaceSet.fold
+  (fun p acc -> StateSet.add (Labelled_place.label p) acc)
+  ps
+  StateSet.empty
+
 
 (* extend a branching process n with a new event labeled t and connect it to 
    its preset places c *)
@@ -57,6 +63,13 @@ let unfold_init (prod : PNet.t) =
   BPNet.add_places initial_marking n0;
   BPNet.set_marking initial_marking n0;
   n0
+
+
+type unfold_result = {
+  event : Event.t;
+  history : Product_transition.t list;
+  prefix : BPNet.t
+}
 
 
 (* to add events: if in the current (nth) branching process a reachable marking 
@@ -127,10 +140,15 @@ let unfold_1
   let possible_extensions = 
     TransSet.fold
       (fun t acc -> List.fold_right
-        (fun c acc' -> let n' = extend t step (PNet.outputs_of_trans t prod) n c
+        (fun c acc' ->
+          let n' = extend t step (PNet.outputs_of_trans t prod) n c in
+          let e = (Event.build step t) in
+          (* let h = past_word e n' in
           
-          in BPNet.fire (Event.build step t) n';
-          (past_word (Event.build step t) n', n')::acc'
+          if not (EventSet.exists (fun e' -> (past_word e' n') = h) (BPNet.transitions n')) then *)
+            (BPNet.fire e n';
+            {event = e; history = past_word e n'; prefix = n'}::acc')
+          (* else acc' *)
         ) 
         (List.filter (fun c -> is_reachable c n) (candidates t n))
         acc
@@ -138,4 +156,71 @@ let unfold_1
       (PNet.transitions prod)
       []
     
-  in List.sort (fun (h1,_) (h2,_) -> stgy h1 h2) possible_extensions
+  in List.sort (fun r1 r2 -> stgy r1.history r2.history) possible_extensions
+
+
+let is_executable prod stgy goals max_steps =
+  TransSet.subset (TransSet.of_list goals) (PNet.transitions prod) && (
+
+  let n0 = unfold_init prod in
+  let terms0 = EventSet.empty in
+
+  let is_feasible e n terms =
+    let b = EventSet.is_empty (EventSet.inter (past_conf e n) terms) in
+    print_endline ("Is " ^ Event.label e ^ " feasible? -> " ^ string_of_bool b);
+    b 
+  in
+
+  (* assumption: e is feasible *)
+  let is_terminal_a e =
+    let b = List.mem (Event.label e) goals in
+    print_endline ("Is " ^ Event.label e ^ " successful? -> " ^ string_of_bool b);
+    b
+  in
+
+  (* assumption: e is feasible *)
+  let is_terminal_b e n =
+    let b = EventSet.exists
+      (fun e' -> stgy (past_word e' n) (past_word e n) < 0 && StateSet.equal
+        (labels_of_places (BPNet.outputs_of_trans e' n)) 
+        (labels_of_places (BPNet.outputs_of_trans e n)))
+      (BPNet.transitions n)
+
+    in
+    print_endline ("Is " ^ Event.label e ^ " terminal? -> " ^ string_of_bool b);
+    b
+  in
+
+  let rec helper step n terms leftover =
+    step <= max_steps && (
+
+    print_endline ("\n\n--- Step " ^ string_of_int step);
+
+    let options = unfold_1 n step prod stgy in
+
+    (* if there's no extension available, consume one from the leftovers *)
+    let options, leftover = match options, leftover with 
+        [], r::rs -> [r], rs
+      | _ -> options, leftover
+    in
+
+    options <> [] && (
+      let ext = List.filter (fun r -> is_feasible r.event r.prefix terms) options in
+      let r = List.hd ext in (* filter preserves the order on the events *)
+      let leftover' = List.filter 
+        (fun r' -> not (PlaceSet.is_empty 
+          (PlaceSet.inter
+            (BPNet.inputs_of_trans r'.event r'.prefix)
+            (BPNet.inputs_of_trans r.event r.prefix)))) 
+        (List.tl ext) in
+
+      print_endline ("Chosen " ^ Event.label r.event);
+
+      (* if r.event is a terminal of type (a) end the search successfully *)
+      is_terminal_a r.event || (      
+        let terms' = if is_terminal_b r.event r.prefix then 
+          EventSet.add r.event terms else terms
+        in helper (step+1) r.prefix terms' (leftover @ leftover'))
+    ))
+
+  in helper 1 n0 terms0 [])
