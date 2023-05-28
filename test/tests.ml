@@ -55,8 +55,8 @@ assert (is_reachable (PlaceSet.of_list [r1;r2]) bp1 = false);;
 assert (is_reachable (PlaceSet.of_list [r1]) bp1 = true);; (* questionable *)
 assert (is_reachable (PlaceSet.of_list [s1;s4]) bp1 = false);;
 
-let t2 = Unfoldings.Event.build 5 "t2";;
-let t3 = Unfoldings.Event.build 6 "t3";;
+let t2 = Unfoldings.Event.build 5 [] "t2";;
+let t3 = Unfoldings.Event.build 6 [] "t3";;
 let s2_4 = Unfoldings.Labelled_place.build [] "s2_4";;
 
 add_trans t2 bp1;;
@@ -197,12 +197,19 @@ let e2 = ["t1,_"];;
 let e6 = ["_,u1";"t1,_";"t3,u2";"_,u3";"_,u1"];;
 let e7 = ["t2,_";"_,u1";"t4,u2"];;
 
+let h1 = ["_,u1";"t1,_"];;
+let h2 = ["t1,_";"_,u1"];;
+
+assert(d_compare sl_compare e1 e2 < 0);;
 assert(d_compare sl_compare e1 e2 < 0);;
 assert(d_compare sl_compare e6 e7 < 0);;
 assert(d_compare sl_compare e1 e6 < 0);;
 assert(d_compare sl_compare e2 e6 < 0);;
 assert(d_compare sl_compare e1 e7 < 0);;
 assert(d_compare sl_compare e2 e7 < 0);;
+assert(d_compare sl_compare h1 h2 = 0);;
+
+print_endline "[OK] misc";;
 
 (* --- *)
 

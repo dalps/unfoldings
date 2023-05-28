@@ -3,9 +3,8 @@ open Product_pretrinet
 
 
 (* convert a list of states to a set of labeled places with serial naming *)
-let label_states states e n =
-  PlaceSet.of_list 
-    (List.map (Labelled_place.build (past_word e n)) states)
+let label_states states history =
+  PlaceSet.of_list (List.map (Labelled_place.build history) states)
 
 
 (* filter the places labeled as a certain state in a given set *)
@@ -20,11 +19,11 @@ let labels_of_places ps = PlaceSet.fold
   StateSet.empty
 
 
-(* extend a branching process n with a new event labeled t and connect it to 
-   its preset places c *)
+(* extend a branching process n with a new event e, by plugging e into a subset
+   c of places of n (its preset) and making new places for the output states
+   of its associated product transition (its postset) and the necessary arcs *)
 let extend 
-  (t : Product_transition.t) (* a transition to be added as a new event*)
-  (name : int) (* a unique name to assign to the event *)
+  (e : Event.t) (* a transition to be added as a new event*)
   (postset : StateSet.t) (* the output states to be added as new places *)
   (n : BPNet.t) (* a branching process *)
   (preset : PlaceSet.t) (* a reachable marking of n labeled as *t *)
@@ -34,24 +33,16 @@ let extend
 
   (* make a copy of n to extend with t *)
   let n' = BPNet.copy n in
-  let event_of_t = Event.build name t in
 
-  BPNet.add_trans event_of_t n';
+  BPNet.add_trans e n';
 
-  PlaceSet.fold
-    (fun p _ -> BPNet.add_to_trans_arc p event_of_t n')
-    preset
-    ();
+  PlaceSet.iter (fun p -> BPNet.add_to_trans_arc p e n') preset;
 
-  let places_of_postset = 
-    label_states (StateSet.elements postset) event_of_t n in
+  let places_of_postset = label_states (StateSet.elements postset) e.history in
 
   BPNet.add_places places_of_postset n';
 
-  PlaceSet.fold
-    (fun p _ -> BPNet.add_to_place_arc event_of_t p n')
-    places_of_postset
-    ();
+  PlaceSet.iter (fun p -> BPNet.add_to_place_arc e p n') places_of_postset;
 
   n'
 
@@ -75,7 +66,7 @@ module UnfoldResult = struct
   type t = {
     event : Event.t;
     history : Product_transition.t list;
-    mutable prefix : BPNet.t
+    prefix : BPNet.t
   }
 
   let compare = compare
@@ -149,15 +140,11 @@ let unfold_1
     TransSet.fold
       (fun t acc -> List.fold_right
         (fun c acc' ->
-          let n' = extend t step (PNet.outputs_of_trans t prod) n c in
-          let e = (Event.build step t) in
-          (* let h = past_word e n' in
-          
-          if not (EventSet.exists (fun e' -> (past_word e' n') = h) (BPNet.transitions n')) then *)
+          let e = (Event.build step (past_word_of_preset c n t) t) in
+          let n' = extend e (PNet.outputs_of_trans t prod) n c in
             (BPNet.fire e n';
             let open UnfoldResult in
             {event = e; history = past_word e n'; prefix = n'}::acc')
-          (* else acc' *)
         ) 
         (List.filter (fun c -> is_reachable c n) (candidates t n))
         acc
@@ -169,7 +156,7 @@ let unfold_1
 
 
 let is_executable prod stgy goals max_steps =
-  TransSet.subset (TransSet.of_list goals) (PNet.transitions prod) && (
+  (
 
   let module Extensions = struct
     module Elt = struct
@@ -243,7 +230,12 @@ let is_executable prod stgy goals max_steps =
 
         let result = match e with
             Extension r -> r
-          | Leftover r -> r.prefix <- union n r.prefix; r (* events are still identified by step number!!! wrong! *)
+          | Leftover r -> {
+            event =
+              Event.build step (Event.history r.event) (Event.label r.event);
+            prefix = union n r.prefix;
+            history = r.history
+          }
         in
 
         let pool = EltSet.remove e pool in
@@ -313,6 +305,7 @@ let is_executable prod stgy goals max_steps =
 
     print_endline ("\n\n--- Step " ^ string_of_int step);
     print_endline ("\n\nSearch space size: " ^ string_of_int (PlaceSet.cardinal (BPNet.marking n)));
+    print_placeset (BPNet.marking n);
 
     let choice = Extensions.update_if
       (fun (r : UnfoldResult.t) -> is_feasible r.event r.prefix terms)

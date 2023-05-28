@@ -5,6 +5,22 @@ module PlaceSet = Set.Make(Labelled_place)
 module EventSet = Set.Make(Event)
 module BPFlowSet = Set.Make(Flow)
 module NodeSet = Set.Make(Node)
+
+let print_placeset ps =
+  print_string "[";
+  List.iter (fun (p : Labelled_place.t) -> print_string "{history = ["; 
+    List.iter (fun t -> print_string ("\"" ^ t ^ "\"")) p.history;
+    print_string ("]; label = \"" ^ p.label ^ "\"}; ")) 
+  (PlaceSet.elements ps);
+  print_endline "]\n"
+
+let print_eventset es =
+  print_string "[";
+  List.iter (fun (e : Event.t) -> print_string "{history = ["; 
+    List.iter (fun t -> print_string ("\"" ^ t ^ "\"")) e.history;
+    print_string ("]; label = \"" ^ e.label ^ "\"}; ")) 
+  (EventSet.elements es);
+  print_endline "]\n"
   
 let predecessors x n =
   let rec helper p parents =
@@ -19,7 +35,7 @@ let predecessors x n =
 
   in helper x NodeSet.empty
 
-  let parents_of_event e n = (* can be generalized to Petrinets *)
+let parents_of_event e n = (* can be generalized to Petrinets *)
   (* always comprises independent events, because an input place may
      only have no more than one causing events (hence they cannot be shared) *)
   let inputs_of_e = inputs_of_trans e n in
@@ -47,6 +63,34 @@ let past_conf e n = EventSet.add e (NodeSet.fold
   (fun x acc -> EventSet.add (Node.trans_of x) acc)
   (NodeSet.filter Node.is_trans (predecessors (Node.of_trans e) n))
   EventSet.empty)
+
+let past_of_preset ps n =
+  let parent_events = PlaceSet.fold
+    (fun p acc -> 
+      let input_event = inputs_of_place p n in
+      assert (EventSet.cardinal input_event <= 1);
+      EventSet.union input_event acc)
+    ps
+    EventSet.empty
+  in
+
+  let rec helper (ps : EventSet.t) word =
+    (EventSet.fold
+      (fun p acc -> 
+        let parents_of_p = parents_of_event p n in
+        (EventSet.fold
+          (fun parent acc' -> 
+            if List.mem parent acc' then acc' 
+            else helper parents_of_p ((EventSet.elements parents_of_p) @ acc'))
+          parents_of_p
+          acc))
+      ps
+      word)
+
+  in helper parent_events (EventSet.elements parent_events)
+
+let past_word_of_preset ps n t = 
+  List.map Event.label (past_of_preset ps n) @ [t]
 
 let input_of_place p n =
   (* by construction, a place may have at most one input event *)
@@ -182,14 +226,6 @@ let is_reachable m n =
     b)
   nodes
   true
-
-let print_placeset ps =
-  print_string "[";
-  List.iter (fun (p : Labelled_place.t) -> print_string "{history = ["; 
-    List.iter (fun t -> print_string ("\"" ^ t ^ "\"")) p.history;
-    print_string ("]; label = \"" ^ p.label ^ "\"}; ")) 
-  (PlaceSet.elements ps);
-  print_endline "]\n"
 
 let union bp1 bp2 = BPNet.of_sets
   (PlaceSet.union (BPNet.places bp1) (BPNet.places bp2))
