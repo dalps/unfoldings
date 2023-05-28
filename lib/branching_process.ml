@@ -190,3 +190,10 @@ let print_placeset ps =
     print_string ("]; label = \"" ^ p.label ^ "\"}; ")) 
   (PlaceSet.elements ps);
   print_endline "]\n"
+
+let union bp1 bp2 = BPNet.of_sets
+  (PlaceSet.union (BPNet.places bp1) (BPNet.places bp2))
+  (EventSet.union (BPNet.transitions bp1) (BPNet.transitions bp2))
+  (BPFlowSet.union (BPNet.flow bp1) (BPNet.flow bp2))
+  (PlaceSet.union (BPNet.marking bp1) (BPNet.marking bp2))
+  

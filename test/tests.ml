@@ -213,27 +213,27 @@ let p = prod2;;
 
 let n0 = unfold_init p;;
 
-let n1s = unfold_1 n0 1 p sl_compare;;
+let n1s = unfold_1 n0 1 p;;
 assert (List.length n1s = 3);;
 let n1 = List.hd n1s;;
 
-let n2s = unfold_1 n1.prefix 2 p sl_compare;;
+let n2s = unfold_1 n1.prefix 2 p;;
 assert (List.length n2s = 1);;
 let n2 = List.nth n2s 0;;
 
-let n3s = unfold_1 n2.prefix 3 p sl_compare;;
+let n3s = unfold_1 n2.prefix 3 p;;
 assert (List.length n3s = 1);;
 let n3 = List.nth n3s 0;;
 
-let n4s = unfold_1 n3.prefix 4 p sl_compare;;
+let n4s = unfold_1 n3.prefix 4 p;;
 assert (List.length n4s = 2);;
 let n4 = List.nth n4s 1;;
 
-let n5s = unfold_1 n4.prefix 5 p sl_compare;;
+let n5s = unfold_1 n4.prefix 5 p;;
 assert (List.length n5s = 2);;
 let n5 = List.nth n5s 0;;
 
-let n6s = unfold_1 n5.prefix 6 p sl_compare;;
+let n6s = unfold_1 n5.prefix 6 p;;
 assert (List.length n6s = 3);;
 
 print_endline "[OK] unfold prod2";;

@@ -12,7 +12,7 @@ let label_states states e n =
 let places_labeled_as st places =
   PlaceSet.filter (fun p -> Labelled_place.label p = st) places
 
-  
+
 (* get the labels of a set of places *)
 let labels_of_places ps = PlaceSet.fold
   (fun p acc -> StateSet.add (Labelled_place.label p) acc)
@@ -71,13 +71,15 @@ let unfold_init (prod : PNet.t) =
   BPNet.set_marking initial_marking n0;
   n0
 
+module UnfoldResult = struct
+  type t = {
+    event : Event.t;
+    history : Product_transition.t list;
+    mutable prefix : BPNet.t
+  }
 
-type unfold_result = {
-  event : Event.t;
-  history : Product_transition.t list;
-  prefix : BPNet.t
-}
-
+  let compare = compare
+end
 
 (* to add events: if in the current (nth) branching process a reachable marking 
    enables a transition t of the product, add a new event n labeled by t and new
@@ -88,8 +90,7 @@ type unfold_result = {
 let unfold_1
   (n : BPNet.t)
   (step : int)
-  (prod : PNet.t)
-  (stgy : Product_transition.t list -> Product_transition.t list -> int) =
+  (prod : PNet.t) =
 
   (* get the reachable markings labeled by *t *)
   let candidates t n =
@@ -154,6 +155,7 @@ let unfold_1
           
           if not (EventSet.exists (fun e' -> (past_word e' n') = h) (BPNet.transitions n')) then *)
             (BPNet.fire e n';
+            let open UnfoldResult in
             {event = e; history = past_word e n'; prefix = n'}::acc')
           (* else acc' *)
         ) 
@@ -163,25 +165,133 @@ let unfold_1
       (PNet.transitions prod)
       []
     
-  in List.sort (fun r1 r2 -> stgy r1.history r2.history) possible_extensions
+  in possible_extensions
 
 
 let is_executable prod stgy goals max_steps =
   TransSet.subset (TransSet.of_list goals) (PNet.transitions prod) && (
 
+  let module Extensions = struct
+    module Elt = struct
+      type t = Extension of UnfoldResult.t | Leftover of UnfoldResult.t
+
+      let is_extension = function Extension _ -> true | _ -> false
+
+      let untag = function Extension r | Leftover r -> r
+
+      let compare e1 e2 = let r1, r2 = untag e1, untag e2 in
+        stgy r1.history r2.history
+    end
+  
+    module UnfoldResultSet = Set.Make(UnfoldResult)
+    module EltSet = Set.Make(Elt)
+  
+    type s = {
+      mutable pool : EltSet.t;
+    }
+  
+    let empty () = {
+      pool = EltSet.empty;
+    }
+
+    let print_pool pool = print_string "{";
+      (EltSet.iter
+        (fun e ->  (match e with
+          | Elt.Extension r -> print_string ("E " ^ (Event.label r.event) ^ ", ")
+          | Elt.Leftover r -> print_string ("L " ^ (Event.label r.event) ^ ", ")))
+        pool);
+      print_endline "}"
+  
+    (* ALGORITH SKETCH 
+       1. get list of extensions
+       2. sort by strategy
+       3. pick the first one
+        3.1 if this is a leftover, update it by "fusing it" with the given prexif
+       4. check for conflicting extensions against the chosen one. If any, add them
+          to the tagged set as leftovers *)
+    let update_if cond n step ext =
+      assert (not (EltSet.exists Elt.is_extension ext.pool));
+
+      print_endline "ext.pool";
+      print_pool ext.pool;
+
+      let new_xts = unfold_1 n step prod in
+
+      (* Add all results of the unfolding as Extension tagged elements *)
+      let pool = List.fold_right
+        (fun r acc -> EltSet.add (Elt.Extension r) acc)
+        new_xts
+        EltSet.empty
+      in
+
+      (* Combine with previous elements (Leftovers) *)
+      let pool = EltSet.union pool ext.pool in
+
+      print_endline "After union";
+      print_pool pool;
+
+      let pool = EltSet.filter
+        (fun e -> cond (Elt.untag e))
+        pool
+      in
+
+      print_endline "After feasible filter";
+      print_pool pool;
+      
+      if not (EltSet.is_empty pool) then
+        let e = List.hd (EltSet.elements pool) in
+
+        let result = match e with
+            Extension r -> r
+          | Leftover r -> r.prefix <- union n r.prefix; r (* events are still identified by step number!!! wrong! *)
+        in
+
+        let pool = EltSet.remove e pool in
+        ext.pool <- EltSet.remove e ext.pool;
+
+        print_endline "After extraction";
+        print_pool pool;
+
+        let conflicts = EltSet.filter 
+          (fun e' -> let r, r' = Elt.untag e, Elt.untag e' in
+            not (PlaceSet.is_empty 
+            (PlaceSet.inter
+              (BPNet.inputs_of_trans r'.event r'.prefix)
+              (BPNet.inputs_of_trans r.event r.prefix)))) 
+          (EltSet.filter Elt.is_extension pool) in
+
+        print_endline "Conflicts";
+        print_pool conflicts;
+
+        let conflicts = EltSet.fold
+          (fun e' acc -> EltSet.add (Leftover (Elt.untag e')) acc)
+          conflicts
+          EltSet.empty in
+
+        ext.pool <- EltSet.union ext.pool conflicts;
+
+        print_endline "After adding conflicts";
+        print_pool ext.pool;
+
+        Some result
+      else
+        None
+  end in
+
   let n0 = unfold_init prod in
   let terms0 = EventSet.empty in
+  let ext = Extensions.empty () in
 
   let is_feasible e n terms =
     let b = EventSet.is_empty (EventSet.inter (past_conf e n) terms) in
-    print_endline ("Is " ^ Event.label e ^ " feasible? -> " ^ string_of_bool b);
+    print_endline ("Is " ^ Event.label e ^ " (" ^ string_of_int (Event.name e) ^ ") feasible? -> " ^ string_of_bool b);
     b 
   in
 
   (* assumption: e is feasible *)
   let is_terminal_a e =
     let b = List.mem (Event.label e) goals in
-    print_endline ("Is " ^ Event.label e ^ " successful? -> " ^ string_of_bool b);
+    print_endline ("Is " ^ Event.label e ^ " (" ^ string_of_int (Event.name e) ^ ") successful? -> " ^ string_of_bool b);
     b
   in
 
@@ -194,40 +304,33 @@ let is_executable prod stgy goals max_steps =
       (BPNet.transitions n)
 
     in
-    print_endline ("Is " ^ Event.label e ^ " terminal? -> " ^ string_of_bool b);
+    print_endline ("Is " ^ Event.label e ^ " (" ^ string_of_int (Event.name e) ^ ") terminal? -> " ^ string_of_bool b);
     b
   in
 
-  let rec helper step n terms leftover =
+  let rec helper step n terms : bool =
     step <= max_steps && (
 
     print_endline ("\n\n--- Step " ^ string_of_int step);
+    print_endline ("\n\nSearch space size: " ^ string_of_int (PlaceSet.cardinal (BPNet.marking n)));
 
-    let options = unfold_1 n step prod stgy in
-
-    (* if there's no extension available, consume one from the leftovers *)
-    let options, leftover = match options, leftover with 
-        [], r::rs -> [r], rs
-      | _ -> options, leftover
+    let choice = Extensions.update_if
+      (fun (r : UnfoldResult.t) -> is_feasible r.event r.prefix terms)
+      n
+      step
+      ext
     in
 
-    options <> [] && (
-      let ext = List.filter (fun r -> is_feasible r.event r.prefix terms) options in
-      let r = List.hd ext in (* filter preserves the order on the events *)
-      let leftover' = List.filter 
-        (fun r' -> not (PlaceSet.is_empty 
-          (PlaceSet.inter
-            (BPNet.inputs_of_trans r'.event r'.prefix)
-            (BPNet.inputs_of_trans r.event r.prefix)))) 
-        (List.tl ext) in
+    (match choice with
+        Some r ->
+          print_endline ("Chosen " ^ Event.label r.event);
 
-      print_endline ("Chosen " ^ Event.label r.event);
+          (* if r.event is a terminal of type (a) end the search successfully *)
+          is_terminal_a r.event || (      
+            let terms' = if is_terminal_b r.event r.prefix then 
+              EventSet.add r.event terms else terms
+            in helper (step+1) r.prefix terms')
 
-      (* if r.event is a terminal of type (a) end the search successfully *)
-      is_terminal_a r.event || (      
-        let terms' = if is_terminal_b r.event r.prefix then 
-          EventSet.add r.event terms else terms
-        in helper (step+1) r.prefix terms' (leftover @ leftover'))
-    ))
+      | None -> false))
 
-  in helper 1 n0 terms0 [])
+  in helper 1 n0 terms0)
