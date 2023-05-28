@@ -57,7 +57,7 @@ assert (is_reachable (PlaceSet.of_list [s1;s4]) bp1 = false);;
 
 let t2 = Unfoldings.Event.build 5 "t2";;
 let t3 = Unfoldings.Event.build 6 "t3";;
-let s2_4 = Unfoldings.Labelled_place.build 9 "s2_4";;
+let s2_4 = Unfoldings.Labelled_place.build [] "s2_4";;
 
 add_trans t2 bp1;;
 add_trans t3 bp1;;
@@ -215,25 +215,25 @@ let n0 = unfold_init p;;
 
 let n1s = unfold_1 n0 1 p sl_compare;;
 assert (List.length n1s = 3);;
-let n1 = snd (List.hd n1s);;
+let n1 = List.hd n1s;;
 
-let n2s = unfold_1 n1 2 p sl_compare;;
+let n2s = unfold_1 n1.prefix 2 p sl_compare;;
 assert (List.length n2s = 1);;
-let n2 = snd (List.nth n2s 0);;
+let n2 = List.nth n2s 0;;
 
-let n3s = unfold_1 n2 3 p sl_compare;;
+let n3s = unfold_1 n2.prefix 3 p sl_compare;;
 assert (List.length n3s = 1);;
-let n3 = snd (List.nth n3s 0);;
+let n3 = List.nth n3s 0;;
 
-let n4s = unfold_1 n3 4 p sl_compare;;
+let n4s = unfold_1 n3.prefix 4 p sl_compare;;
 assert (List.length n4s = 2);;
-let n4 = snd (List.nth n4s 1);;
+let n4 = List.nth n4s 1;;
 
-let n5s = unfold_1 n4 5 p sl_compare;;
+let n5s = unfold_1 n4.prefix 5 p sl_compare;;
 assert (List.length n5s = 2);;
-let n5 = snd (List.nth n5s 0);;
+let n5 = List.nth n5s 0;;
 
-let n6s = unfold_1 n5 6 p sl_compare;;
+let n6s = unfold_1 n5.prefix 6 p sl_compare;;
 assert (List.length n6s = 3);;
 
 print_endline "[OK] unfold prod2";;

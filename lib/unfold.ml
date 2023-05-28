@@ -3,15 +3,16 @@ open Product_pretrinet
 
 
 (* convert a list of states to a set of labeled places with serial naming *)
-let label_states states start =
+let label_states states e n =
   PlaceSet.of_list 
-    (List.mapi (fun i -> Labelled_place.build (start+i+1)) states)
+    (List.map (Labelled_place.build (past_word e n)) states)
 
 
 (* filter the places labeled as a certain state in a given set *)
 let places_labeled_as st places =
   PlaceSet.filter (fun p -> Labelled_place.label p = st) places
 
+  
 (* get the labels of a set of places *)
 let labels_of_places ps = PlaceSet.fold
   (fun p acc -> StateSet.add (Labelled_place.label p) acc)
@@ -33,18 +34,19 @@ let extend
 
   (* make a copy of n to extend with t *)
   let n' = BPNet.copy n in
-  let places_of_postset = 
-    label_states (StateSet.elements postset) (place_offset n) in
   let event_of_t = Event.build name t in
 
   BPNet.add_trans event_of_t n';
-
-  BPNet.add_places places_of_postset n';
 
   PlaceSet.fold
     (fun p _ -> BPNet.add_to_trans_arc p event_of_t n')
     preset
     ();
+
+  let places_of_postset = 
+    label_states (StateSet.elements postset) event_of_t n in
+
+  BPNet.add_places places_of_postset n';
 
   PlaceSet.fold
     (fun p _ -> BPNet.add_to_place_arc event_of_t p n')
@@ -59,7 +61,12 @@ let extend
 let unfold_init (prod : PNet.t) =
   let n0 = BPNet.empty () in
   let initial_marking = 
-    label_states (StateSet.elements (PNet.marking prod)) 0 in
+    StateSet.fold
+      (fun s acc -> PlaceSet.add (Labelled_place.build [] s) acc)
+      (PNet.marking prod)
+      PlaceSet.empty
+  in
+
   BPNet.add_places initial_marking n0;
   BPNet.set_marking initial_marking n0;
   n0

@@ -47,7 +47,19 @@ let past_conf e n = EventSet.add e (NodeSet.fold
   (fun x acc -> EventSet.add (Node.trans_of x) acc)
   (NodeSet.filter Node.is_trans (predecessors (Node.of_trans e) n))
   EventSet.empty)
+
+let input_of_place p n =
+  (* by construction, a place may have at most one input event *)
+  let e = inputs_of_place p n in
+
+  match EventSet.elements e with
+      [] -> None
+    | e::_ -> Some e
         
+let place_history p n = match input_of_place p n with
+    None -> []
+  | Some e -> past_word e n
+
 let is_predecessor x y n = NodeSet.mem x (predecessors y n)
 
 let is_causally_related x y n = is_predecessor x y n || is_predecessor y x n
@@ -171,7 +183,10 @@ let is_reachable m n =
   nodes
   true
 
-let place_offset n = 
-  Labelled_place.name (List.hd (List.rev (PlaceSet.elements (places n))))
-  
-let fresh_place n lbl = Labelled_place.build (place_offset n) lbl
+let print_placeset ps =
+  print_string "[";
+  List.iter (fun (p : Labelled_place.t) -> print_string "{history = ["; 
+    List.iter (fun t -> print_string ("\"" ^ t ^ "\"")) p.history;
+    print_string ("]; label = \"" ^ p.label ^ "\"}; ")) 
+  (PlaceSet.elements ps);
+  print_endline "]\n"

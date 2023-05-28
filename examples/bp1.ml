@@ -15,14 +15,14 @@ let e2 = build 4 "e2"
 
 open Unfoldings.Labelled_place
 
-let s1 = build 1 "s1"
-let s2 = build 2 "s2"
-let s3 = build 3 "s3"
-let s4 = build 4 "s4"
-let r1 = build 5 "r1"
-let r2 = build 6 "r2"
-let r3 = build 7 "r3"
-let r4 = build 8 "r4"
+let s1 = build [] "s1"
+let s2 = build [] "s2"
+let s3 = build [] "s3"
+let s4 = build [] "s4"
+let r1 = build [] "r1"
+let r2 = build [] "r2"
+let r3 = build [] "r3"
+let r4 = build [] "r4"
 
 let bp1 = of_lists
   [s1;s2;s3;s4;r1;r2;r3;r4]
