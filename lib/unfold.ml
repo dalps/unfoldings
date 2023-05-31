@@ -168,6 +168,10 @@ let is_executable prod stgy goals max_steps =
 
       let compare e1 e2 = let r1, r2 = untag e1, untag e2 in
         stgy r1.history r2.history
+
+      let string_of_elt = function
+          Extension r -> "E " ^ (Event.label r.event)
+        | Leftover r -> "L " ^ (Event.label r.event)
     end
   
     module UnfoldResultSet = Set.Make(UnfoldResult)
@@ -182,11 +186,7 @@ let is_executable prod stgy goals max_steps =
     }
 
     let print_pool pool = print_string "{";
-      (EltSet.iter
-        (fun e ->  (match e with
-          | Elt.Extension r -> print_string ("E " ^ (Event.label r.event) ^ ", ")
-          | Elt.Leftover r -> print_string ("L " ^ (Event.label r.event) ^ ", ")))
-        pool);
+      (EltSet.iter (fun e -> print_string (Elt.string_of_elt e ^ "; ")) pool);
       print_endline "}"
   
     (* ALGORITH SKETCH 
@@ -199,9 +199,6 @@ let is_executable prod stgy goals max_steps =
     let update_if cond n step ext =
       assert (not (EltSet.exists Elt.is_extension ext.pool));
 
-      print_endline "ext.pool";
-      print_pool ext.pool;
-
       let new_xts = unfold_1 n step prod in
 
       (* Add all results of the unfolding as Extension tagged elements *)
@@ -211,22 +208,28 @@ let is_executable prod stgy goals max_steps =
         EltSet.empty
       in
 
+      (if new_xts = [] then
+        (print_endline "\nThe product cannot be unfolded any further!")
+      else
+        (print_string ("Discovered " ^ string_of_int (List.length new_xts) ^ " fresh candidate extensions: "); print_pool pool; print_endline ""));
+
+      (if not (EltSet.is_empty ext.pool) then
+        (print_string "There are leftover candidates to consider: "; print_pool ext.pool; print_endline ""));
+
       (* Combine with previous elements (Leftovers) *)
       let pool = EltSet.union pool ext.pool in
-
-      print_endline "After union";
-      print_pool pool;
 
       let pool = EltSet.filter
         (fun e -> cond (Elt.untag e))
         pool
       in
 
-      print_endline "After feasible filter";
-      print_pool pool;
-      
       if not (EltSet.is_empty pool) then
+        let _ = print_string "\nFeasible candidates (sorted by strategy): "; print_pool pool in
+
         let e = List.hd (EltSet.elements pool) in
+
+        print_endline ("\n[+] Choosing " ^ Elt.string_of_elt e ^ "\n");
 
         let result = match e with
             Extension r -> r
@@ -241,9 +244,6 @@ let is_executable prod stgy goals max_steps =
         let pool = EltSet.remove e pool in
         ext.pool <- EltSet.remove e ext.pool;
 
-        print_endline "After extraction";
-        print_pool pool;
-
         let conflicts = EltSet.filter 
           (fun e' -> let r, r' = Elt.untag e, Elt.untag e' in
             not (PlaceSet.is_empty 
@@ -252,8 +252,8 @@ let is_executable prod stgy goals max_steps =
               (BPNet.inputs_of_trans r.event r.prefix)))) 
           (EltSet.filter Elt.is_extension pool) in
 
-        print_endline "Conflicts";
-        print_pool conflicts;
+        (if not (EltSet.is_empty conflicts) then
+          (print_string (string_of_int (EltSet.cardinal conflicts) ^ " candidates are in conflict with the selected one: "); print_pool conflicts; print_endline "I'll remember them in future steps as leftovers...\n"));
 
         let conflicts = EltSet.fold
           (fun e' acc -> EltSet.add (Leftover (Elt.untag e')) acc)
@@ -262,28 +262,27 @@ let is_executable prod stgy goals max_steps =
 
         ext.pool <- EltSet.union ext.pool conflicts;
 
-        print_endline "After adding conflicts";
-        print_pool ext.pool;
-
         Some result
+        
       else
+        let _ = print_endline "\nThere are no feasible extensions!" in
         None
   end in
 
   let n0 = unfold_init prod in
   let terms0 = EventSet.empty in
   let ext = Extensions.empty () in
-
+ 
   let is_feasible e n terms =
     let b = EventSet.is_empty (EventSet.inter (past_conf e n) terms) in
-    print_endline ("Is " ^ Event.label e ^ " (" ^ string_of_int (Event.name e) ^ ") feasible? -> " ^ string_of_bool b);
+    print_endline ("Is " ^ Event.label e ^ " (found in " ^ string_of_int (Event.name e) ^ ") feasible? -> " ^ string_of_bool b);
     b 
   in
 
   (* assumption: e is feasible *)
   let is_terminal_a e =
     let b = List.mem (Event.label e) goals in
-    print_endline ("Is " ^ Event.label e ^ " (" ^ string_of_int (Event.name e) ^ ") successful? -> " ^ string_of_bool b);
+    print_endline ("Is " ^ Event.label e ^ " successful? -> " ^ string_of_bool b);
     b
   in
 
@@ -296,15 +295,17 @@ let is_executable prod stgy goals max_steps =
       (BPNet.transitions n)
 
     in
-    print_endline ("Is " ^ Event.label e ^ " (" ^ string_of_int (Event.name e) ^ ") terminal? -> " ^ string_of_bool b);
+    print_endline ("Is " ^ Event.label e ^ " terminal? -> " ^ string_of_bool b);
     b
   in
 
   let rec helper step n terms : bool =
     step <= max_steps && (
 
-    print_endline ("\n\n--- Step " ^ string_of_int step);
-    print_endline ("\n\nSearch space size: " ^ string_of_int (PlaceSet.cardinal (BPNet.marking n)));
+    print_string ("\n+------------------+\n       ");
+    print_string ("STEP " ^ string_of_int step);
+    print_endline ("       \n+------------------+\n");
+    print_string ("Search space (" ^ string_of_int (PlaceSet.cardinal (BPNet.marking n)) ^ " places): ");
     print_placeset (BPNet.marking n);
 
     let choice = Extensions.update_if
@@ -316,14 +317,14 @@ let is_executable prod stgy goals max_steps =
 
     (match choice with
         Some r ->
-          print_endline ("Chosen " ^ Event.label r.event);
-
           (* if r.event is a terminal of type (a) end the search successfully *)
           is_terminal_a r.event || (      
             let terms' = if is_terminal_b r.event r.prefix then 
               EventSet.add r.event terms else terms
             in helper (step+1) r.prefix terms')
 
-      | None -> false))
+      | None ->
+          (print_string "\nNone of ["; List.iter (fun t -> print_string (t ^ "; ") ) goals; print_endline "] is executable!");
+          false))
 
   in helper 1 n0 terms0)

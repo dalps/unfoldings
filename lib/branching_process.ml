@@ -6,10 +6,13 @@ module EventSet = Set.Make(Event)
 module BPFlowSet = Set.Make(Flow)
 module NodeSet = Set.Make(Node)
 
+let print_history h =
+  List.iter (fun t -> print_string ("\"" ^ t ^ "\"; ")) h
+
 let print_placeset ps =
   print_string "[";
   List.iter (fun (p : Labelled_place.t) -> print_string "{history = ["; 
-    List.iter (fun t -> print_string ("\"" ^ t ^ "\"")) p.history;
+    print_history p.history;
     print_string ("]; label = \"" ^ p.label ^ "\"}; ")) 
   (PlaceSet.elements ps);
   print_endline "]\n"
@@ -17,7 +20,7 @@ let print_placeset ps =
 let print_eventset es =
   print_string "[";
   List.iter (fun (e : Event.t) -> print_string "{history = ["; 
-    List.iter (fun t -> print_string ("\"" ^ t ^ "\"")) e.history;
+    print_history e.history;
     print_string ("]; label = \"" ^ e.label ^ "\"}; ")) 
   (EventSet.elements es);
   print_endline "]\n"
