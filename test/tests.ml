@@ -214,7 +214,11 @@ print_endline "[OK] misc";;
 (* --- *)
 
 open Unfoldings.Unfold;;
+open Examples.Prod1;;
 open Examples.Prod2;;
+open Examples.Prod3;;
+open Examples.Prod4;;
+open Examples.Prod5;;
 
 let p = prod2;;
 
@@ -244,3 +248,32 @@ let n6s = unfold_1 n5.prefix 6 p;;
 assert (List.length n6s = 3);;
 
 print_endline "[OK] unfold prod2";;
+
+(* --- *)
+
+assert(is_executable prod1 (d_compare sl_compare) ["e1"] 3);;
+assert(is_executable prod1 (d_compare sl_compare) ["e2"] 3);;
+assert(is_executable prod1 (d_compare sl_compare) ["e3"] 3);;
+
+assert(is_executable prod2 (d_compare sl_compare) ["_,u3"] 5);;
+assert(is_executable prod2 (d_compare sl_compare) ["t4,u2"] 10);;
+assert(is_executable prod2 (d_compare sl_compare) ["t5,_"] 10);;
+assert(is_executable prod2 (d_compare sl_compare) ["t3,u2"] 5);;
+
+assert(is_executable prod3 (d_compare sl_compare) ["_,b1,_,_,_"] 5);;
+assert(is_executable prod3 (d_compare sl_compare) ["_,_,b2,_,_"] 5);;
+assert(is_executable prod3 (d_compare sl_compare) ["_,_,_,b3,_"] 5);;
+assert(is_executable prod3 (d_compare sl_compare) ["_,_,_,_,b4"] 5);;
+assert(is_executable prod3 (d_compare sl_compare) ["a0,a1,_,_,_"] 5);;
+assert(is_executable prod3 (d_compare sl_compare) ["c0,c1,c2,c3,c4"] 5 = false);;
+
+assert(is_executable prod4 (d_compare sl_compare) ["_,u1,v1"] 5);;
+assert(is_executable prod4 (d_compare sl_compare) ["_,u1,_"] 5 = false);;
+assert(is_executable prod4 (d_compare sl_compare) ["t1,u1,_"] 5);;
+
+assert(is_executable prod5 (d_compare sl_compare) ["_,_,f3,f4"] 10);;
+assert(is_executable prod5 (d_compare sl_compare) ["_,_,f3,f5"] 10 = false);;
+assert(is_executable prod5 (d_compare sl_compare) ["i1,i2,i3,i4"] 15);;
+assert(is_executable prod5 sl_compare ["i1,i2,i3,i4"] 15);;
+
+print_endline "[OK] is_executable";;
