@@ -65,7 +65,6 @@ let unfold_init (prod : PNet.t) =
 module UnfoldResult = struct
   type t = {
     event : Event.t;
-    history : Product_transition.t list;
     prefix : BPNet.t
   }
 
@@ -144,7 +143,7 @@ let unfold_1
           let n' = extend e (PNet.outputs_of_trans t prod) n c in
             (BPNet.fire e n';
             let open UnfoldResult in
-            {event = e; history = past_word e n'; prefix = n'}::acc')
+            {event = e; prefix = n'}::acc')
         ) 
         (List.filter (fun c -> is_reachable c n) (candidates t n))
         acc
@@ -155,8 +154,7 @@ let unfold_1
   in possible_extensions
 
 
-let is_executable prod stgy goals max_steps =
-  (
+let is_executable prod stgy goals max_steps = (
 
   let module Extensions = struct
     module Elt = struct
@@ -167,7 +165,7 @@ let is_executable prod stgy goals max_steps =
       let untag = function Extension r | Leftover r -> r
 
       let compare e1 e2 = let r1, r2 = untag e1, untag e2 in
-        stgy r1.history r2.history
+        stgy (Event.history r1.event) (Event.history r2.event)
 
       let string_of_elt = function
           Extension r -> "E " ^ (Event.label r.event)
@@ -237,7 +235,6 @@ let is_executable prod stgy goals max_steps =
             event =
               Event.build step (Event.history r.event) (Event.label r.event);
             prefix = union n r.prefix;
-            history = r.history
           }
         in
 
