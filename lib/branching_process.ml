@@ -1,29 +1,4 @@
-module BPNet = Petrinet.Make(Labelled_place)(Event)
-open BPNet
-
-module PlaceSet = Set.Make(Labelled_place)
-module EventSet = Set.Make(Event)
-module BPFlowSet = Set.Make(Flow)
-module NodeSet = Set.Make(Node)
-
-let print_history h =
-  List.iter (fun t -> print_string ("\"" ^ Product_transition.string_of_t t ^ "\"; ")) h
-
-let print_placeset ps =
-  print_string "[";
-  List.iter (fun (p : Labelled_place.t) -> print_string "{history = ["; 
-    print_history p.history;
-    print_string ("]; label = \"" ^ p.label ^ "\"}; ")) 
-  (PlaceSet.elements ps);
-  print_endline "]\n"
-
-let print_eventset es =
-  print_string "[";
-  List.iter (fun (e : Event.t) -> print_string "{history = ["; 
-    print_history e.history;
-    print_string ("]; label = \"" ^ Product_transition.string_of_t e.label ^ "\"}; ")) 
-  (EventSet.elements es);
-  print_endline "]\n"
+include Petrinet.Make(Labelled_place)(Event)
   
 let predecessors x n =
   let rec helper p parents =
@@ -43,18 +18,18 @@ let parents_of_event e n = (* can be generalized to Petrinets *)
      only have no more than one causing events (hence they cannot be shared) *)
   let inputs_of_e = inputs_of_trans e n in
   PlaceSet.fold
-    (fun p acc -> EventSet.union (inputs_of_place p n) acc)
+    (fun p acc -> TransSet.union (inputs_of_place p n) acc)
     inputs_of_e
-    EventSet.empty
+    TransSet.empty
 
 let past e n =
   let rec helper p word =
     let parents_of_p = parents_of_event p n in (* get the immediate predecessors *)
     (* add each parent IF NOT already present in the result *)
-    (EventSet.fold 
+    (TransSet.fold 
       (fun parent acc -> 
         if List.mem parent acc then acc 
-        else helper parent ((EventSet.elements parents_of_p) @ acc))
+        else helper parent ((TransSet.elements parents_of_p) @ acc))
       parents_of_p
       word)
 
@@ -62,35 +37,35 @@ let past e n =
 
 let past_word e n = List.map Event.label (past e n)
 
-let past_conf e n = EventSet.add e (NodeSet.fold
-  (fun x acc -> EventSet.add (Node.trans_of x) acc)
+let past_conf e n = TransSet.add e (NodeSet.fold
+  (fun x acc -> TransSet.add (Node.trans_of x) acc)
   (NodeSet.filter Node.is_trans (predecessors (Node.of_trans e) n))
-  EventSet.empty)
+  TransSet.empty)
 
 let past_of_preset ps n =
   let parent_events = PlaceSet.fold
     (fun p acc -> 
       let input_event = inputs_of_place p n in
-      assert (EventSet.cardinal input_event <= 1);
-      EventSet.union input_event acc)
+      assert (TransSet.cardinal input_event <= 1);
+      TransSet.union input_event acc)
     ps
-    EventSet.empty
+    TransSet.empty
   in
 
-  let rec helper (ps : EventSet.t) word =
-    (EventSet.fold
+  let rec helper (ps : TransSet.t) word =
+    (TransSet.fold
       (fun p acc -> 
         let parents_of_p = parents_of_event p n in
-        (EventSet.fold
+        (TransSet.fold
           (fun parent acc' -> 
             if List.mem parent acc' then acc' 
-            else helper parents_of_p ((EventSet.elements parents_of_p) @ acc'))
+            else helper parents_of_p ((TransSet.elements parents_of_p) @ acc'))
           parents_of_p
           acc))
       ps
       word)
 
-  in helper parent_events (EventSet.elements parent_events)
+  in helper parent_events (TransSet.elements parent_events)
 
 let past_word_of_preset ps n t = 
   List.map Event.label (past_of_preset ps n) @ [t]
@@ -99,7 +74,7 @@ let input_of_place p n =
   (* by construction, a place may have at most one input event *)
   let e = inputs_of_place p n in
 
-  match EventSet.elements e with
+  match TransSet.elements e with
       [] -> None
     | e::_ -> Some e
         
@@ -230,9 +205,9 @@ let is_reachable m n =
   nodes
   true
 
-let union bp1 bp2 = BPNet.of_sets
-  (PlaceSet.union (BPNet.places bp1) (BPNet.places bp2))
-  (EventSet.union (BPNet.transitions bp1) (BPNet.transitions bp2))
-  (BPFlowSet.union (BPNet.flow bp1) (BPNet.flow bp2))
-  (PlaceSet.union (BPNet.marking bp1) (BPNet.marking bp2))
+let union bp1 bp2 = of_sets
+  (PlaceSet.union (places bp1) (places bp2))
+  (TransSet.union (transitions bp1) (transitions bp2))
+  (FlowSet.union (flow bp1) (flow bp2))
+  (PlaceSet.union (marking bp1) (marking bp2))
   

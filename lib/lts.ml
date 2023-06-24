@@ -81,7 +81,7 @@ let is_history (ts : string list) sys =
 
 let product_component_of lts (* component_name *) =
   let open Product_transition in
-  Product_pretrinet.PNet.of_sets
+  Product_pretrinet.of_sets
     lts.states
     (Hashtbl.fold
       (fun t _ acc -> Product_pretrinet.TransSet.add [T t] acc)
@@ -89,11 +89,11 @@ let product_component_of lts (* component_name *) =
       Product_pretrinet.TransSet.empty)
     (Hashtbl.fold
       (fun t (trans : Trans.t) acc -> 
-        let open Product_pretrinet.PNet in
-          Product_pretrinet.PFlowSet.add (trans.source @--> [T t])
-          (Product_pretrinet.PFlowSet.add ([T t] -->@ trans.target) acc))
+        let open Product_pretrinet in
+          Product_pretrinet.FlowSet.add (trans.source @--> [T t])
+          (Product_pretrinet.FlowSet.add ([T t] -->@ trans.target) acc))
       lts.transitions
-      Product_pretrinet.PFlowSet.empty)
+      Product_pretrinet.FlowSet.empty)
     (StateSet.of_list [lts.initialState])
 
     (* [ component_name ] *)

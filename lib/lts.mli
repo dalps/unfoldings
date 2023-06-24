@@ -16,4 +16,4 @@ val add_trans : Trans.t -> t -> unit
 val set_init_state : State.t -> t -> unit
 val is_computation : string list -> t -> bool
 val is_history : string list -> t -> bool
-val product_component_of : t -> Product_pretrinet.PNet.t
+val product_component_of : t -> Product_pretrinet.t

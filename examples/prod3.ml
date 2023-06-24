@@ -1,7 +1,6 @@
 (* Product of Fig. 3.5 p. 27 *)
 
 open Unfoldings.Product_pretrinet
-open Unfoldings.Product_pretrinet.PNet
 open Unfoldings.Product_transition
 
 let r = of_lists

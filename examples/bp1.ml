@@ -5,7 +5,7 @@
 *)
 
 open Unfoldings.Event
-open Unfoldings.Branching_process.BPNet
+open Unfoldings.Branching_process
 
 let t1 = build 1 [] [T "t1"]
 let u1 = build 2 [] [T "u1"]

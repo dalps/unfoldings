@@ -1,8 +1,4 @@
-module PNet = Petrinet.Make(State)(Product_transition)
-
-module StateSet = Set.Make(State)
-module TransSet = Set.Make(Product_transition)
-module PFlowSet = Set.Make(PNet.Flow)
+include Petrinet.Make(State)(Product_transition)
 
 (* Product of a list of nets ns given a synchronization constraint sync,
    represented as a list of list of transition options. The i-th element of
@@ -10,46 +6,45 @@ module PFlowSet = Set.Make(PNet.Flow)
    component or None if that component doesn't participate.
    Components must not share names of states and transitions. 
    Component order must match the order of local transitions. *)
-let product (ns : PNet.t list) (sync : Product_transition.t list) =
-  let open PNet in
+let product (ns : t list) (sync : Product_transition.t list) =
   let parse_preflow (trans : Product_transition.t) =
     let preset =
       List.fold_left2
-        (fun acc n t -> StateSet.union (inputs_of_trans [t] n) acc)
-        StateSet.empty
+        (fun acc n t -> PlaceSet.union (inputs_of_trans [t] n) acc)
+        PlaceSet.empty
         ns
         trans
-    in StateSet.fold
-      (fun s acc -> PFlowSet.add (s @--> trans) acc)
+    in PlaceSet.fold
+      (fun s acc -> FlowSet.add (s @--> trans) acc)
       preset
-      PFlowSet.empty
+      FlowSet.empty
   in
 
   let parse_postflow trans =
     let postset =
       List.fold_left2
-        (fun acc n t -> StateSet.union (outputs_of_trans [t] n) acc)
-        StateSet.empty
+        (fun acc n t -> PlaceSet.union (outputs_of_trans [t] n) acc)
+        PlaceSet.empty
         ns
         trans
-    in StateSet.fold
-      (fun s acc -> PFlowSet.add (trans -->@ s) acc)
+    in PlaceSet.fold
+      (fun s acc -> FlowSet.add (trans -->@ s) acc)
       postset
-      PFlowSet.empty
+      FlowSet.empty
 
-  in PNet.of_sets
+  in of_sets
     (List.fold_left
-      (fun acc n -> StateSet.union (places n) acc)
-      StateSet.empty
+      (fun acc n -> PlaceSet.union (places n) acc)
+      PlaceSet.empty
       ns)
     (TransSet.of_list sync)
     (List.fold_left
-      (fun acc trans -> PFlowSet.union
-        (PFlowSet.union (parse_preflow trans) (parse_postflow trans)) acc)
-      PFlowSet.empty
+      (fun acc trans -> FlowSet.union
+        (FlowSet.union (parse_preflow trans) (parse_postflow trans)) acc)
+      FlowSet.empty
       sync)
     (List.fold_left
-      (fun acc n -> StateSet.union (marking n) acc)
-      StateSet.empty
+      (fun acc n -> PlaceSet.union (marking n) acc)
+      PlaceSet.empty
       ns)
       

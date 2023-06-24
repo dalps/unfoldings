@@ -1,12 +1,12 @@
 module PlaceSet = Set.Make(Unfoldings.State)
 module EventSet = Set.Make(Unfoldings.Product_transition)
-module FlowSet = Set.Make(Unfoldings.Product_pretrinet.PNet.Flow)
-module NodeSet = Set.Make(Unfoldings.Product_pretrinet.PNet.Node)
+module FlowSet = Set.Make(Unfoldings.Product_pretrinet.Flow)
+module NodeSet = Set.Make(Unfoldings.Product_pretrinet.Node)
 
 (* --- *)
 
 open Examples.Prod1;;
-open Unfoldings.Product_pretrinet.PNet;;
+open Unfoldings.Product_pretrinet;;
 
 fire [T "e2"] prod1;; (* {p1,p2} ---> m1 := {p3,p4} *)
 fire [T "e1"] prod1;; (* {p3,p4} ---> m2 := {p1,p4} *)
@@ -25,9 +25,8 @@ print_endline "[OK] prod1";;
 (* --- *)
 
 open Examples.Bp1;;
-open Unfoldings.Branching_process
-open Unfoldings.Branching_process.BPNet;; 
-open Unfoldings.Branching_process.BPNet.Node;;
+open Unfoldings.Branching_process;;
+open Unfoldings.Branching_process.Node;;
 
 assert (is_occurrence_sequence [e1;t1;u1;e2] bp1 = true);;
 assert (is_occurrence_sequence [e1;u1;t1;e2] bp1 = true);;
@@ -102,7 +101,7 @@ print_endline "[OK] lts1";;
 
 open Examples.Prod2;;
 open Unfoldings.Product_transition;;
-open Unfoldings.Product_pretrinet.PNet;;
+open Unfoldings.Product_pretrinet;;
 
 let t1 = [T "t1"; Idle];;
 let t2 = [T "t2"; Idle];;
