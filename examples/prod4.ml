@@ -1,7 +1,7 @@
 (* Product of Fig. 4.5 p. 54 *)
 
 open Unfoldings.Lts
-open Unfoldings.Product_pretrinet
+open Unfoldings.Product
 
 let s = product_component_of (build
   ["s1";"s2"]

@@ -1,12 +1,12 @@
 module PlaceSet = Set.Make(Unfoldings.State)
 module EventSet = Set.Make(Unfoldings.Product_transition)
-module FlowSet = Set.Make(Unfoldings.Product_pretrinet.Flow)
-module NodeSet = Set.Make(Unfoldings.Product_pretrinet.Node)
+module FlowSet = Set.Make(Unfoldings.Product.Flow)
+module NodeSet = Set.Make(Unfoldings.Product.Node)
 
 (* --- *)
 
 open Examples.Prod1;;
-open Unfoldings.Product_pretrinet;;
+open Unfoldings.Product;;
 
 fire [T "e2"] prod1;; (* {p1,p2} ---> m1 := {p3,p4} *)
 fire [T "e1"] prod1;; (* {p3,p4} ---> m2 := {p1,p4} *)
@@ -101,7 +101,7 @@ print_endline "[OK] lts1";;
 
 open Examples.Prod2;;
 open Unfoldings.Product_transition;;
-open Unfoldings.Product_pretrinet;;
+open Unfoldings.Product;;
 
 let t1 = [T "t1"; Idle];;
 let t2 = [T "t2"; Idle];;

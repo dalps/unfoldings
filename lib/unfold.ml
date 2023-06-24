@@ -1,7 +1,7 @@
 open Branching_process
 
-module StateSet = Product_pretrinet.PlaceSet
-module GlobalTransSet = Product_pretrinet.TransSet
+module StateSet = Product.PlaceSet
+module GlobalTransSet = Product.TransSet
 module LblPlaceSet = Branching_process.PlaceSet
 module EventSet = Branching_process.TransSet
 
@@ -34,12 +34,12 @@ let extend e postset n preset =
 
 (* n0 is the branching process with no events and one place for each component
    of prod, labeled with the initial state of the component *)
-let unfold_init (prod : Product_pretrinet.t) =
+let unfold_init (prod : Product.t) =
   let n0 = Branching_process.empty () in
   let initial_marking = 
     StateSet.fold
       (fun s acc -> LblPlaceSet.add (Labelled_place.build [] s) acc)
-      (Product_pretrinet.marking prod)
+      (Product.marking prod)
       LblPlaceSet.empty
   in
   Branching_process.add_places initial_marking n0;
@@ -58,7 +58,7 @@ end
 let unfold_1 n step prod =
   (* get the reachable markings labeled by *t *)
   let candidates t n =
-    let inputs_of_t = Product_pretrinet.inputs_of_trans t prod in
+    let inputs_of_t = Product.inputs_of_trans t prod in
 
     (* for each input state, compute the set of places labeled by it *)
     let options =
@@ -88,11 +88,11 @@ let unfold_1 n step prod =
     in helper options
   in
   let possible_extensions = 
-    Product_pretrinet.TransSet.fold
+    Product.TransSet.fold
       (fun t acc -> List.fold_right
         (fun c acc' ->
           let e = (Event.build step (past_word_of_preset c n t) t) in
-          let n' = extend e (Product_pretrinet.outputs_of_trans t prod) n c in
+          let n' = extend e (Product.outputs_of_trans t prod) n c in
             (Branching_process.fire e n';
             let open UnfoldResult in
             {event = e; prefix = n'}::acc')
@@ -100,7 +100,7 @@ let unfold_1 n step prod =
         (List.filter (fun c -> is_reachable c n) (candidates t n))
         acc
       )
-      (Product_pretrinet.transitions prod)
+      (Product.transitions prod)
       []
   in possible_extensions
 
