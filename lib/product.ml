@@ -1,4 +1,22 @@
-include Petrinet.Make(State)(Product_transition)
+module Trans = struct
+  type local_t = Idle | T of string
+
+  type t = local_t list
+
+  let is_idle = (=) Idle
+
+  let participates i t = List.nth t i <> Idle
+
+  let projection i h = List.filter (participates i) h
+
+  let is_independent t1 t2 = List.for_all
+    (fun (l1, l2) -> is_idle l1 || is_idle l2)
+    (List.combine t1 t2)
+
+  let compare = compare
+end
+
+include Petrinet.Make(State)(Trans)
 
 (* Product of a list of nets ns given a synchronization constraint sync,
    represented as a list of list of transition options. The i-th element of
@@ -6,8 +24,8 @@ include Petrinet.Make(State)(Product_transition)
    component or None if that component doesn't participate.
    Components must not share names of states and transitions. 
    Component order must match the order of local transitions. *)
-let product (ns : t list) (sync : Product_transition.t list) =
-  let parse_preflow (trans : Product_transition.t) =
+let product (ns : t list) (sync : Trans.t list) =
+  let parse_preflow (trans : Trans.t) =
     let preset =
       List.fold_left2
         (fun acc n t -> PlaceSet.union (inputs_of_trans [t] n) acc)

@@ -1,7 +1,6 @@
 (* Product of Fig. 3.5 p. 27 *)
 
 open Unfoldings.Product
-open Unfoldings.Product_transition
 
 let r = of_lists
   ["r1";"r2";"r3"]

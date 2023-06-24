@@ -80,7 +80,6 @@ let is_history (ts : string list) sys =
   in first_t.source = sys.initialState && is_computation ts sys
 
 let product_component_of lts (* component_name *) =
-  let open Product_transition in
   Product.of_sets
     lts.states
     (Hashtbl.fold

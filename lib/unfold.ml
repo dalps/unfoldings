@@ -7,15 +7,15 @@ module EventSet = Branching_process.TransSet
 
 (* convert a list of states to a set of labeled places with serial naming *)
 let label_states states history =
-  LblPlaceSet.of_list (List.map (Labelled_place.build history) states)
+  LblPlaceSet.of_list (List.map (LabelledPlace.build history) states)
 
 (* filter the places labeled as a certain state in a given set *)
 let places_labeled_as st places =
-  LblPlaceSet.filter (fun p -> Labelled_place.label p = st) places
+  LblPlaceSet.filter (fun p -> LabelledPlace.label p = st) places
 
 (* get the labels of a set of places *)
 let labels_of_places ps = LblPlaceSet.fold
-  (fun p acc -> StateSet.add (Labelled_place.label p) acc)
+  (fun p acc -> StateSet.add (LabelledPlace.label p) acc)
   ps
   StateSet.empty
 
@@ -38,7 +38,7 @@ let unfold_init (prod : Product.t) =
   let n0 = Branching_process.empty () in
   let initial_marking = 
     StateSet.fold
-      (fun s acc -> LblPlaceSet.add (Labelled_place.build [] s) acc)
+      (fun s acc -> LblPlaceSet.add (LabelledPlace.build [] s) acc)
       (Product.marking prod)
       LblPlaceSet.empty
   in

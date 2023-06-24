@@ -1,34 +1,15 @@
-type local_t = Idle | T of string
-
-type t = local_t list
-
-let rec string_of_t = function
-  | [] -> ""
-  | [Idle] -> "_"
-  | [T s] -> s
-  | Idle::ls -> "_," ^ string_of_t ls
-  | T s::ls -> s ^ "," ^ string_of_t ls
-
-let is_idle = (=) Idle
-
-let participates i t = List.nth t i <> Idle
-
-let projection i h = List.filter (participates i) h
-
-let is_independent t1 t2 = List.for_all
-  (fun (l1, l2) -> is_idle l1 || is_idle l2)
-  (List.combine t1 t2)
+open Product.Trans
 
 let rec tword_equiv w1 w2 = match w1,w2 with
-| [], [] -> true
-| [], _::_ | _::_, [] -> false 
-| t1::u1::w1', u2::t2::w2' when t1 = t2 && u1 <> u2 && is_independent u2 t2 -> 
-    tword_equiv (u1::w1') (u2::w2')
-| t1::u1::w1', u2::t2::w2' when u1 = u2 && t1 <> t2 && is_independent t1 u1 -> 
-    tword_equiv (t1::w1') (t2::w2')
-| t1::u1::w1', u2::t2::w2' when t1 = t2 && u1 = u2 && is_independent t1 u1 -> 
-    tword_equiv (u1::w1') (u2::w2')
-| a1::w1', a2::w2' -> a1 = a2 && tword_equiv w1' w2'
+  | [], [] -> true
+  | [], _::_ | _::_, [] -> false 
+  | t1::u1::w1', u2::t2::w2' when t1 = t2 && u1 <> u2 && is_independent u2 t2 -> 
+      tword_equiv (u1::w1') (u2::w2')
+  | t1::u1::w1', u2::t2::w2' when u1 = u2 && t1 <> t2 && is_independent t1 u1 -> 
+      tword_equiv (t1::w1') (t2::w2')
+  | t1::u1::w1', u2::t2::w2' when t1 = t2 && u1 = u2 && is_independent t1 u1 -> 
+      tword_equiv (u1::w1') (u2::w2')
+  | a1::w1', a2::w2' -> a1 = a2 && tword_equiv w1' w2'
 
 let trace w =
   let combine ws vs =
@@ -94,5 +75,3 @@ let d_compare cmp w w' =
     0
     (projections w)
     (projections w')
-    
-let compare = compare

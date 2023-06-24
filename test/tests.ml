@@ -1,10 +1,3 @@
-module PlaceSet = Set.Make(Unfoldings.State)
-module EventSet = Set.Make(Unfoldings.Product_transition)
-module FlowSet = Set.Make(Unfoldings.Product.Flow)
-module NodeSet = Set.Make(Unfoldings.Product.Node)
-
-(* --- *)
-
 open Examples.Prod1;;
 open Unfoldings.Product;;
 
@@ -54,9 +47,9 @@ assert (is_reachable (PlaceSet.of_list [r1;r2]) bp1 = false);;
 assert (is_reachable (PlaceSet.of_list [r1]) bp1 = true);; (* questionable *)
 assert (is_reachable (PlaceSet.of_list [s1;s4]) bp1 = false);;
 
-let t2 = Unfoldings.Event.build 5 [] [T "t2"];;
-let t3 = Unfoldings.Event.build 6 [] [T "t3"];;
-let s2_4 = Unfoldings.Labelled_place.build [] "s2_4";;
+let t2 = Event.build 5 [] [T "t2"];;
+let t3 = Event.build 6 [] [T "t3"];;
+let s2_4 = LabelledPlace.build [] "s2_4";;
 
 add_trans t2 bp1;;
 add_trans t3 bp1;;
@@ -100,8 +93,9 @@ print_endline "[OK] lts1";;
 (* --- *)
 
 open Examples.Prod2;;
-open Unfoldings.Product_transition;;
 open Unfoldings.Product;;
+open Trans;;
+open Unfoldings.History_utils
 
 let t1 = [T "t1"; Idle];;
 let t2 = [T "t2"; Idle];;
