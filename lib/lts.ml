@@ -80,22 +80,20 @@ let is_history (ts : string list) sys =
   in first_t.source = sys.initialState && is_computation ts sys
 
 let product_component_of lts (* component_name *) =
+  let open Product_transition in
   Product_pretrinet.PNet.of_sets
     lts.states
-
     (Hashtbl.fold
-      (fun t _ acc -> Product_pretrinet.TransSet.add t acc)
+      (fun t _ acc -> Product_pretrinet.TransSet.add [T t] acc)
       lts.transitions
       Product_pretrinet.TransSet.empty)
-
     (Hashtbl.fold
       (fun t (trans : Trans.t) acc -> 
-        let open Product_pretrinet.PNet.Flow in
-          Product_pretrinet.PFlowSet.add (trans.source @--> t)
-          (Product_pretrinet.PFlowSet.add (t -->@ trans.target) acc))
+        let open Product_pretrinet.PNet in
+          Product_pretrinet.PFlowSet.add (trans.source @--> [T t])
+          (Product_pretrinet.PFlowSet.add ([T t] -->@ trans.target) acc))
       lts.transitions
       Product_pretrinet.PFlowSet.empty)
-
     (StateSet.of_list [lts.initialState])
 
     (* [ component_name ] *)

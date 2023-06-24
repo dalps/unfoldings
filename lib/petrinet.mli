@@ -17,8 +17,6 @@ module Make :
 
       val to_place : T.t -> P.t -> t
       val to_trans : P.t -> T.t -> t
-      val ( -->@ ) : T.t -> P.t -> t
-      val ( @--> ) : P.t -> T.t -> t
       val source : t -> Node.t
       val target : t -> Node.t
       val target_trans : t -> T.t
@@ -27,6 +25,9 @@ module Make :
       val source_place : t -> P.t
       val compare : t -> t -> int
     end
+
+    val ( -->@ ) : T.t -> P.t -> Flow.t
+    val ( @--> ) : P.t -> T.t -> Flow.t
 
     type t
 

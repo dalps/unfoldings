@@ -1,6 +1,7 @@
 (* Product of Fig. 4.5 p. 54 *)
 
 open Unfoldings.Lts
+open Unfoldings.Product_pretrinet
 
 let s = product_component_of (build
   ["s1";"s2"]
@@ -20,13 +21,10 @@ let q = product_component_of (build
   [("q1" --> "q2") "v1"]
   "q1")
 
-
-open Unfoldings.Product_pretrinet
-
 let prod4 = product [s;r;q]
   [
-    [Some "t1"; Some "u1"; None];
-    [None; Some "u1"; Some "v1"];
-    [Some "t1"; Some "u2"; None];
-    [None; Some "u2"; Some "v1"];
+    [T "t1"; T "u1"; Idle];
+    [Idle; T "u1"; T "v1"];
+    [T "t1"; T "u2"; Idle];
+    [Idle; T "u2"; T "v1"];
   ]

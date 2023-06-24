@@ -8,17 +8,17 @@ module NodeSet = Set.Make(Unfoldings.Product_pretrinet.PNet.Node)
 open Examples.Prod1;;
 open Unfoldings.Product_pretrinet.PNet;;
 
-fire "e2" prod1;; (* {p1,p2} ---> m1 := {p3,p4} *)
-fire "e1" prod1;; (* {p3,p4} ---> m2 := {p1,p4} *)
-fire "e3" prod1;; (* {p1,p4} ---> {p1,p2} = m0 *)
-fire "e1" prod1;; (* not enabled *)
-fire "e9" prod1;; (* not an event in n *)
+fire [T "e2"] prod1;; (* {p1,p2} ---> m1 := {p3,p4} *)
+fire [T "e1"] prod1;; (* {p3,p4} ---> m2 := {p1,p4} *)
+fire [T "e3"] prod1;; (* {p1,p4} ---> {p1,p2} = m0 *)
+fire [T "e1"] prod1;; (* not enabled *)
+fire [T "e9"] prod1;; (* not an event in n *)
 
-assert (is_occurrence_sequence ["e2";"e1";"e3"] prod1 = true);;
-assert (is_occurrence_sequence ["e2";"e3";"e1"] prod1 = true);;
-assert (is_occurrence_sequence ["e1"] prod1 = false);;
-assert (is_occurrence_sequence ["e2";"e3";"e2"] prod1 = false);;
-assert (is_occurrence_sequence ["e2";"e2"] prod1 = false);;
+assert (is_occurrence_sequence [[T "e2"];[T "e1"];[T "e3"]] prod1 = true);;
+assert (is_occurrence_sequence [[T "e2"];[T "e3"];[T "e1"]] prod1 = true);;
+assert (is_occurrence_sequence [[T "e1"]] prod1 = false);;
+assert (is_occurrence_sequence [[T "e2"];[T "e3"];[T "e2"]] prod1 = false);;
+assert (is_occurrence_sequence [[T "e2"];[T "e2"]] prod1 = false);;
 
 print_endline "[OK] prod1";;
 
@@ -55,8 +55,8 @@ assert (is_reachable (PlaceSet.of_list [r1;r2]) bp1 = false);;
 assert (is_reachable (PlaceSet.of_list [r1]) bp1 = true);; (* questionable *)
 assert (is_reachable (PlaceSet.of_list [s1;s4]) bp1 = false);;
 
-let t2 = Unfoldings.Event.build 5 [] "t2";;
-let t3 = Unfoldings.Event.build 6 [] "t3";;
+let t2 = Unfoldings.Event.build 5 [] [T "t2"];;
+let t3 = Unfoldings.Event.build 6 [] [T "t3"];;
 let s2_4 = Unfoldings.Labelled_place.build [] "s2_4";;
 
 add_trans t2 bp1;;
@@ -104,44 +104,64 @@ open Examples.Prod2;;
 open Unfoldings.Product_transition;;
 open Unfoldings.Product_pretrinet.PNet;;
 
-assert (is_occurrence_sequence ["t1,_";"_,u1";"t3,u2";"t5,_"] prod2);;
-assert (is_occurrence_sequence ["_,u1";"t1,_";"t3,u2";"_,u3"] prod2);;
-assert (is_occurrence_sequence ["_,u1";"t3,u2"] prod2 = false);;
-assert (is_occurrence_sequence ["t1,_";"_,u1";"t4,u2";"_,u3"] prod2 = false);;
-assert (is_occurrence_sequence ["t1,_";"_,u1";"t4,u2";"_,u3"] prod2 = false);;
-assert (is_occurrence_sequence ["t2,_";"_,u1";"t4,u2";"_,u3"] prod2);;
-assert (is_occurrence_sequence ["_,u1";"t2,_";"t4,u2";"_,u3";"t5,_"] prod2);;
-assert (is_occurrence_sequence ["_,u1";"t2,_";"t4,u2";"t5,_";"_,u3";"_,u1"] prod2);;
-assert (is_occurrence_sequence ["_,u1";"t2,_";"t4,u2";"t5,_";"_,u3";"_,u1";"t4,u2"] prod2 = false);;
-assert (is_occurrence_sequence ["_,u1";"t2,_";"t4,u2";"t5,_";"_,u3";"t2,_";"_,u1";"t4,u2"] prod2);;
-assert (is_occurrence_sequence ["_,u1";"t2,_";"t4,u2";"t5,_";"_,u3";"t1,_";"_,u1";"t3,u2"] prod2);;
+let t1 = [T "t1"; Idle];;
+let t2 = [T "t2"; Idle];;
+let u1 = [Idle; T "u1"];;
+let t3u2 = [T "t3"; T "u2"];;
+let t4u2 = [T "t4"; T "u2"];;
+let t4 = [T "t4"; Idle];;
+let t5 = [T "t5"; Idle];;
+let u3 = [Idle; T "u3"];;
 
-assert (is_independent "t1,_" "_,u1");;
-assert (is_independent "t1,_" "t5,_" = false);;
-assert (is_independent "t3,u2" "t4,u2" = false);;
+assert (is_occurrence_sequence [t1;u1;t3u2;t5] prod2);;
+assert (is_occurrence_sequence [u1;t1;t3u2;u3] prod2);;
+assert (is_occurrence_sequence [u1;t3u2] prod2 = false);;
+assert (is_occurrence_sequence [t1;u1;t4u2;u3] prod2 = false);;
+assert (is_occurrence_sequence [t1;u1;t4u2;u3] prod2 = false);;
+assert (is_occurrence_sequence [t2;u1;t4u2;u3] prod2);;
+assert (is_occurrence_sequence [u1;t2;t4u2;u3;t5] prod2);;
+assert (is_occurrence_sequence [u1;t2;t4u2;t5;u3;u1] prod2);;
+assert (is_occurrence_sequence [u1;t2;t4u2;t5;u3;u1;t4u2] prod2 = false);;
+assert (is_occurrence_sequence [u1;t2;t4u2;t5;u3;t2;u1;t4u2] prod2);;
+assert (is_occurrence_sequence [u1;t2;t4u2;t5;u3;t1;u1;t3u2] prod2);;
 
-assert (tword_equiv ["t1,_";"_,u1";"t3,u2";"t5,_";"_,u3"] ["_,u1";"t1,_";"t3,u2";"_,u3";"t5,_"]);;
-assert (tword_equiv ["t1,_";"_,u1";"t3,u2";"t5,_";"_,u3"] ["_,u1";"t1,_";"t3,u2";"t5,_";"_,u3"]);;
-assert (tword_equiv ["_,u1";"t1,_";"t3,u2";"t5,_";"_,u3"] ["_,u1";"t1,_";"t3,u2";"_,u3";"t5,_"]);;
-assert (tword_equiv ["_,u1";"t1,_";"t3,u2";"t5,_";"_,u3"] ["_,u1";"t1,_";"t3,u2";"t5,_";"_,u3"]);;
-assert (tword_equiv ["_,u1";"t1,_";"t3,u2";"t5,_";"_,u3"] ["_,u1";"t1,_";"t3,u2";"t4,_";"_,u3"] = false);;
-assert (tword_equiv ["_,u1";"t1,_";"t3,u2";"t5,_";"_,u3"] ["_,u1";"t1,_";"t3,u2";"t4,_"] = false);;
-assert (tword_equiv ["_,u1";"t1,_";"t3,u2";"t5,_";"_,u3"] ["_,u1";"t1,_";"t3,u2";"t5,_";"t4,u2"] = false);;
-assert (tword_equiv ["a,_,_";"_,b,_";"_,_,c"] ["_,b,_";"a,_,_";"_,_,c"]);;
-assert (tword_equiv ["a,_,_";"_,b,_";"_,_,c"] ["a,_,_";"_,_,c";"_,b,_"]);;
-assert (tword_equiv ["_,b,_";"a,_,_";"_,_,c"] ["a,_,_";"_,_,c";"_,b,_"]);;
-assert (tword_equiv ["a,_,_";"_,b,_";"_,_,c"] ["a,_,_";"_,_,c1";"_,b,_"] = false);;
-assert (tword_equiv ["a,_,_";"_,b,_";"_,_,c"] ["_,_,c";"_,b,_";"a,_,_"] = false);;
+assert (is_independent t1 u1);;
+assert (is_independent t1 t5 = false);;
+assert (is_independent t3u2 t4u2 = false);;
+
+assert (tword_equiv [t1;u1;t3u2;t5;u3] [u1;t1;t3u2;u3;t5]);;
+assert (tword_equiv [t1;u1;t3u2;t5;u3] [u1;t1;t3u2;t5;u3]);;
+assert (tword_equiv [u1;t1;t3u2;t5;u3] [u1;t1;t3u2;u3;t5]);;
+assert (tword_equiv [u1;t1;t3u2;t5;u3] [u1;t1;t3u2;t5;u3]);;
+assert (tword_equiv [u1;t1;t3u2;t5;u3] [u1;t1;t3u2;t4;u3] = false);;
+assert (tword_equiv [u1;t1;t3u2;t5;u3] [u1;t1;t3u2;t4] = false);;
+assert (tword_equiv [u1;t1;t3u2;t5;u3] [u1;t1;t3u2;t5;t4u2] = false);;
+
+let a = [T "a"; Idle; Idle];;
+let b = [Idle; T "b"; Idle];;
+let c = [Idle; Idle; T "c"];;
+let c1 = [Idle; Idle; T "c1"];;
+
+assert (tword_equiv [a;b;c] [b;a;c]);;
+assert (tword_equiv [a;b;c] [a;c;b]);;
+assert (tword_equiv [b;a;c] [a;c;b]);;
+assert (tword_equiv [a;b;c] [a;c1;b] = false);;
+assert (tword_equiv [a;b;c] [c;b;a] = false);;
 
 print_endline "[OK] prod2";;
 
 (* --- *)
 
-let h1 = ["t1,_";"_,u1";"t3,u2";"t5,_";"_,u3"];;
-let h21 = ["a,_,_";"_,b,_";"_,_,c"];;
-let h22 = ["d,_,_";"_,e,f";"g,_,c"];;
-let h3 = ["t1,_";"_,u1";"t5,_";"_,u3";"t1,_";"_,u1";"t3,u2";"t5,_";"_,u3";"t4,u4"];;
-let h4 = ["t"];;
+let d = [T "d"; Idle; Idle];;
+let ef = [Idle; T "e"; T "f"];;
+let gc = [T "g"; Idle; T "c"];;
+let t4u4 = [T "t4"; T "u4"];;
+
+let h1 = [t1;u1;t3u2;t5;u3];;
+let h21 = [a;b;c];;
+let h22 = [d;ef;gc];;
+let h3 = [t1;u1;t5;u3;t1;u1;t3u2;t5;u3;t4u4];;
+let h4 = [[T "t"]];;
 
 let traceh3 = trace h3;;
 let traceh21 = trace h21;;
@@ -192,13 +212,13 @@ assert (naive_concat (trace h21) (trace h22) <> trace (h21 @ h22));; (* rhs is l
 
 (* --- *)
 
-let e1 = ["_,u1"];;
-let e2 = ["t1,_"];;
-let e6 = ["_,u1";"t1,_";"t3,u2";"_,u3";"_,u1"];;
-let e7 = ["t2,_";"_,u1";"t4,u2"];;
+let e1 = [u1];;
+let e2 = [t1];;
+let e6 = [u1;t1;t3u2;u3;u1];;
+let e7 = [t2;u1;t4u2];;
 
-let h1 = ["_,u1";"t1,_"];;
-let h2 = ["t1,_";"_,u1"];;
+let h1 = [u1;t1];;
+let h2 = [t1;u1];;
 
 assert(d_compare sl_compare e1 e2 < 0);;
 assert(d_compare sl_compare e1 e2 < 0);;
@@ -251,29 +271,40 @@ print_endline "[OK] unfold prod2";;
 
 (* --- *)
 
-assert(is_executable prod1 (d_compare sl_compare) ["e1"] 3);;
-assert(is_executable prod1 (d_compare sl_compare) ["e2"] 3);;
-assert(is_executable prod1 (d_compare sl_compare) ["e3"] 3);;
+assert(is_executable prod1 (d_compare sl_compare) [[T "e1"]] 3);;
+assert(is_executable prod1 (d_compare sl_compare) [[T "e2"]] 3);;
+assert(is_executable prod1 (d_compare sl_compare) [[T "e3"]] 3);;
+print_endline "[OK] is_executable prod1";;
 
-assert(is_executable prod2 (d_compare sl_compare) ["_,u3"] 5);;
-assert(is_executable prod2 (d_compare sl_compare) ["t4,u2"] 10);;
-assert(is_executable prod2 (d_compare sl_compare) ["t5,_"] 10);;
-assert(is_executable prod2 (d_compare sl_compare) ["t3,u2"] 5);;
+assert(is_executable prod2 (d_compare sl_compare) [u3] 5);;
+assert(is_executable prod2 (d_compare sl_compare) [t4u2] 10);;
+assert(is_executable prod2 (d_compare sl_compare) [t5] 10);;
+assert(is_executable prod2 (d_compare sl_compare) [t3u2] 5);;
+print_endline "[OK] is_executable prod2";;
 
-assert(is_executable prod3 (d_compare sl_compare) ["_,b1,_,_,_"] 5);;
-assert(is_executable prod3 (d_compare sl_compare) ["_,_,b2,_,_"] 5);;
-assert(is_executable prod3 (d_compare sl_compare) ["_,_,_,b3,_"] 5);;
-assert(is_executable prod3 (d_compare sl_compare) ["_,_,_,_,b4"] 5);;
-assert(is_executable prod3 (d_compare sl_compare) ["a0,a1,_,_,_"] 5);;
-assert(is_executable prod3 (d_compare sl_compare) ["c0,c1,c2,c3,c4"] 5 = false);;
+let a0a1 = [T "a0"; T "a1"; Idle; Idle; Idle];;
+let b1 = [Idle; T "b1"; Idle; Idle; Idle];;
+let b2 = [Idle; Idle; T "b2"; Idle; Idle];;
+let b3 = [Idle; Idle; Idle; T "b3"; Idle];;
+let b4 = [Idle; Idle; Idle; Idle; T "b4"];;
+let c = [T "c0"; T "c1"; T "c2"; T "c3"; T "c4"];;
 
-assert(is_executable prod4 (d_compare sl_compare) ["_,u1,v1"] 5);;
-assert(is_executable prod4 (d_compare sl_compare) ["_,u1,_"] 5 = false);;
-assert(is_executable prod4 (d_compare sl_compare) ["t1,u1,_"] 5);;
+assert(is_executable prod3 (d_compare sl_compare) [b1] 5);;
+assert(is_executable prod3 (d_compare sl_compare) [b2] 5);;
+assert(is_executable prod3 (d_compare sl_compare) [b3] 5);;
+assert(is_executable prod3 (d_compare sl_compare) [b4] 5);;
+assert(is_executable prod3 (d_compare sl_compare) [a0a1] 5);;
+assert(is_executable prod3 (d_compare sl_compare) [c] 5 = false);;
+assert(is_executable prod3 (d_compare sl_compare) [c; a0a1] 5);;
+print_endline "[OK] is_executable prod3";;
 
-assert(is_executable prod5 (d_compare sl_compare) ["_,_,f3,f4"] 10);;
-assert(is_executable prod5 (d_compare sl_compare) ["_,_,f3,f5"] 10 = false);;
-assert(is_executable prod5 (d_compare sl_compare) ["i1,i2,i3,i4"] 15);;
-assert(is_executable prod5 sl_compare ["i1,i2,i3,i4"] 15);;
+assert(is_executable prod4 (d_compare sl_compare) [[Idle; T "u1"; T "v1"]] 5);;
+assert(is_executable prod4 (d_compare sl_compare) [[Idle; T "u1"; Idle]] 5 = false);;
+assert(is_executable prod4 (d_compare sl_compare) [[T "t1"; T "u1"; Idle]] 5);;
+print_endline "[OK] is_executable prod4";;
 
-print_endline "[OK] is_executable";;
+assert(is_executable prod5 (d_compare sl_compare) [[Idle; Idle; T "f3"; T "f4"]] 10);;
+assert(is_executable prod5 (d_compare sl_compare) [[Idle; Idle; T "f3"; T "f5"]] 10 = false);;
+assert(is_executable prod5 (d_compare sl_compare) [[T "i1"; T "i2"; T "i3"; T "i4"]] 15);;
+assert(is_executable prod5 sl_compare [[T "i1"; T "i2"; T "i3"; T "i4"]] 15);;
+print_endline "[OK] is_executable prod5";;

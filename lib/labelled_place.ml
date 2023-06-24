@@ -1,5 +1,3 @@
-open Product_transition
-
 type t = {
   history : Product_transition.t list;
   label : State.t
@@ -11,7 +9,7 @@ let history p = p.history
 
 let label p = p.label
 
-let compare p1 p2 = 
+let compare (p1 : t) (p2 : t) = 
   (* temporary strategy *)
   let n = Product_transition.sl_compare p1.history p2.history in
   if n = 0 then

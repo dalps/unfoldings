@@ -118,14 +118,6 @@ let unfold_1
 
   in
 
-  (* for each transition of the product, compute its reachable candidates, then
-    sort all the histories obtained by appending the transition to the candidate
-    and select the smallest according to the search strategy. *)
-
-  (* given two reachable candidates c1 and c2 for a transition t, add t to the the
-    candidate with the smaller history -> need a way to associate a history to a 
-    marking *)
-
   (* ALGORITHM SKETCH *)
   (* 1. initialize an empty list l 
      2. for each transition t of prod, compute its reachable candidates in n
@@ -168,8 +160,8 @@ let is_executable prod stgy goals max_steps = (
         stgy (Event.history r1.event) (Event.history r2.event)
 
       let string_of_elt = function
-          Extension r -> "E " ^ (Event.label r.event)
-        | Leftover r -> "L " ^ (Event.label r.event)
+          Extension r -> "E " ^ Product_transition.string_of_t (Event.label r.event)
+        | Leftover r -> "L " ^ Product_transition.string_of_t (Event.label r.event)
     end
   
     module UnfoldResultSet = Set.Make(UnfoldResult)
@@ -272,14 +264,14 @@ let is_executable prod stgy goals max_steps = (
  
   let is_feasible e n terms =
     let b = EventSet.is_empty (EventSet.inter (past_conf e n) terms) in
-    print_endline ("Is " ^ Event.label e ^ " (found in " ^ string_of_int (Event.name e) ^ ") feasible? -> " ^ string_of_bool b);
+    print_endline ("Is " ^ Product_transition.string_of_t (Event.label e) ^ " (found in " ^ string_of_int (Event.name e) ^ ") feasible? -> " ^ string_of_bool b);
     b 
   in
 
   (* assumption: e is feasible *)
   let is_terminal_a e =
     let b = List.mem (Event.label e) goals in
-    print_endline ("Is " ^ Event.label e ^ " successful? -> " ^ string_of_bool b);
+    print_endline ("Is " ^ Product_transition.string_of_t (Event.label e) ^ " successful? -> " ^ string_of_bool b);
     b
   in
 
@@ -292,7 +284,7 @@ let is_executable prod stgy goals max_steps = (
       (BPNet.transitions n)
 
     in
-    print_endline ("Is " ^ Event.label e ^ " terminal? -> " ^ string_of_bool b);
+    print_endline ("Is " ^ Product_transition.string_of_t (Event.label e) ^ " terminal? -> " ^ string_of_bool b);
     b
   in
 
@@ -321,7 +313,7 @@ let is_executable prod stgy goals max_steps = (
             in helper (step+1) r.prefix terms')
 
       | None ->
-          (print_string "\nNone of ["; List.iter (fun t -> print_string (t ^ "; ") ) goals; print_endline "] is executable!");
+          (print_string "\nNone of ["; List.iter (fun t -> print_string (Product_transition.string_of_t t ^ "; ") ) goals; print_endline "] is executable!");
           false))
 
   in helper 1 n0 terms0)

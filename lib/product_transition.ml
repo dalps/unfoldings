@@ -1,40 +1,24 @@
-type t = string
+type local_t = Idle | T of string
 
-exception IllegalGlobalTransition
+type t = local_t list
 
-let __SEP__ = ','
-let __IDLE__ = '_'
+let rec string_of_t = function
+  | [] -> ""
+  | [Idle] -> "_"
+  | [T s] -> s
+  | Idle::ls -> "_," ^ string_of_t ls
+  | T s::ls -> s ^ "," ^ string_of_t ls
 
-let sep = Char.escaped __SEP__
-let idle = Char.escaped __IDLE__
+let is_idle = (=) Idle
 
-let represents_local_transition t =
-  not (String.contains t __SEP__) &&
-  not (String.contains t __IDLE__)
-
-let is_idle t = String.contains t __IDLE__
-
-let explode = String.split_on_char __SEP__
-
-let is_well_formed t =
-  let rec helper l = match l with
-      [] -> false
-    | s::ss -> if String.contains s __IDLE__ 
-        then s = idle && helper ss 
-        else helper ss
-
-  in helper (explode t)
-
-let participates i t = List.nth (explode t) i <> Char.escaped __IDLE__
+let participates i t = List.nth t i <> Idle
 
 let projection i h = List.filter (participates i) h
 
 let is_independent t1 t2 = List.for_all
-  (fun (le1,le2) -> is_idle le1 || is_idle le2)
-  (List.combine (explode t1) (explode t2))
+  (fun (l1, l2) -> is_idle l1 || is_idle l2)
+  (List.combine t1 t2)
 
-(* Two transition words are equivalent if one can be obtained from the other
-   by swapping consecutive indepentent transitions. *)
 let rec tword_equiv w1 w2 = match w1,w2 with
 | [], [] -> true
 | [], _::_ | _::_, [] -> false 
@@ -46,7 +30,6 @@ let rec tword_equiv w1 w2 = match w1,w2 with
     tword_equiv (u1::w1') (u2::w2')
 | a1::w1', a2::w2' -> a1 = a2 && tword_equiv w1' w2'
 
-(* trace w is the list of all words w' such that w tword_eq uiv w' (includes w) *)
 let trace w =
   let combine ws vs =
     List.fold_left
@@ -58,7 +41,6 @@ let trace w =
     []
     ws
   in
-  
   let rec scramble = function
       [] -> []
     | [t] -> [[t]]
@@ -69,36 +51,44 @@ let trace w =
         combine [[t]] (scramble (u::v')) @
         combine [[u]] (scramble (t::v'))
     | t::v' -> combine [[t]] (scramble v')
-
   in scramble w
 
 let concat_traces w w' = trace (w @ w')
 
-let to_alpha t = String.concat "" (List.filter (fun u -> not (is_idle u)) (explode t))
-
-let to_alpha_word w = String.concat "" (List.map to_alpha w)
-
 let sl_compare w w' =
+  let string_of_t t = 
+    String.concat "" (
+      List.map (function
+        | Idle -> ""
+        | T s -> s
+      )
+      t
+    )
+  in
+  let string_of_tword w = String.concat "" (List.map string_of_t w) in
   let len_diff = List.length w - List.length w' in
   if len_diff = 0 then
-    String.compare (to_alpha_word w) (to_alpha_word w')
+    String.compare (string_of_tword w) (string_of_tword w')
   else len_diff
 
 let projections w =
-  let len = List.length (explode (List.hd w)) in
-  assert(List.for_all (fun t -> List.length (explode t) = len) w);
-
+  let len = List.length (List.hd w) in
+  assert(
+    let cond = List.for_all (fun t -> List.length t = len) w in
+    if not cond then 
+      print_endline "All global transitions must have the same length.";
+    cond
+  );
   let rec helper i projs =
     if i = len then projs
     else helper (i+1) (projs @ [(projection i w)])
-
   in helper 0 []
 
 let d_compare cmp w w' =
   List.fold_left2
     (fun res wk wk' ->
       let diff = cmp wk wk' in
-      (* Compute the difference between the k-th projections, with k in 1..n;
+      (* Compute the difference between the k-th projections, with k = 1..n;
          once it is not 0, carry it over the next steps as the final result. *)
       if res <> 0 then res else diff)
     0

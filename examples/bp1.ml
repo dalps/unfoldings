@@ -6,12 +6,11 @@
 
 open Unfoldings.Event
 open Unfoldings.Branching_process.BPNet
-open Flow
 
-let t1 = build 1 [] "t1"
-let u1 = build 2 [] "u1"
-let e1 = build 3 [] "e1"
-let e2 = build 4 [] "e2"
+let t1 = build 1 [] [T "t1"]
+let u1 = build 2 [] [T "u1"]
+let e1 = build 3 [] [T "e1"]
+let e2 = build 4 [] [T "e2"]
 
 open Unfoldings.Labelled_place
 

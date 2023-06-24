@@ -7,7 +7,7 @@ module BPFlowSet = Set.Make(Flow)
 module NodeSet = Set.Make(Node)
 
 let print_history h =
-  List.iter (fun t -> print_string ("\"" ^ t ^ "\"; ")) h
+  List.iter (fun t -> print_string ("\"" ^ Product_transition.string_of_t t ^ "\"; ")) h
 
 let print_placeset ps =
   print_string "[";
@@ -21,7 +21,7 @@ let print_eventset es =
   print_string "[";
   List.iter (fun (e : Event.t) -> print_string "{history = ["; 
     print_history e.history;
-    print_string ("]; label = \"" ^ e.label ^ "\"}; ")) 
+    print_string ("]; label = \"" ^ Product_transition.string_of_t e.label ^ "\"}; ")) 
   (EventSet.elements es);
   print_endline "]\n"
   

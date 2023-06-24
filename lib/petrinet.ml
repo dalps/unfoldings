@@ -22,10 +22,7 @@ module Make(P : Set.OrderedType) (T : Set.OrderedType) =
       type t = {source: Node.t; target: Node.t} 
       
       let to_place e p = {source = Node.of_trans e; target = Node.of_place p}
-      let to_trans p e = {source = Node.of_place p; target = Node.of_trans e}
-      let (-->@) = to_place
-      let (@-->) = to_trans
-      
+      let to_trans p e = {source = Node.of_place p; target = Node.of_trans e}     
       let source f = f.source
       let target f = f.target
       let target_trans f = Node.trans_of f.target
@@ -35,6 +32,9 @@ module Make(P : Set.OrderedType) (T : Set.OrderedType) =
 
       let compare = compare
     end
+
+    let (-->@) = Flow.to_place
+    let (@-->) = Flow.to_trans
         
     module PSet = Set.Make(P)
     module TSet = Set.Make(T)
