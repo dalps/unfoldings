@@ -264,15 +264,17 @@ print_endline "[OK] unfold prod2";;
 
 (* --- *)
 
-assert(Executability.test prod1 (d_compare sl_compare) [[T "e1"]] 3);;
-assert(Executability.test prod1 (d_compare sl_compare) [[T "e2"]] 3);;
-assert(Executability.test prod1 (d_compare sl_compare) [[T "e3"]] 3);;
+open Unfoldings.Executability;;
+
+assert(test prod1 (d_compare sl_compare) [[T "e1"]] 3);;
+assert(test prod1 (d_compare sl_compare) [[T "e2"]] 3);;
+assert(test prod1 (d_compare sl_compare) [[T "e3"]] 3);;
 print_endline "[OK] is_executable prod1";;
 
-assert(Executability.test prod2 (d_compare sl_compare) [u3] 5);;
-assert(Executability.test prod2 (d_compare sl_compare) [t4u2] 10);;
-assert(Executability.test prod2 (d_compare sl_compare) [t5] 10);;
-assert(Executability.test prod2 (d_compare sl_compare) [t3u2] 5);;
+assert(test prod2 (d_compare sl_compare) [u3] 5);;
+assert(test prod2 (d_compare sl_compare) [t4u2] 10);;
+assert(test prod2 (d_compare sl_compare) [t5] 10);;
+assert(test prod2 (d_compare sl_compare) [t3u2] 5);;
 print_endline "[OK] is_executable prod2";;
 
 let a0a1 = [T "a0"; T "a1"; Idle; Idle; Idle];;
@@ -282,24 +284,24 @@ let b3 = [Idle; Idle; Idle; T "b3"; Idle];;
 let b4 = [Idle; Idle; Idle; Idle; T "b4"];;
 let c = [T "c0"; T "c1"; T "c2"; T "c3"; T "c4"];;
 
-assert(Executability.test prod3 (d_compare sl_compare) [b1] 5);;
-assert(Executability.test prod3 (d_compare sl_compare) [b2] 5);;
-assert(Executability.test prod3 (d_compare sl_compare) [b3] 5);;
-assert(Executability.test prod3 (d_compare sl_compare) [b4] 5);;
-assert(Executability.test prod3 (d_compare sl_compare) [a0a1] 5);;
-assert(Executability.test prod3 (d_compare sl_compare) [c] 5 = false);;
-assert(Executability.test prod3 (d_compare sl_compare) [c; a0a1] 5);;
+assert(test prod3 (d_compare sl_compare) [b1] 5);;
+assert(test prod3 (d_compare sl_compare) [b2] 5);;
+assert(test prod3 (d_compare sl_compare) [b3] 5);;
+assert(test prod3 (d_compare sl_compare) [b4] 5);;
+assert(test prod3 (d_compare sl_compare) [a0a1] 5);;
+assert(test prod3 (d_compare sl_compare) [c] 5 = false);;
+assert(test prod3 (d_compare sl_compare) [c; a0a1] 5);;
 print_endline "[OK] is_executable prod3";;
 
-assert(Executability.test prod4 (d_compare sl_compare) [[Idle; T "u1"; T "v1"]] 5);;
-assert(Executability.test prod4 (d_compare sl_compare) [[Idle; T "u1"; Idle]] 5 = false);;
-assert(Executability.test prod4 (d_compare sl_compare) [[T "t1"; T "u1"; Idle]] 5);;
+assert(test prod4 (d_compare sl_compare) [[Idle; T "u1"; T "v1"]] 5);;
+assert(test prod4 (d_compare sl_compare) [[Idle; T "u1"; Idle]] 5 = false);;
+assert(test prod4 (d_compare sl_compare) [[T "t1"; T "u1"; Idle]] 5);;
 print_endline "[OK] is_executable prod4";;
 
-assert(Executability.test prod5 (d_compare sl_compare) [[Idle; Idle; T "f3"; T "f4"]] 10);;
-assert(Executability.test prod5 (d_compare sl_compare) [[Idle; Idle; T "f3"; T "f5"]] 10 = false);;
-assert(Executability.test prod5 (d_compare sl_compare) [[T "i1"; T "i2"; T "i3"; T "i4"]] 15);;
-assert(Executability.test prod5 sl_compare [[T "i1"; T "i2"; T "i3"; T "i4"]] 15);;
+assert(test prod5 (d_compare sl_compare) [[Idle; Idle; T "f3"; T "f4"]] 10);;
+assert(test prod5 (d_compare sl_compare) [[Idle; Idle; T "f3"; T "f5"]] 10 = false);;
+assert(test prod5 (d_compare sl_compare) [[T "i1"; T "i2"; T "i3"; T "i4"]] 15);;
+assert(test prod5 sl_compare [[T "i1"; T "i2"; T "i3"; T "i4"]] 15);;
 print_endline "[OK] is_executable prod5";;
 
 open Unfoldings.Product;;
