@@ -108,10 +108,12 @@ type strategy = GlobalTransSet.elt list -> GlobalTransSet.elt list -> int
 
 module type SearchScheme = sig
   (* assumption: e is feasible *)
-  val is_terminal : Event.t -> Branching_process.t -> strategy -> bool
+  val is_terminal : 
+    Event.t -> Branching_process.t -> strategy -> Product.Trans.t list -> bool
 
   (* assumption: e is feasible *)
-  val is_successful : Event.t -> Branching_process.t -> Product.Trans.t list -> bool
+  val is_successful : 
+    Event.t -> Branching_process.t -> strategy -> Product.Trans.t list -> bool
 end
 
 module Unfold (SS : SearchScheme) = struct
@@ -212,9 +214,9 @@ module Unfold (SS : SearchScheme) = struct
       match choice with
       | Some r ->
           (* if r.event is a terminal of type (a) end the search successfully *)
-          SS.is_successful r.event n goals || (      
+          SS.is_successful r.event r.prefix stgy goals || (      
             let terms' =
-              if SS.is_terminal r.event r.prefix stgy 
+              if SS.is_terminal r.event r.prefix stgy goals
               then 
               EventSet.add r.event terms else terms
             in unfold (step+1) r.prefix terms'

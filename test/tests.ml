@@ -304,6 +304,8 @@ assert(test prod5 (d_compare sl_compare) [[T "i1"; T "i2"; T "i3"; T "i4"]] 15);
 assert(test prod5 sl_compare [[T "i1"; T "i2"; T "i3"; T "i4"]] 15);;
 print_endline "[OK] is_executable prod5";;
 
+(* --- *)
+
 open Unfoldings.Product;;
 
 assert(TransSet.cardinal (transitions (undoable prod2)) = 2 * (TransSet.cardinal (transitions prod2)));;
@@ -344,3 +346,56 @@ fire t1 undo_prod2;;
 fire undo_t2 undo_prod2;;
 assert(PlaceSet.equal m0 (marking undo_prod2) = false);;
 print_endline "[OK] undoable";;
+
+(* --- *)
+
+open Unfoldings.Repeated_executability;;
+open Examples.Prod5_loops;;
+open Examples.Prod6;;
+
+assert(test prod6 (d_compare sl_compare) [[T "r"]] 50);;
+print_endline "[OK] is_infinitely_executable prod6";;
+
+assert(test prod1 (d_compare sl_compare) [[T "e1"]] 50);;
+assert(test prod1 (d_compare sl_compare) [[T "e2"]] 50);;
+assert(test prod1 (d_compare sl_compare) [[T "e3"]] 50);;
+print_endline "[OK] is_infinitely_executable prod1";;
+
+assert(test prod2 (d_compare sl_compare) [u3] 50);;
+assert(test prod2 (d_compare sl_compare) [t4u2] 50);;
+assert(test prod2 (d_compare sl_compare) [t5] 50);;
+assert(test prod2 (d_compare sl_compare) [t3u2] 50);;
+print_endline "[OK] is_infinitely_executable prod2";;
+
+let a0a1 = [T "a0"; T "a1"; Idle; Idle; Idle];;
+let b1 = [Idle; T "b1"; Idle; Idle; Idle];;
+let b2 = [Idle; Idle; T "b2"; Idle; Idle];;
+let b3 = [Idle; Idle; Idle; T "b3"; Idle];;
+let b4 = [Idle; Idle; Idle; Idle; T "b4"];;
+let c = [T "c0"; T "c1"; T "c2"; T "c3"; T "c4"];;
+
+assert(test prod3 (d_compare sl_compare) [b1] 50 = false);;
+assert(test prod3 (d_compare sl_compare) [b2] 50 = false);;
+assert(test prod3 (d_compare sl_compare) [b3] 50 = false);;
+assert(test prod3 (d_compare sl_compare) [b4] 50 = false);;
+assert(test prod3 (d_compare sl_compare) [a0a1] 50 = false);;
+assert(test prod3 (d_compare sl_compare) [c] 50 = false);;
+assert(test prod3 (d_compare sl_compare) [c; a0a1] 50 = false);;
+print_endline "[OK] is_infinitely_executable prod3";;
+
+assert(test prod4 (d_compare sl_compare) [[Idle; T "u1"; T "v1"]] 50 = false);;
+assert(test prod4 (d_compare sl_compare) [[Idle; T "u1"; Idle]] 50 = false);;
+assert(test prod4 (d_compare sl_compare) [[T "t1"; T "u1"; Idle]] 50 = false);;
+print_endline "[OK] is_infinitely_executable prod4";;
+
+assert(test prod5 (d_compare sl_compare) [[Idle; Idle; T "f3"; T "f4"]] 50 = false);;
+assert(test prod5 (d_compare sl_compare) [[Idle; Idle; T "f3"; T "f5"]] 50 = false);;
+assert(test prod5 (d_compare sl_compare) [[T "i1"; T "i2"; T "i3"; T "i4"]] 50 = false);;
+assert(test prod5 sl_compare [[T "i1"; T "i2"; T "i3"; T "i4"]] 50 = false);;
+print_endline "[OK] is_infinitely_executable prod5";;
+
+assert(test prod5' (d_compare sl_compare) [[Idle; Idle; T "f3"; T "f4"]] 50 = false);;
+assert(test prod5' (d_compare sl_compare) [[Idle; Idle; T "f3"; T "f5"]] 50 = false);;
+assert(test prod5' (d_compare sl_compare) [[T "i1"; T "i2"; T "i3"; T "i4"]] 50);;
+assert(test prod5' sl_compare [[T "i1"; T "i2"; T "i3"; T "i4"]] 50);;
+print_endline "[OK] is_infinitely_executable prod5_loops";;

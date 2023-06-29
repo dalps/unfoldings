@@ -3,8 +3,8 @@ open Product.Trans
 
 let string_of_local_t = function
   | Idle -> "_"
-  | T s -> s
-  | U s -> "!" ^ s
+  | T s -> "\"" ^ s ^ "\""
+  | U s -> "!" ^ "\"" ^ s ^ "\""
 
 let rec string_of_trans = function
   | [] -> ""
@@ -14,16 +14,13 @@ let rec string_of_trans = function
 let rec string_of_history = function
   | [] -> ""
   | [t] -> string_of_trans t
-  | t::ts -> "\"" ^ string_of_trans t ^ "\"; " ^ string_of_history ts
+  | t::ts -> string_of_trans t ^ "; " ^ string_of_history ts
 
 let string_of_event (e : Event.t) = 
-  "{name = " ^ string_of_int e.name ^ "; 
-    history = [" ^ string_of_history e.history ^ "]; 
-    label = \"" ^ string_of_trans e.label ^ "\"}"
+  "{name = " ^ string_of_int e.name ^ "; history = [" ^ string_of_history e.history ^ "]; label = \"" ^ string_of_trans e.label ^ "\"}"
 
 let string_of_place (p : LabelledPlace.t) = 
-  "{history = [" ^ string_of_history p.history ^ "]; 
-    label = \"" ^ p.label ^ "\"}"
+  "{history = [" ^ string_of_history p.history ^ "]; label = \"" ^ p.label ^ "\"}"
 
 let string_of_placeset ps =
   "[" ^
