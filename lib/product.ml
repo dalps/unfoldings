@@ -1,5 +1,5 @@
 module Trans = struct
-  type local_t = Idle | T of string
+  type local_t = Idle | T of string | U of string
 
   type t = local_t list
 
@@ -65,4 +65,29 @@ let product (ns : t list) (sync : Trans.t list) =
       (fun acc n -> PlaceSet.union (marking n) acc)
       PlaceSet.empty
       ns)
-      
+
+let rec undo_of = function
+  | [] -> []
+  | Trans.T s::ts -> Trans.U s::(undo_of ts) 
+  | t::ts -> t::(undo_of ts)
+  
+let undoable n =
+  let n = copy n in
+  (TransSet.iter
+    (fun t ->
+      let undo_t = undo_of t in
+      add_trans undo_t n;
+      let inputs_of_t = inputs_of_trans t n in
+      let outputs_of_t = outputs_of_trans t n in
+      (PlaceSet.iter
+        (fun p -> add_to_trans_arc p undo_t n)
+        outputs_of_t
+      );
+      (PlaceSet.iter
+        (fun p -> add_to_place_arc undo_t p n)
+        inputs_of_t
+      )
+    )
+    (transitions n)
+  );
+  n
