@@ -104,119 +104,136 @@ let unfold_1 n step prod =
       []
   in possible_extensions
 
-let is_executable prod stgy goals max_steps = (
-  let module Extensions = struct
-    module Elt = struct
-      type t = Extension of UnfoldResult.t | Leftover of UnfoldResult.t
+type strategy = GlobalTransSet.elt list -> GlobalTransSet.elt list -> int
 
-      let is_extension = function Extension _ -> true | _ -> false
+module type SearchScheme = sig
+  (* assumption: e is feasible *)
+  val is_terminal : Event.t -> Branching_process.t -> strategy -> bool
 
-      let untag = function Extension r | Leftover r -> r
+  (* assumption: e is feasible *)
+  val is_successful : Event.t -> Branching_process.t -> Product.Trans.t list -> bool
+end
 
-      let compare e1 e2 = let r1, r2 = untag e1, untag e2 in
-        stgy (Event.history r1.event) (Event.history r2.event)
-    end
-  
-    module UnfoldResultSet = Set.Make(UnfoldResult)
-    module EltSet = Set.Make(Elt)
-  
-    type s = {
-      mutable pool : EltSet.t;
-    }
-  
-    let empty () = {
-      pool = EltSet.empty;
-    }
-  
-    let update_if cond n step ext =
-      assert (not (EltSet.exists Elt.is_extension ext.pool));
+module Unfold (SS : SearchScheme) = struct
+  let test prod stgy goals max_steps = (
+    let module Extensions = struct
+      module Elt = struct
+        type t = Extension of UnfoldResult.t | Leftover of UnfoldResult.t
 
-      let new_xts = unfold_1 n step prod in
+        let is_extension = function Extension _ -> true | _ -> false
 
-      (* Add all results of the unfolding as Extension tagged elements *)
-      let pool = List.fold_right
-        (fun r acc -> EltSet.add (Elt.Extension r) acc)
-        new_xts
-        EltSet.empty
-      in
+        let untag = function Extension r | Leftover r -> r
 
-      (* Combine with previous elements (Leftovers) *)
-      let pool = EltSet.union pool ext.pool in
+        let compare e1 e2 = let r1, r2 = untag e1, untag e2 in
+          stgy (Event.history r1.event) (Event.history r2.event)
+      end
+    
+      module UnfoldResultSet = Set.Make(UnfoldResult)
+      module EltSet = Set.Make(Elt)
+    
+      type s = {
+        mutable pool : EltSet.t;
+      }
+    
+      let empty () = {
+        pool = EltSet.empty;
+      }
+    
+      let update_if cond n step ext =
+        assert (not (EltSet.exists Elt.is_extension ext.pool));
 
-      let pool = EltSet.filter
-        (fun e -> cond (Elt.untag e))
-        pool
-      in
+        let new_xts = unfold_1 n step prod in
 
-      if not (EltSet.is_empty pool) then
-        let e = List.hd (EltSet.elements pool) in
-
-        let result = match e with
-            Extension r -> r
-          | Leftover r -> {
-            event =
-              Event.build step (Event.history r.event) (Event.label r.event);
-            prefix = union n r.prefix;
-          }
+        (* Add all results of the unfolding as Extension tagged elements *)
+        let pool = List.fold_right
+          (fun r acc -> EltSet.add (Elt.Extension r) acc)
+          new_xts
+          EltSet.empty
         in
 
-        let pool = EltSet.remove e pool in
-        ext.pool <- EltSet.remove e ext.pool;
+        (* Combine with previous elements (Leftovers) *)
+        let pool = EltSet.union pool ext.pool in
 
-        let conflicts = EltSet.filter 
-          (fun e' -> let r, r' = Elt.untag e, Elt.untag e' in
-            not (LblPlaceSet.is_empty 
-            (LblPlaceSet.inter
-              (Branching_process.inputs_of_trans r'.event r'.prefix)
-              (Branching_process.inputs_of_trans r.event r.prefix)))) 
-          (EltSet.filter Elt.is_extension pool) in
+        let pool = EltSet.filter
+          (fun e -> cond (Elt.untag e))
+          pool
+        in
 
-        let conflicts = EltSet.fold
-          (fun e' acc -> EltSet.add (Leftover (Elt.untag e')) acc)
-          conflicts
-          EltSet.empty in
+        if not (EltSet.is_empty pool) then
+          let e = List.hd (EltSet.elements pool) in
 
-        ext.pool <- EltSet.union ext.pool conflicts;
+          let result = match e with
+              Extension r -> r
+            | Leftover r -> {
+              event =
+                Event.build step (Event.history r.event) (Event.label r.event);
+              prefix = union n r.prefix;
+            }
+          in
 
-        Some result
-        
-      else
-        None
-    end 
-  in
+          let pool = EltSet.remove e pool in
+          ext.pool <- EltSet.remove e ext.pool;
 
-  let n0 = unfold_init prod in
-  let terms0 = EventSet.empty in
-  let ext = Extensions.empty () in
-  let is_feasible e n terms =
-    EventSet.is_empty (EventSet.inter (past_conf e n) terms) 
-  in
-  let is_terminal_a e = (* assumption: e is feasible *)
-    List.mem (Event.label e) goals
-  in
-  let is_terminal_b e n = (* assumption: e is feasible *)
+          let conflicts = EltSet.filter 
+            (fun e' -> let r, r' = Elt.untag e, Elt.untag e' in
+              not (LblPlaceSet.is_empty 
+              (LblPlaceSet.inter
+                (Branching_process.inputs_of_trans r'.event r'.prefix)
+                (Branching_process.inputs_of_trans r.event r.prefix)))) 
+            (EltSet.filter Elt.is_extension pool) in
+
+          let conflicts = EltSet.fold
+            (fun e' acc -> EltSet.add (Leftover (Elt.untag e')) acc)
+            conflicts
+            EltSet.empty in
+
+          ext.pool <- EltSet.union ext.pool conflicts;
+
+          Some result
+          
+        else
+          None
+      end 
+    in
+    let is_feasible e n terms =
+      EventSet.is_empty (EventSet.inter (past_conf e n) terms)
+    in
+    let n0 = unfold_init prod in
+    let terms0 = EventSet.empty in
+    let ext = Extensions.empty () in
+    let rec unfold step n terms : bool =
+      step <= max_steps && (
+      let choice = Extensions.update_if
+        (fun (r : UnfoldResult.t) -> is_feasible r.event r.prefix terms)
+        n
+        step
+        ext
+      in
+      match choice with
+      | Some r ->
+          (* if r.event is a terminal of type (a) end the search successfully *)
+          SS.is_successful r.event n goals || (      
+            let terms' =
+              if SS.is_terminal r.event r.prefix stgy 
+              then 
+              EventSet.add r.event terms else terms
+            in unfold (step+1) r.prefix terms'
+          )
+      | None -> false)
+    in 
+      unfold 1 n0 terms0)
+end
+
+module ExecutabilitySS : SearchScheme = struct
+  let is_terminal e n stgy =
     EventSet.exists
       (fun e' -> stgy (past_word e' n) (past_word e n) < 0 && StateSet.equal
         (labels_of_places (Branching_process.outputs_of_trans e' n)) 
         (labels_of_places (Branching_process.outputs_of_trans e n)))
       (Branching_process.transitions n)
-  in
-  let rec helper step n terms : bool =
-    step <= max_steps && (
-    let choice = Extensions.update_if
-      (fun (r : UnfoldResult.t) -> is_feasible r.event r.prefix terms)
-      n
-      step
-      ext
-    in
-    match choice with
-    | Some r ->
-        (* if r.event is a terminal of type (a) end the search successfully *)
-        is_terminal_a r.event || (      
-          let terms' = if is_terminal_b r.event r.prefix then 
-            EventSet.add r.event terms else terms
-          in helper (step+1) r.prefix terms'
-        )
-    | None -> false)
-  in 
-    helper 1 n0 terms0)
+
+  let is_successful e _ goals =
+    List.mem (Event.label e) goals
+end
+
+module Executability = Unfold(ExecutabilitySS)
