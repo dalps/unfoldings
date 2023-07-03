@@ -58,7 +58,7 @@ end
 let unfold_1 n step prod =
   (* get the reachable markings labeled by *t *)
   let candidates t n =
-    let inputs_of_t = Product.inputs_of_trans t prod in
+    let inputs_of_t = Product.preset_t prod t in
 
     (* for each input state, compute the set of places labeled by it *)
     let options =
@@ -92,7 +92,7 @@ let unfold_1 n step prod =
       (fun t acc -> List.fold_right
         (fun c acc' ->
           let e = (Event.build step (past_word_of_preset c n t) t) in
-          let n' = extend e (Product.outputs_of_trans t prod) n c in
+          let n' = extend e (Product.postset_t prod t) n c in
             (Branching_process.fire e n';
             let open UnfoldResult in
             {event = e; prefix = n'}::acc')
@@ -180,8 +180,8 @@ module Unfold (SS : SearchScheme) = struct
             (fun e' -> let r, r' = Elt.untag e, Elt.untag e' in
               not (LblPlaceSet.is_empty 
               (LblPlaceSet.inter
-                (Branching_process.inputs_of_trans r'.event r'.prefix)
-                (Branching_process.inputs_of_trans r.event r.prefix)))) 
+                (Branching_process.preset_t r'.prefix r'.event)
+                (Branching_process.preset_t r.prefix r.event)))) 
             (EltSet.filter Elt.is_extension pool) in
 
           let conflicts = EltSet.fold

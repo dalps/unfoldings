@@ -25,44 +25,18 @@ include Petrinet.Make(State)(Trans)
    Components must not share names of states and transitions. 
    Component order must match the order of local transitions. *)
 let product (ns : t list) (sync : Trans.t list) =
-  let parse_preflow (trans : Trans.t) =
-    let preset =
-      List.fold_left2
-        (fun acc n t -> PlaceSet.union (inputs_of_trans [t] n) acc)
-        PlaceSet.empty
-        ns
-        trans
-    in PlaceSet.fold
-      (fun s acc -> FlowSet.add (s @--> trans) acc)
-      preset
-      FlowSet.empty
+  let preset gt =
+    List.fold_right2
+      (fun n t -> PlaceSet.union (preset_t n [t])) ns gt PlaceSet.empty
   in
-
-  let parse_postflow trans =
-    let postset =
-      List.fold_left2
-        (fun acc n t -> PlaceSet.union (outputs_of_trans [t] n) acc)
-        PlaceSet.empty
-        ns
-        trans
-    in PlaceSet.fold
-      (fun s acc -> FlowSet.add (trans -->@ s) acc)
-      postset
-      FlowSet.empty
-
-  in of_sets
-    (List.fold_left
-      (fun acc n -> PlaceSet.union (places n) acc)
-      PlaceSet.empty
-      ns)
+  let postset gt =
+    List.fold_right2
+      (fun n t -> PlaceSet.union (postset_t n [t])) ns gt PlaceSet.empty
+  in
+  of_sets
+    (List.fold_right (fun n -> PlaceSet.union (places n)) ns PlaceSet.empty)
     (TransSet.of_list sync)
-    (List.fold_left
-      (fun acc trans -> FlowSet.union
-        (FlowSet.union (parse_preflow trans) (parse_postflow trans)) acc)
-      FlowSet.empty
-      sync)
-    (List.fold_left
-      (fun acc n -> PlaceSet.union (marking n) acc)
-      PlaceSet.empty
-      ns)
+    preset
+    postset
+    (List.fold_right (fun n -> PlaceSet.union (marking n)) ns PlaceSet.empty)
       

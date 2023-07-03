@@ -13,8 +13,8 @@ module RepeatedExecSS : SearchScheme = struct
   let is_terminal (e : Event.t) n stgy goals =
     let b = EventSet.exists
       (fun e' -> stgy e'.history e.history < 0 && StateSet.equal
-        (labels_of_places (outputs_of_trans e' n))
-        (labels_of_places (outputs_of_trans e n)) &&
+        (labels_of_places (postset_t n e'))
+        (labels_of_places (postset_t n e)) &&
         ((is_predecessor (Node.of_trans e') (Node.of_trans e) n) ||
         r_occurrences e' goals >= r_occurrences e goals))
       (transitions n)
@@ -25,8 +25,8 @@ module RepeatedExecSS : SearchScheme = struct
   let is_successful (e : Event.t) n stgy goals =
     let b = EventSet.exists
       (fun e' -> stgy e'.history e.history < 0 && StateSet.equal
-        (labels_of_places (outputs_of_trans e' n))
-        (labels_of_places (outputs_of_trans e n)) &&
+        (labels_of_places (postset_t n e'))
+        (labels_of_places (postset_t n e)) &&
         (is_predecessor (Node.of_trans e') (Node.of_trans e) n) &&
         let _ = print_string (string_of_trans (Event.label e) ^ " is of type (a)") in
         let b = r_occurrences e' goals < r_occurrences e goals in

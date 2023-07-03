@@ -1,182 +1,125 @@
-module Make (P : Set.OrderedType) (T : Set.OrderedType) =
-  struct
-    module Node = struct
-      type t = P of P.t | T of T.t
+module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
+  module Node = struct
+    type t = P of P.t | T of T.t
 
-      exception NotAPlace
-      exception NotATransition
-    
-      let of_place p = P p
-      let of_trans e = T e      
-      let is_place = function P _ -> true | T _ -> false
-      let is_trans = function P _ -> false | T _ -> true
-      let place_of = function P p -> p | _ -> raise NotAPlace
-      let trans_of = function T e -> e | _ -> raise NotATransition
-      
-      let compare = compare
-    end
-    
-    module Flow = struct
-      type t = {source: Node.t; target: Node.t} 
-      
-      let to_place e p = {source = Node.of_trans e; target = Node.of_place p}
-      let to_trans p e = {source = Node.of_place p; target = Node.of_trans e}     
-      let source f = f.source
-      let target f = f.target
-      let target_trans f = Node.trans_of f.target
-      let source_trans f = Node.trans_of f.source
-      let target_place f = Node.place_of f.target
-      let source_place f = Node.place_of f.source
+    exception NotAPlace
+    exception NotATransition
 
-      let compare = compare
-    end
+    let of_place p = P p
+    let of_trans e = T e
+    let is_place = function P _ -> true | T _ -> false
+    let is_trans = function P _ -> false | T _ -> true
+    let place_of = function P p -> p | _ -> raise NotAPlace
+    let trans_of = function T e -> e | _ -> raise NotATransition
+    let compare = compare
+  end
 
-    let (-->@) = Flow.to_place
-    let (@-->) = Flow.to_trans
+  module PlaceSet = Set.Make (P)
+  module TransSet = Set.Make (T)
+  module NodeSet = Set.Make (Node)
 
-    module PlaceSet = Set.Make(P)
-    module TransSet = Set.Make(T)
-    module FlowSet = Set.Make(Flow)
-    module NodeSet = Set.Make(Node)
-    
-    type t = {
-      mutable places: PlaceSet.t;
-      mutable transitions: TransSet.t;
-      mutable flow: FlowSet.t;
-      mutable marking: PlaceSet.t
-    }
-    
-    let empty () = {
+  type t = {
+    mutable places : PlaceSet.t;
+    mutable transitions : TransSet.t;
+    mutable preset : T.t -> PlaceSet.t;
+    mutable postset : T.t -> PlaceSet.t;
+    mutable marking : PlaceSet.t;
+  }
+
+  let bottom _ = PlaceSet.empty
+  let bind_pset f t pset t' = if t' = t then PlaceSet.union pset (f t) else f t'
+  let bind_p f t p t' = if t' = t then PlaceSet.add p (f t) else f t'
+  let bind_f f f' t = PlaceSet.union (f t) (f' t)
+
+  let ( --> ) pre post t =
+    (
+      bind_pset bottom t (PlaceSet.of_list pre), 
+      bind_pset bottom t (PlaceSet.of_list post)
+    )
+
+  let empty () =
+    {
       places = PlaceSet.empty;
       transitions = TransSet.empty;
-      flow = FlowSet.empty;
-      marking = PlaceSet.empty
+      preset = bottom;
+      postset = bottom;
+      marking = PlaceSet.empty;
     }
-    
-    let of_lists ps ts fs im = {
+
+  let of_lists ps ts fs im =
+    {
       places = PlaceSet.of_list ps;
       transitions = TransSet.of_list ts;
-      flow = FlowSet.of_list fs;
+      preset = List.fold_right (fun f -> bind_f (fst f)) fs bottom;
+      postset = List.fold_right (fun f -> bind_f (snd f)) fs bottom;
       marking = PlaceSet.of_list im;
     }
 
-    let of_sets pset tset fset im = {
-      places = pset;
-      transitions = tset;
-      flow = fset;
-      marking = im
-    }
+  let of_sets places transitions preset postset marking =
+    { places; transitions; preset; postset; marking }
 
-    let copy n = of_sets n.places n.transitions n.flow n.marking
+  let copy n = of_sets n.places n.transitions n.preset n.postset n.marking
+  let places n = n.places
+  let transitions n = n.transitions
+  let preset_t n = n.preset
+  let postset_t n = n.postset
+  let marking n = n.marking
+  let add_place p n = n.places <- PlaceSet.add p n.places
+  let add_trans t n = n.transitions <- TransSet.add t n.transitions
+  let add_places ps n = n.places <- PlaceSet.union ps n.places
+  let add_transs ts n = n.transitions <- TransSet.union ts n.transitions
+  let add_to_trans_arc p t n = n.preset <- bind_p n.preset t p
+  let add_to_place_arc t p n = n.postset <- bind_p n.postset t p
 
-    let places n = n.places
-    let transitions n = n.transitions
-    let flow n = n.flow
-    let marking n = n.marking
-    
-    let add_place p n = n.places <- PlaceSet.add p n.places
-    
-    let add_trans t n = 
-      n.transitions <- TransSet.add t n.transitions
-    
-    let add_places ps n = n.places <- PlaceSet.union ps n.places
-    
-    let add_transs ts n =
-      n.transitions <- TransSet.union (TransSet.of_list ts) n.transitions
-    
-    exception UnknownPlace of P.t
-    exception UnknownTransition of T.t
-    exception NotANode of Node.t
-    
-    let add_to_place_arc t p n = 
-      if PlaceSet.mem p n.places 
-      then
-        if TransSet.mem t n.transitions
-        then n.flow <- FlowSet.add (Flow.to_place t p) n.flow
-        else raise (UnknownTransition t)
-      else raise (UnknownPlace p)
-    
-    let add_to_trans_arc p t n = 
-      if PlaceSet.mem p n.places 
-      then
-        if TransSet.mem t n.transitions
-        then n.flow <- FlowSet.add (Flow.to_trans p t) n.flow
-        else raise (UnknownTransition t)
-      else raise (UnknownPlace p)
-          
-    let set_marking m n =
-      n.marking <- if PlaceSet.subset m n.places then m else n.marking
+  let set_marking m n =
+    n.marking <- (if PlaceSet.subset m n.places then m else n.marking)
 
-    let nodes_of_places pset = PlaceSet.fold
-      (fun p acc -> NodeSet.add (Node.of_place p) acc)
-      pset
-      NodeSet.empty
-  
-    let nodes_of_transs tset = TransSet.fold
-      (fun t acc -> NodeSet.add (Node.of_trans t) acc)
-      tset
-      NodeSet.empty
-    
-    let inputs_of x n = FlowSet.fold 
-      (fun f acc -> NodeSet.add f.source acc) 
-      (FlowSet.filter (fun f -> f.target = x) n.flow)
-      NodeSet.empty
-    
-    let outputs_of x n = FlowSet.fold 
-      (fun f acc -> NodeSet.add f.target acc) 
-      (FlowSet.filter (fun f -> f.source = x) n.flow)
-      NodeSet.empty
-    
-    let inputs_of_place p n = 
-      let flows = FlowSet.filter (fun f -> Node.of_place p = f.target) n.flow in
-      FlowSet.fold 
-        (fun f acc -> TransSet.add (Flow.source_trans f) acc) 
-        flows
-        TransSet.empty
-    
-    let outputs_of_place p n = 
-      let flows = FlowSet.filter (fun f -> Node.of_place p = f.source) n.flow in
-      FlowSet.fold 
-        (fun f acc -> TransSet.add (Flow.target_trans f) acc) 
-        flows
-        TransSet.empty
-    
-    let inputs_of_trans t n =
-      let flows = FlowSet.filter (fun f -> Node.of_trans t = f.target) n.flow in
-      FlowSet.fold 
-        (fun f acc -> PlaceSet.add (Flow.source_place f) acc) 
-        flows
-        PlaceSet.empty
-    
-    let outputs_of_trans t n =
-      let flows = FlowSet.filter (fun f -> Node.of_trans t = f.source) n.flow in
-      FlowSet.fold 
-        (fun f acc -> PlaceSet.add (Flow.target_place f) acc) 
-        flows
-        PlaceSet.empty
+  let preset_p n p =
+    TransSet.filter (fun t -> PlaceSet.mem p (n.postset t)) n.transitions
 
-    let enables m t n = PlaceSet.subset (inputs_of_trans t n) m
+  let postset_p n p =
+    TransSet.filter (fun t -> PlaceSet.mem p (n.preset t)) n.transitions
 
-    let fire t n = if enables n.marking t n then
-      let input = inputs_of_trans t n in
-      let output = outputs_of_trans t n in
-      set_marking (PlaceSet.union (PlaceSet.diff n.marking input) output) n
+  let nodeset_of_placeset pset =
+    PlaceSet.fold (fun p -> NodeSet.add (Node.of_place p)) pset NodeSet.empty
 
-    let is_occurrence_sequence ts n =
-      let rec helper tlist m = match tlist with
-        [] -> true
-      | t::ts' ->
+  let nodeset_of_transset tset =
+    TransSet.fold (fun t -> NodeSet.add (Node.of_trans t)) tset NodeSet.empty
+
+  let preset_x n x =
+    if Node.is_place x then nodeset_of_transset (preset_p n (Node.place_of x))
+    else nodeset_of_placeset (n.preset (Node.trans_of x))
+
+  let postset_x n x =
+    if Node.is_place x then nodeset_of_transset (postset_p n (Node.place_of x))
+    else nodeset_of_placeset (n.postset (Node.trans_of x))
+
+  let enables m t n = PlaceSet.subset (n.preset t) m
+
+  let fire t n =
+    if enables n.marking t n then
+      set_marking
+        (PlaceSet.union (PlaceSet.diff n.marking (n.preset t)) (n.postset t))
+        n
+
+  exception NotANode of Node.t
+
+  let is_occurrence_sequence ts n =
+    let rec helper tlist m =
+      match tlist with
+      | [] -> true
+      | t :: ts' ->
           if TransSet.mem t n.transitions then
-            let input = inputs_of_trans t n in
-            let output = outputs_of_trans t n in
-            let m' = PlaceSet.union (PlaceSet.diff m input) output in
+            let m' =
+              PlaceSet.union (PlaceSet.diff m (n.preset t)) (n.postset t)
+            in
             enables m t n && helper ts' m'
-          else
-            raise (NotANode (Node.of_trans t))
-    
-      in helper ts n.marking
+          else raise (NotANode (Node.of_trans t))
+    in
 
-    let fire_sequence ts n =
-      assert (is_occurrence_sequence ts n);
-      List.fold_left (fun _ t -> fire t n) () ts
-  end
+    helper ts n.marking
+
+  let fire_sequence ts n =
+    assert (is_occurrence_sequence ts n);
+    List.fold_left (fun _ t -> fire t n) () ts
+end

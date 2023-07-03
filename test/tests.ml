@@ -1,17 +1,17 @@
 open Examples.Prod1;;
 open Unfoldings.Product;;
 
-fire [T "e2"] prod1;; (* {p1,p2} ---> m1 := {p3,p4} *)
-fire [T "e1"] prod1;; (* {p3,p4} ---> m2 := {p1,p4} *)
-fire [T "e3"] prod1;; (* {p1,p4} ---> {p1,p2} = m0 *)
-fire [T "e1"] prod1;; (* not enabled *)
-fire [T "e9"] prod1;; (* not an event in n *)
+fire [T "t2"] prod1;; (* {p1,p2} ---> m1 := {p3,p4} *)
+fire [T "t1"] prod1;; (* {p3,p4} ---> m2 := {p1,p4} *)
+fire [T "t3"] prod1;; (* {p1,p4} ---> {p1,p2} = m0 *)
+fire [T "t1"] prod1;; (* not enabled *)
+fire [T "t9"] prod1;; (* not an event in n *)
 
-assert (is_occurrence_sequence [[T "e2"];[T "e1"];[T "e3"]] prod1 = true);;
-assert (is_occurrence_sequence [[T "e2"];[T "e3"];[T "e1"]] prod1 = true);;
-assert (is_occurrence_sequence [[T "e1"]] prod1 = false);;
-assert (is_occurrence_sequence [[T "e2"];[T "e3"];[T "e2"]] prod1 = false);;
-assert (is_occurrence_sequence [[T "e2"];[T "e2"]] prod1 = false);;
+assert (is_occurrence_sequence [[T "t2"];[T "t1"];[T "t3"]] prod1);;
+assert (is_occurrence_sequence [[T "t2"];[T "t3"];[T "t1"]] prod1);;
+assert (is_occurrence_sequence [[T "t1"]] prod1 = false);;
+assert (is_occurrence_sequence [[T "t2"];[T "t3"];[T "t2"]] prod1 = false);;
+assert (is_occurrence_sequence [[T "t2"];[T "t2"]] prod1 = false);;
 
 print_endline "[OK] prod1";;
 
@@ -21,30 +21,30 @@ open Examples.Bp1;;
 open Unfoldings.Branching_process;;
 open Unfoldings.Branching_process.Node;;
 
-assert (is_occurrence_sequence [e1;t1;u1;e2] bp1 = true);;
-assert (is_occurrence_sequence [e1;u1;t1;e2] bp1 = true);;
+assert (is_occurrence_sequence [e1;t1;u1;e2] bp1);;
+assert (is_occurrence_sequence [e1;u1;t1;e2] bp1);;
 assert (is_occurrence_sequence [e1;u1;e2] bp1 = false);;
 assert (is_occurrence_sequence [e2;t1;u1;e1] bp1 = false);;
 
-assert (is_predecessor (of_trans e1) (of_trans e2) bp1 = true);;
+assert (is_predecessor (of_trans e1) (of_trans e2) bp1);;
 assert (is_predecessor (of_trans t1) (of_trans u1) bp1 = false);;
 assert (is_predecessor (of_place s2) (of_trans u1) bp1 = false);;
  
 assert (is_conflict (of_place s2) (of_place r2) bp1 = false);;
 assert (is_conflict (of_trans t1) (of_trans u1) bp1 = false);;
 
-assert (is_concurrent (of_trans t1) (of_trans u1) bp1 = true);;
+assert (is_concurrent (of_trans t1) (of_trans u1) bp1);;
 assert (is_concurrent (of_trans e1) (of_trans u1) bp1 = false);;
 
-assert (is_reachable (PlaceSet.of_list [s1;r1]) bp1 = true);;
-assert (is_reachable (PlaceSet.of_list [s2;r2]) bp1 = true);;
-assert (is_reachable (PlaceSet.of_list [s3;r3]) bp1 = true);;
-assert (is_reachable (PlaceSet.of_list [s4;r4]) bp1 = true);;
+assert (is_reachable (PlaceSet.of_list [s1;r1]) bp1);;
+assert (is_reachable (PlaceSet.of_list [s2;r2]) bp1);;
+assert (is_reachable (PlaceSet.of_list [s3;r3]) bp1);;
+assert (is_reachable (PlaceSet.of_list [s4;r4]) bp1);;
 assert (is_reachable (PlaceSet.of_list [s4;r4;s3]) bp1 = false);;
-assert (is_reachable (PlaceSet.of_list [s3;r2]) bp1 = true);;
-assert (is_reachable (PlaceSet.of_list [r2;s3]) bp1 = true);;
+assert (is_reachable (PlaceSet.of_list [s3;r2]) bp1);;
+assert (is_reachable (PlaceSet.of_list [r2;s3]) bp1);;
 assert (is_reachable (PlaceSet.of_list [r1;r2]) bp1 = false);;
-assert (is_reachable (PlaceSet.of_list [r1]) bp1 = true);; (* questionable *)
+assert (is_reachable (PlaceSet.of_list [r1]) bp1);; (* questionable *)
 assert (is_reachable (PlaceSet.of_list [s1;s4]) bp1 = false);;
 
 let t2 = Event.build 5 [] [T "t2"];;
@@ -62,33 +62,19 @@ add_to_place_arc t3 s4 bp1;;
 
 assert (is_conflict (of_place s2_4) (of_place r3) bp1 = false);;
 assert (is_conflict (of_place s2_4) (of_place s4) bp1 = false);;
-assert (is_conflict (of_place s2_4) (of_place s3) bp1 = true);;
-assert (is_conflict (of_trans t1) (of_trans t2) bp1 = true);;
-assert (is_conflict (of_trans e2) (of_place s2_4) bp1 = true);;
-assert (is_conflict (of_trans t3) (of_trans e2) bp1 = true);;
-assert (is_conflict (of_trans t2) (of_trans e2) bp1 = true);;
+assert (is_conflict (of_place s2_4) (of_place s3) bp1);;
+assert (is_conflict (of_trans t1) (of_trans t2) bp1);;
+assert (is_conflict (of_trans e2) (of_place s2_4) bp1);;
+assert (is_conflict (of_trans t3) (of_trans e2) bp1);;
+assert (is_conflict (of_trans t2) (of_trans e2) bp1);;
 
-assert (is_concurrent (of_trans t3) (of_trans u1) bp1 = true);;
-assert (is_concurrent (of_trans t2) (of_trans u1) bp1 = true);;
+assert (is_concurrent (of_trans t3) (of_trans u1) bp1);;
+assert (is_concurrent (of_trans t2) (of_trans u1) bp1);;
 assert (is_concurrent (of_trans t3) (of_trans e2) bp1 = false);;
 assert (is_concurrent (of_trans t2) (of_trans e2) bp1 = false);;
 assert (is_concurrent (of_trans t3) (of_trans t1) bp1 = false);; 
 
 print_endline "[OK] bp1";;
-
-(* --- *)
-
-open Examples.Lts1;;
-open Unfoldings.Lts;;
-
-assert (is_computation ["t1";"t2"] lts1 = false);;
-assert (is_computation ["t1";"t3";"t4"] lts1 = false);;
-assert (is_computation ["t3";"t5";"t1"] lts1 = true);;
-assert (is_history ["t3";"t5";"t1"] lts1 = false);;
-assert (is_history ["t1";"t3";"t5";"t2";"t4";"t5"] lts1 = true);;
-assert (is_history ["t1";"t3";"t5";"t2";"t4";"t1"] lts1 = false);;
-
-print_endline "[OK] lts1";;
 
 (* --- *)
 
@@ -266,9 +252,9 @@ print_endline "[OK] unfold prod2";;
 
 open Unfoldings.Executability;;
 
-assert(test prod1 (d_compare sl_compare) [[T "e1"]] 3);;
-assert(test prod1 (d_compare sl_compare) [[T "e2"]] 3);;
-assert(test prod1 (d_compare sl_compare) [[T "e3"]] 3);;
+assert(test prod1 (d_compare sl_compare) [[T "t1"]] 3);;
+assert(test prod1 (d_compare sl_compare) [[T "t2"]] 3);;
+assert(test prod1 (d_compare sl_compare) [[T "t3"]] 3);;
 print_endline "[OK] is_executable prod1";;
 
 assert(test prod2 (d_compare sl_compare) [u3] 5);;
@@ -313,9 +299,9 @@ open Examples.Prod6;;
 assert(test prod6 (d_compare sl_compare) [[T "r"]] 50);;
 print_endline "[OK] is_infinitely_executable prod6";;
 
-assert(test prod1 (d_compare sl_compare) [[T "e1"]] 50);;
-assert(test prod1 (d_compare sl_compare) [[T "e2"]] 50);;
-assert(test prod1 (d_compare sl_compare) [[T "e3"]] 50);;
+assert(test prod1 (d_compare sl_compare) [[T "t1"]] 50);;
+assert(test prod1 (d_compare sl_compare) [[T "t2"]] 50);;
+assert(test prod1 (d_compare sl_compare) [[T "t3"]] 50);;
 print_endline "[OK] is_infinitely_executable prod1";;
 
 assert(test prod2 (d_compare sl_compare) [u3] 50);;

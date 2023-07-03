@@ -1,8 +1,4 @@
-(* A Petri net modelling the unfolding of a product of two components S and Q. 
-   si are the states of transition system S, qi are the states of transition 
-   system Q. Events where S and Q take a step singularly are denoted ti and ui 
-   respectively, while events where S and Q synchronize are denoted ei.
-*)
+(* Made up occurrence net *)
 
 open Unfoldings.Branching_process
 
@@ -24,17 +20,9 @@ let bp1 = of_lists
   [s1;s2;s3;s4;r1;r2;r3;r4]
   [t1;u1;e1;e2]
   [
-    s1 @--> e1;
-    r1 @--> e1;
-    e1 -->@ s2;
-    e1 -->@ r2;
-    s2 @--> t1;
-    r2 @--> u1;
-    t1 -->@ s3;
-    u1 -->@ r3;
-    s3 @--> e2;
-    r3 @--> e2;
-    e2 -->@ s4;
-    e2 -->@ r4;
+    ([s1;r1] --> [s2;r2]) e1;
+    ([s2] --> [s3]) t1;
+    ([r2] --> [r3]) u1;
+    ([s3;r3] --> [s4;r4]) e2;
   ]
   [s1;r1]
