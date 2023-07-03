@@ -306,49 +306,6 @@ print_endline "[OK] is_executable prod5";;
 
 (* --- *)
 
-open Unfoldings.Product;;
-
-assert(TransSet.cardinal (transitions (undoable prod2)) = 2 * (TransSet.cardinal (transitions prod2)));;
-assert(FlowSet.cardinal (flow (undoable prod2)) = 2 * (FlowSet.cardinal (flow prod2)));;
-assert(PlaceSet.equal (places (undoable prod2)) (places prod2));;
-assert(PlaceSet.equal (marking (undoable prod2)) (marking prod2));;
-
-open Examples.Prod2;; (* "reload" prod2 *)
-
-let undo_prod2 = undoable prod2;;
-
-TransSet.iter
-  (fun t ->
-    let undo_t = undo_of t in
-    assert(TransSet.mem undo_t (transitions undo_prod2))
-  )
-  (transitions prod2);;
-
-let undo_t1 = [U "t1"; Idle];;
-let undo_t2 = [U "t2"; Idle];;
-
-let m0 = marking undo_prod2;;
-
-fire t1 undo_prod2;;
-fire undo_t1 undo_prod2;;
-assert(PlaceSet.equal m0 (marking undo_prod2));; (* as if the marking never changed *)
-
-fire t2 undo_prod2;;
-fire undo_t2 undo_prod2;;
-assert(PlaceSet.equal m0 (marking undo_prod2));;
-
-fire t2 undo_prod2;;
-fire undo_t1 undo_prod2;;
-assert(PlaceSet.equal m0 (marking undo_prod2) = false);;
-
-fire undo_t2 undo_prod2;;
-fire t1 undo_prod2;;
-fire undo_t2 undo_prod2;;
-assert(PlaceSet.equal m0 (marking undo_prod2) = false);;
-print_endline "[OK] undoable";;
-
-(* --- *)
-
 open Unfoldings.Repeated_executability;;
 open Examples.Prod5_loops;;
 open Examples.Prod6;;

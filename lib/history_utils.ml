@@ -42,7 +42,6 @@ let sl_compare w w' =
       List.map (function
         | Idle -> ""
         | T s -> s
-        | U s -> "!" ^ s
       )
       t
     )

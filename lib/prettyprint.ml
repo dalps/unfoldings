@@ -3,8 +3,7 @@ open Product.Trans
 
 let string_of_local_t = function
   | Idle -> "_"
-  | T s -> "\"" ^ s ^ "\""
-  | U s -> "!" ^ "\"" ^ s ^ "\""
+  | T s -> s
 
 let rec string_of_trans = function
   | [] -> ""
