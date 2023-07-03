@@ -32,10 +32,8 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
   let bind_f f f' t = PlaceSet.union (f t) (f' t)
 
   let ( --> ) pre post t =
-    (
-      bind_pset bottom t (PlaceSet.of_list pre), 
-      bind_pset bottom t (PlaceSet.of_list post)
-    )
+    ( bind_pset bottom t (PlaceSet.of_list pre),
+      bind_pset bottom t (PlaceSet.of_list post) )
 
   let empty () =
     {

@@ -1,9 +1,9 @@
-open Unfoldings;;
-
-open Lts;;
-open Branching_process;; open Event;; open Labelled_place;;
-open Product_pretrinet;; open Product_transition;; open State;;
-open Unfold;;
-
-open Examples;;
-open Prod1;; open Prod2;; open Prod3;; open Prod4;; open Prod5;;
+open Unfoldings
+open Branching_process
+open Product
+open Examples
+open Prod1
+open Prod2
+open Prod3
+open Prod4
+open Prod5;;
