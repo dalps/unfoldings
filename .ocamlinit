@@ -1,5 +1,5 @@
 open Unfoldings
-open Branching_process
+open Occurrence_net
 open Product
 open Examples
 open Prod1

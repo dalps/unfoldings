@@ -1,6 +1,6 @@
 (* Made up occurrence net *)
 
-open Unfoldings.Branching_process
+open Unfoldings.Occurrence_net
 
 let t1 = Event.build 1 [] [ T "t1" ]
 let u1 = Event.build 2 [] [ T "u1" ]
@@ -15,7 +15,7 @@ let r2 = Token.build [] "r2"
 let r3 = Token.build [] "r3"
 let r4 = Token.build [] "r4"
 
-let bp1 =
+let onet =
   of_lists
     [ s1; s2; s3; s4; r1; r2; r3; r4 ]
     [ t1; u1; e1; e2 ]

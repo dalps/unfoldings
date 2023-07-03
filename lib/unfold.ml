@@ -1,4 +1,4 @@
-open Branching_process
+open Occurrence_net
 
 (* convert a list of states to a set of labeled places with serial naming *)
 let label_states states history =
@@ -43,7 +43,7 @@ let unfold_init (prod : Product.t) =
   n0
 
 module UnfoldResult = struct
-  type t = { event : Event.t; prefix : Branching_process.t }
+  type t = { event : Event.t; prefix : Occurrence_net.t }
 
   let compare = compare
 end

@@ -1,5 +1,5 @@
 open Unfold
-open Branching_process
+open Occurrence_net
 
 module ExecutabilitySS : SearchScheme = struct
   let is_terminal (e : Event.t) n stgy _ =

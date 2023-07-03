@@ -1,4 +1,4 @@
-open Branching_process
+open Occurrence_net
 open Product.GlobalT
 
 let string_of_local_t = function Idle -> "_" | T s -> s
@@ -25,7 +25,7 @@ let string_of_event (e : Event.t) =
 let string_of_place (p : Token.t) =
   "{history = ["
   ^ string_of_history (Token.history p)
-  ^ "]; label = \"" ^ (Token.label p) ^ "\"}"
+  ^ "]; label = \"" ^ Token.label p ^ "\"}"
 
 let string_of_placeset ps =
   "["

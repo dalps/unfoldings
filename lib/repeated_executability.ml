@@ -1,5 +1,5 @@
 open Unfold
-open Branching_process
+open Occurrence_net
 
 module RepeatedExecSS : SearchScheme = struct
   let r_occurrences (e : Event.t) goals =

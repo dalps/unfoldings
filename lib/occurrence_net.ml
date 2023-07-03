@@ -134,10 +134,10 @@ let is_reachable m n =
     (fun x -> NodeSet.for_all (fun y -> is_concurrent x y n) nodes)
     nodes
 
-let union bp1 bp2 =
+let union n1 n2 =
   of_sets
-    (PlaceSet.union (places bp1) (places bp2))
-    (TransSet.union (transitions bp1) (transitions bp2))
-    (bind_f (preset_t bp1) (preset_t bp2))
-    (bind_f (postset_t bp1) (postset_t bp2))
-    (PlaceSet.union (marking bp1) (marking bp2))
+    (PlaceSet.union (places n1) (places n2))
+    (TransSet.union (transitions n1) (transitions n2))
+    (bind_f (preset_t n1) (preset_t n2))
+    (bind_f (postset_t n1) (postset_t n2))
+    (PlaceSet.union (marking n1) (marking n2))

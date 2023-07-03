@@ -30,58 +30,58 @@ print_endline "[OK] prod1"
 
 (* --- *)
 
-open Examples.Bp1
-open Unfoldings.Branching_process
-open Unfoldings.Branching_process.Node;;
+open Examples.Onet
+open Unfoldings.Occurrence_net
+open Unfoldings.Occurrence_net.Node;;
 
-assert (is_occurrence_sequence [ e1; t1; u1; e2 ] bp1);;
-assert (is_occurrence_sequence [ e1; u1; t1; e2 ] bp1);;
-assert (is_occurrence_sequence [ e1; u1; e2 ] bp1 = false);;
-assert (is_occurrence_sequence [ e2; t1; u1; e1 ] bp1 = false);;
-assert (is_predecessor (of_trans e1) (of_trans e2) bp1);;
-assert (is_predecessor (of_trans t1) (of_trans u1) bp1 = false);;
-assert (is_predecessor (of_place s2) (of_trans u1) bp1 = false);;
-assert (is_conflict (of_place s2) (of_place r2) bp1 = false);;
-assert (is_conflict (of_trans t1) (of_trans u1) bp1 = false);;
-assert (is_concurrent (of_trans t1) (of_trans u1) bp1);;
-assert (is_concurrent (of_trans e1) (of_trans u1) bp1 = false);;
-assert (is_reachable (PlaceSet.of_list [ s1; r1 ]) bp1);;
-assert (is_reachable (PlaceSet.of_list [ s2; r2 ]) bp1);;
-assert (is_reachable (PlaceSet.of_list [ s3; r3 ]) bp1);;
-assert (is_reachable (PlaceSet.of_list [ s4; r4 ]) bp1);;
-assert (is_reachable (PlaceSet.of_list [ s4; r4; s3 ]) bp1 = false);;
-assert (is_reachable (PlaceSet.of_list [ s3; r2 ]) bp1);;
-assert (is_reachable (PlaceSet.of_list [ r2; s3 ]) bp1);;
-assert (is_reachable (PlaceSet.of_list [ r1; r2 ]) bp1 = false);;
-assert (is_reachable (PlaceSet.of_list [ r1 ]) bp1);;
+assert (is_occurrence_sequence [ e1; t1; u1; e2 ] onet);;
+assert (is_occurrence_sequence [ e1; u1; t1; e2 ] onet);;
+assert (is_occurrence_sequence [ e1; u1; e2 ] onet = false);;
+assert (is_occurrence_sequence [ e2; t1; u1; e1 ] onet = false);;
+assert (is_predecessor (of_trans e1) (of_trans e2) onet);;
+assert (is_predecessor (of_trans t1) (of_trans u1) onet = false);;
+assert (is_predecessor (of_place s2) (of_trans u1) onet = false);;
+assert (is_conflict (of_place s2) (of_place r2) onet = false);;
+assert (is_conflict (of_trans t1) (of_trans u1) onet = false);;
+assert (is_concurrent (of_trans t1) (of_trans u1) onet);;
+assert (is_concurrent (of_trans e1) (of_trans u1) onet = false);;
+assert (is_reachable (PlaceSet.of_list [ s1; r1 ]) onet);;
+assert (is_reachable (PlaceSet.of_list [ s2; r2 ]) onet);;
+assert (is_reachable (PlaceSet.of_list [ s3; r3 ]) onet);;
+assert (is_reachable (PlaceSet.of_list [ s4; r4 ]) onet);;
+assert (is_reachable (PlaceSet.of_list [ s4; r4; s3 ]) onet = false);;
+assert (is_reachable (PlaceSet.of_list [ s3; r2 ]) onet);;
+assert (is_reachable (PlaceSet.of_list [ r2; s3 ]) onet);;
+assert (is_reachable (PlaceSet.of_list [ r1; r2 ]) onet = false);;
+assert (is_reachable (PlaceSet.of_list [ r1 ]) onet);;
 
 (* questionable *)
-assert (is_reachable (PlaceSet.of_list [ s1; s4 ]) bp1 = false)
+assert (is_reachable (PlaceSet.of_list [ s1; s4 ]) onet = false)
 
 let t2 = Event.build 5 [] [ T "t2" ]
 let t3 = Event.build 6 [] [ T "t3" ]
 let s2_4 = Token.build [] "s2_4";;
 
-add_trans t2 bp1;;
-add_trans t3 bp1;;
-add_place s2_4 bp1;;
-add_to_trans_arc s2 t2 bp1;;
-add_to_place_arc t2 s2_4 bp1;;
-add_to_trans_arc s2_4 t3 bp1;;
-add_to_place_arc t3 s4 bp1;;
-assert (is_conflict (of_place s2_4) (of_place r3) bp1 = false);;
-assert (is_conflict (of_place s2_4) (of_place s4) bp1 = false);;
-assert (is_conflict (of_place s2_4) (of_place s3) bp1);;
-assert (is_conflict (of_trans t1) (of_trans t2) bp1);;
-assert (is_conflict (of_trans e2) (of_place s2_4) bp1);;
-assert (is_conflict (of_trans t3) (of_trans e2) bp1);;
-assert (is_conflict (of_trans t2) (of_trans e2) bp1);;
-assert (is_concurrent (of_trans t3) (of_trans u1) bp1);;
-assert (is_concurrent (of_trans t2) (of_trans u1) bp1);;
-assert (is_concurrent (of_trans t3) (of_trans e2) bp1 = false);;
-assert (is_concurrent (of_trans t2) (of_trans e2) bp1 = false);;
-assert (is_concurrent (of_trans t3) (of_trans t1) bp1 = false);;
-print_endline "[OK] bp1"
+add_trans t2 onet;;
+add_trans t3 onet;;
+add_place s2_4 onet;;
+add_to_trans_arc s2 t2 onet;;
+add_to_place_arc t2 s2_4 onet;;
+add_to_trans_arc s2_4 t3 onet;;
+add_to_place_arc t3 s4 onet;;
+assert (is_conflict (of_place s2_4) (of_place r3) onet = false);;
+assert (is_conflict (of_place s2_4) (of_place s4) onet = false);;
+assert (is_conflict (of_place s2_4) (of_place s3) onet);;
+assert (is_conflict (of_trans t1) (of_trans t2) onet);;
+assert (is_conflict (of_trans e2) (of_place s2_4) onet);;
+assert (is_conflict (of_trans t3) (of_trans e2) onet);;
+assert (is_conflict (of_trans t2) (of_trans e2) onet);;
+assert (is_concurrent (of_trans t3) (of_trans u1) onet);;
+assert (is_concurrent (of_trans t2) (of_trans u1) onet);;
+assert (is_concurrent (of_trans t3) (of_trans e2) onet = false);;
+assert (is_concurrent (of_trans t2) (of_trans e2) onet = false);;
+assert (is_concurrent (of_trans t3) (of_trans t1) onet = false);;
+print_endline "[OK] onet"
 
 (* --- *)
 
