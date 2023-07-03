@@ -14,14 +14,18 @@ let rec string_of_history = function
   | t :: ts -> string_of_trans t ^ "; " ^ string_of_history ts
 
 let string_of_event (e : Event.t) =
-  "{name = " ^ string_of_int e.name ^ "; history = ["
-  ^ string_of_history e.history
-  ^ "]; label = \"" ^ string_of_trans e.label ^ "\"}"
+  "{name = "
+  ^ string_of_int (Event.name e)
+  ^ "; history = ["
+  ^ string_of_history (Event.history e)
+  ^ "]; label = \""
+  ^ string_of_trans (Event.label e)
+  ^ "\"}"
 
 let string_of_place (p : Token.t) =
   "{history = ["
-  ^ string_of_history p.history
-  ^ "]; label = \"" ^ p.label ^ "\"}"
+  ^ string_of_history (Token.history p)
+  ^ "]; label = \"" ^ (Token.label p) ^ "\"}"
 
 let string_of_placeset ps =
   "["

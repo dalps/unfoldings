@@ -5,7 +5,7 @@ module ExecutabilitySS : SearchScheme = struct
   let is_terminal (e : Event.t) n stgy _ =
     TransSet.exists
       (fun e' ->
-        stgy e'.history e.history < 0
+        stgy (Event.history e') (Event.history e) < 0
         && Product.PlaceSet.equal
              (labels_of_places (postset_t n e'))
              (labels_of_places (postset_t n e)))

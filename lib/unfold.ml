@@ -23,7 +23,7 @@ let extend e postset n preset =
   add_trans e n';
   PlaceSet.iter (fun p -> add_to_trans_arc p e n') preset;
   let places_of_postset =
-    label_states (Product.PlaceSet.elements postset) e.history
+    label_states (Product.PlaceSet.elements postset) (Event.history e)
   in
   add_places places_of_postset n';
   PlaceSet.iter (fun p -> add_to_place_arc e p n') places_of_postset;

@@ -3,12 +3,12 @@ open Branching_process
 
 module RepeatedExecSS : SearchScheme = struct
   let r_occurrences (e : Event.t) goals =
-    List.length (List.filter (fun t -> List.mem t goals) e.history)
+    List.length (List.filter (fun t -> List.mem t goals) (Event.history e))
 
   let is_terminal (e : Event.t) n stgy goals =
     TransSet.exists
       (fun e' ->
-        stgy e'.history e.history < 0
+        stgy (Event.history e') (Event.history e) < 0
         && Product.PlaceSet.equal
              (labels_of_places (postset_t n e'))
              (labels_of_places (postset_t n e))
@@ -19,7 +19,7 @@ module RepeatedExecSS : SearchScheme = struct
   let is_successful (e : Event.t) n stgy goals =
     TransSet.exists
       (fun e' ->
-        stgy e'.history e.history < 0
+        stgy (Event.history e') (Event.history e) < 0
         && Product.PlaceSet.equal
              (labels_of_places (postset_t n e'))
              (labels_of_places (postset_t n e))
