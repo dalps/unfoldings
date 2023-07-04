@@ -1,4 +1,81 @@
+module type S = sig
+  type place
+  type trans
+  type t
+
+  module Node : sig
+    type t = P of place | T of trans
+
+    val of_place : place -> t
+    val of_trans : trans -> t
+    val is_place : t -> bool
+    val is_trans : t -> bool
+    val place_of : t -> place
+    val trans_of : t -> trans
+    val compare : 'a -> 'a -> int
+  end
+
+  module TransSet : Set.S
+  module PlaceSet : Set.S
+  module NodeSet : module type of Set.Make (Node)
+
+  val bottom : 'a -> PlaceSet.t
+  val bind_pset : ('a -> PlaceSet.t) -> 'a -> PlaceSet.t -> 'a -> PlaceSet.t
+  val bind_p : ('a -> PlaceSet.t) -> 'a -> PlaceSet.elt -> 'a -> PlaceSet.t
+  val bind_f : ('a -> PlaceSet.t) -> ('a -> PlaceSet.t) -> 'a -> PlaceSet.t
+
+  val ( --> ) :
+    PlaceSet.elt list ->
+    PlaceSet.elt list ->
+    'a ->
+    ('a -> PlaceSet.t) * ('a -> PlaceSet.t)
+
+  val empty : unit -> t
+
+  val of_lists :
+    PlaceSet.elt list ->
+    TransSet.elt list ->
+    ((trans -> PlaceSet.t) * (trans -> PlaceSet.t)) list ->
+    PlaceSet.elt list ->
+    t
+
+  val of_sets :
+    PlaceSet.t ->
+    TransSet.t ->
+    (trans -> PlaceSet.t) ->
+    (trans -> PlaceSet.t) ->
+    PlaceSet.t ->
+    t
+
+  val copy : t -> t
+  val places : t -> PlaceSet.t
+  val transitions : t -> TransSet.t
+  val preset_t : t -> trans -> PlaceSet.t
+  val postset_t : t -> trans -> PlaceSet.t
+  val marking : t -> PlaceSet.t
+  val add_place : PlaceSet.elt -> t -> unit
+  val add_trans : TransSet.elt -> t -> unit
+  val add_places : PlaceSet.t -> t -> unit
+  val add_transs : TransSet.t -> t -> unit
+  val add_to_trans_arc : PlaceSet.elt -> trans -> t -> unit
+  val add_to_place_arc : trans -> PlaceSet.elt -> t -> unit
+  val set_marking : PlaceSet.t -> t -> unit
+  val preset_p : t -> PlaceSet.elt -> TransSet.t
+  val postset_p : t -> PlaceSet.elt -> TransSet.t
+  val nodeset_of_placeset : PlaceSet.t -> NodeSet.t
+  val nodeset_of_transset : TransSet.t -> NodeSet.t
+  val preset_x : t -> Node.t -> NodeSet.t
+  val postset_x : t -> Node.t -> NodeSet.t
+  val enables : PlaceSet.t -> trans -> t -> bool
+  val fire : trans -> t -> unit
+  val is_occurrence_sequence : TransSet.elt list -> t -> bool
+  val fire_sequence : TransSet.elt list -> t -> unit
+end
+
 module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
+  type place = P.t
+  type trans = T.t
+
   module Node = struct
     type t = P of P.t | T of T.t
 
@@ -100,24 +177,20 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
         (PlaceSet.union (PlaceSet.diff n.marking (n.preset t)) (n.postset t))
         n
 
-  exception NotANode of Node.t
-
   let is_occurrence_sequence ts n =
-    let rec helper tlist m =
-      match tlist with
+    let rec helper m = function
       | [] -> true
       | t :: ts' ->
-          if TransSet.mem t n.transitions then
-            let m' =
-              PlaceSet.union (PlaceSet.diff m (n.preset t)) (n.postset t)
-            in
-            enables m t n && helper ts' m'
-          else raise (NotANode (Node.of_trans t))
+          assert (TransSet.mem t n.transitions);
+          let m' =
+            PlaceSet.union (PlaceSet.diff m (n.preset t)) (n.postset t)
+          in
+          enables m t n && helper m' ts'
     in
 
-    helper ts n.marking
+    helper n.marking ts
 
   let fire_sequence ts n =
     assert (is_occurrence_sequence ts n);
-    List.fold_left (fun _ t -> fire t n) () ts
+    List.iter (fun t -> fire t n) ts
 end
