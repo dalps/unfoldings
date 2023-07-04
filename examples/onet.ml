@@ -26,3 +26,5 @@ let onet =
       ([ s3; r3 ] --> [ s4; r4 ]) e2;
     ]
     [ s1; r1 ]
+
+let rev_onet = reversible onet

@@ -8,12 +8,15 @@ module Token : sig
 end
 
 module Event : sig
-  type t
+  type event
+  type t = E of event | Rev of t
 
+  val event_of_t : t -> event
   val build : int -> Product.GlobalT.t list -> Product.GlobalT.t -> t
   val name : t -> int
   val history : t -> Product.GlobalT.t list
   val label : t -> Product.GlobalT.t
+  val compare_event : event -> event -> int
   val compare : t -> t -> int
 end
 
@@ -36,3 +39,4 @@ val is_conflict : Node.t -> Node.t -> t -> bool
 val is_concurrent : Node.t -> Node.t -> t -> bool
 val is_reachable : PlaceSet.t -> t -> bool
 val union : t -> t -> t
+val reversible : t -> t

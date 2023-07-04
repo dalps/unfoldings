@@ -11,20 +11,39 @@ module Token = struct
 end
 
 module Event = struct
-  type t = {
+  type event = {
     name : int;
     history : Product.GlobalT.t list;
     label : Product.GlobalT.t;
   }
 
-  let build name history label = { name; history; label }
-  let name e = e.name
-  let history e = e.history
-  let label e = e.label
+  type t = E of event | Rev of t
 
-  let compare e1 e2 =
+  let rec event_of_t = function E e -> e | Rev t -> event_of_t t
+  let build name history label = E { name; history; label }
+
+  let name e' =
+    let e = event_of_t e' in
+    e.name
+
+  let history e' =
+    let e = event_of_t e' in
+    e.history
+
+  let label e' =
+    let e = event_of_t e' in
+    e.label
+
+  let compare_event e1 e2 =
     let n = History_utils.sl_compare e1.history e2.history in
     if n = 0 then compare e1.label e2.label else n
+
+  let rec compare e1' e2' =
+    match (e1', e2') with
+    | E e1, E e2 -> compare_event e1 e2
+    | c, Rev (Rev d) | Rev (Rev c), d | Rev c, Rev d -> compare c d
+    | E _, Rev _ -> -1
+    | Rev _, E _ -> 1
 end
 
 include Petrinet.Make (Token) (Event)
@@ -141,3 +160,18 @@ let union n1 n2 =
     (bind_f (preset_t n1) (preset_t n2))
     (bind_f (postset_t n1) (postset_t n2))
     (PlaceSet.union (marking n1) (marking n2))
+
+let reversible n =
+  let rec preset = function
+    | Event.E _ as e -> preset_t n e
+    | Rev (Rev e') -> preset e'
+    | Rev e' -> postset e'
+  and postset = function
+    | Event.E _ as e -> postset_t n e
+    | Rev (Rev e') -> postset e'
+    | Rev e' -> preset e'
+  in
+  of_sets (places n)
+    (TransSet.union (transitions n)
+       (TransSet.map (fun e -> Rev e) (transitions n)))
+    preset postset (marking n)

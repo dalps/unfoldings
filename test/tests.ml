@@ -60,27 +60,28 @@ assert (is_reachable (PlaceSet.of_list [ s1; s4 ]) onet = false)
 
 let t2 = Event.build 5 [] [ T "t2" ]
 let t3 = Event.build 6 [] [ T "t3" ]
-let s2_4 = Token.build [] "s2_4";;
+let s2_4 = Token.build [] "s2_4"
+let onet' = copy onet;;
 
-add_trans t2 onet;;
-add_trans t3 onet;;
-add_place s2_4 onet;;
-add_to_trans_arc s2 t2 onet;;
-add_to_place_arc t2 s2_4 onet;;
-add_to_trans_arc s2_4 t3 onet;;
-add_to_place_arc t3 s4 onet;;
-assert (is_conflict (of_place s2_4) (of_place r3) onet = false);;
-assert (is_conflict (of_place s2_4) (of_place s4) onet = false);;
-assert (is_conflict (of_place s2_4) (of_place s3) onet);;
-assert (is_conflict (of_trans t1) (of_trans t2) onet);;
-assert (is_conflict (of_trans e2) (of_place s2_4) onet);;
-assert (is_conflict (of_trans t3) (of_trans e2) onet);;
-assert (is_conflict (of_trans t2) (of_trans e2) onet);;
-assert (is_concurrent (of_trans t3) (of_trans u1) onet);;
-assert (is_concurrent (of_trans t2) (of_trans u1) onet);;
-assert (is_concurrent (of_trans t3) (of_trans e2) onet = false);;
-assert (is_concurrent (of_trans t2) (of_trans e2) onet = false);;
-assert (is_concurrent (of_trans t3) (of_trans t1) onet = false);;
+add_trans t2 onet';;
+add_trans t3 onet';;
+add_place s2_4 onet';;
+add_to_trans_arc s2 t2 onet';;
+add_to_place_arc t2 s2_4 onet';;
+add_to_trans_arc s2_4 t3 onet';;
+add_to_place_arc t3 s4 onet';;
+assert (is_conflict (of_place s2_4) (of_place r3) onet' = false);;
+assert (is_conflict (of_place s2_4) (of_place s4) onet' = false);;
+assert (is_conflict (of_place s2_4) (of_place s3) onet');;
+assert (is_conflict (of_trans t1) (of_trans t2) onet');;
+assert (is_conflict (of_trans e2) (of_place s2_4) onet');;
+assert (is_conflict (of_trans t3) (of_trans e2) onet');;
+assert (is_conflict (of_trans t2) (of_trans e2) onet');;
+assert (is_concurrent (of_trans t3) (of_trans u1) onet');;
+assert (is_concurrent (of_trans t2) (of_trans u1) onet');;
+assert (is_concurrent (of_trans t3) (of_trans e2) onet' = false);;
+assert (is_concurrent (of_trans t2) (of_trans e2) onet' = false);;
+assert (is_concurrent (of_trans t3) (of_trans t1) onet' = false);;
 print_endline "[OK] onet"
 
 (* --- *)
@@ -378,3 +379,55 @@ assert (
 
 assert (test prod5' sl_compare [ [ T "i1"; T "i2"; T "i3"; T "i4" ] ] 50);;
 print_endline "[OK] is_infinitely_executable prod5_loops"
+
+open Unfoldings.Occurrence_net
+open Examples.Onet
+
+let m0 = marking rev_onet;;
+
+assert (PlaceSet.equal (places rev_onet) (places onet));;
+
+assert (
+  TransSet.cardinal (transitions rev_onet)
+  = 2 * TransSet.cardinal (transitions onet))
+;;
+
+assert (TransSet.subset (transitions onet) (transitions rev_onet));;
+assert (PlaceSet.equal (marking rev_onet) (marking onet));;
+
+TransSet.iter
+  (fun t ->
+    assert (TransSet.mem (Rev t) (transitions rev_onet));
+    assert (PlaceSet.equal (preset_t rev_onet (Rev t)) (postset_t rev_onet t));
+    assert (PlaceSet.equal (postset_t rev_onet (Rev t)) (preset_t rev_onet t)))
+  (transitions onet)
+;;
+
+assert (Event.compare (Rev (Rev e1)) e1 = 0);;
+assert (Event.compare (Rev (Rev e1)) e1 = compare e1 e1);;
+assert (Event.compare (Rev (Rev e1)) e2 = compare e1 e2);;
+assert (Event.compare (Rev e1) e1 = 1);;
+assert (Event.compare (Rev e1) (Rev e2) = compare e1 e2);;
+assert (Event.compare (Rev e1) (Rev e2) = compare e1 e2);;
+assert (PlaceSet.equal (preset_t rev_onet (Rev (Rev e1))) (preset_t rev_onet e1))
+;;
+
+assert (
+  PlaceSet.equal
+    (preset_t rev_onet (Rev (Rev (Rev e2))))
+    (preset_t rev_onet (Rev e2)))
+;;
+
+assert (
+  PlaceSet.equal
+    (postset_t rev_onet (Rev e2))
+    (postset_t rev_onet (Rev (Rev (Rev e2)))))
+;;
+
+fire_sequence [ e1; Rev e1 ] rev_onet;;
+assert (PlaceSet.equal (marking rev_onet) m0);;
+fire (Rev e1) rev_onet;;
+assert (PlaceSet.equal (marking rev_onet) m0);;
+fire_sequence [ e1; t1; u1; e2; Rev e2; Rev t1; Rev u1; Rev e1 ] rev_onet;;
+assert (PlaceSet.equal (marking rev_onet) m0);;
+print_endline "[OK] reversible"
