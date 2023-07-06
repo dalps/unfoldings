@@ -1,5 +1,6 @@
-open Unfold
-open Occurrence_net
+module ProductUnfold = Unfold.Make(Product)
+open ProductUnfold
+open ProductUnfold.OccurrenceNet
 
 module RepeatedExecSS : SearchScheme = struct
   let r_occurrences (e : Event.t) goals =

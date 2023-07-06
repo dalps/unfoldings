@@ -1,5 +1,6 @@
-open Unfold
-open Occurrence_net
+module ProductUnfold = Unfold.Make(Product)
+open ProductUnfold
+open ProductUnfold.OccurrenceNet
 
 module ExecutabilitySS : SearchScheme = struct
   let is_terminal (e : Event.t) n stgy _ =

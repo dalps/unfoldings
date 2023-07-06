@@ -1,42 +1,41 @@
-module Token : sig
-  type t
+module Make : functor (P : Set.OrderedType) (T : Set.OrderedType) -> sig
+  module Token : sig
+    type t = { history : T.t list; label : P.t }
 
-  val build : Product.GlobalT.t list -> string -> t
-  val history : t -> Product.GlobalT.t list
-  val label : t -> string
-  val compare : t -> t -> int
+    val build : T.t list -> P.t -> t
+    val history : t -> T.t list
+    val label : t -> P.t
+    val compare : t -> t -> int
+  end
+
+  module Event : sig
+    type event = { name : int; history : T.t list; label : T.t }
+    type t = E of event | Rev of t
+
+    val event_of_t : t -> event
+    val build : int -> T.t list -> T.t -> t
+    val name : t -> int
+    val history : t -> T.t list
+    val label : t -> T.t
+    val compare_event : event -> event -> int
+    val compare : t -> t -> int
+  end
+
+  include module type of Petrinet.Make (Token) (Event)
+
+  val predecessors : NodeSet.elt -> t -> NodeSet.t
+  val parents_of_event : trans -> t -> TransSet.t
+  val past : trans -> t -> TransSet.elt list
+  val past_word : trans -> t -> T.t list
+  val past_conf : TransSet.elt -> t -> TransSet.t
+  val past_of_preset : PlaceSet.t -> t -> TransSet.elt list
+  val past_word_of_preset : PlaceSet.t -> t -> T.t -> T.t list
+  val place_history : PlaceSet.elt -> t -> T.t list
+  val is_predecessor : NodeSet.elt -> NodeSet.elt -> t -> bool
+  val is_causally_related : NodeSet.elt -> NodeSet.elt -> t -> bool
+  val is_conflict : NodeSet.elt -> NodeSet.elt -> t -> bool
+  val is_concurrent : NodeSet.elt -> NodeSet.elt -> t -> bool
+  val is_reachable : PlaceSet.t -> t -> bool
+  val union : t -> t -> t
+  val reversible : t -> t
 end
-
-module Event : sig
-  type event
-  type t = E of event | Rev of t
-
-  val event_of_t : t -> event
-  val build : int -> Product.GlobalT.t list -> Product.GlobalT.t -> t
-  val name : t -> int
-  val history : t -> Product.GlobalT.t list
-  val label : t -> Product.GlobalT.t
-  val compare_event : event -> event -> int
-  val compare : t -> t -> int
-end
-
-include module type of Petrinet.Make (Token) (Event)
-
-val predecessors : Node.t -> t -> NodeSet.t
-val parents_of_event : Event.t -> t -> TransSet.t
-val past : Event.t -> t -> Event.t list
-val past_word : Event.t -> t -> Product.GlobalT.t list
-val past_conf : Event.t -> t -> TransSet.t
-val past_of_preset : PlaceSet.t -> t -> Event.t list
-
-val past_word_of_preset :
-  PlaceSet.t -> t -> Product.GlobalT.t -> Product.GlobalT.t list
-
-val place_history : Token.t -> t -> Product.GlobalT.t list
-val is_predecessor : Node.t -> Node.t -> t -> bool
-val is_causally_related : Node.t -> Node.t -> t -> bool
-val is_conflict : Node.t -> Node.t -> t -> bool
-val is_concurrent : Node.t -> Node.t -> t -> bool
-val is_reachable : PlaceSet.t -> t -> bool
-val union : t -> t -> t
-val reversible : t -> t

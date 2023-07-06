@@ -15,8 +15,10 @@ module type S = sig
     val compare : 'a -> 'a -> int
   end
 
-  module TransSet : Set.S
-  module PlaceSet : Set.S
+  module Place : Set.OrderedType with type t = place
+  module Trans : Set.OrderedType with type t = trans
+  module PlaceSet : Set.S with type elt = place
+  module TransSet : Set.S with type elt = trans 
   module NodeSet : module type of Set.Make (Node)
 
   val bottom : 'a -> PlaceSet.t
@@ -76,5 +78,7 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) :
   S
     with type place = P.t
      and type trans = T.t
-     and module PlaceSet = Set.Make(P)
-     and module TransSet = Set.Make(T)
+
+(* save the arguments only: 
+   S with module Place = P and module Trans = T
+*)

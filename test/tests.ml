@@ -31,8 +31,8 @@ print_endline "[OK] prod1"
 (* --- *)
 
 open Examples.Onet
-open Unfoldings.Occurrence_net
-open Unfoldings.Occurrence_net.Node;;
+open StringOccurrenceNet;;
+open StringOccurrenceNet.Node;;
 
 assert (is_occurrence_sequence [ e1; t1; u1; e2 ] onet);;
 assert (is_occurrence_sequence [ e1; u1; t1; e2 ] onet);;
@@ -209,7 +209,8 @@ print_endline "[OK] misc"
 
 (* --- *)
 
-open Unfoldings.Unfold
+module ProductUnfolder = Unfoldings.Unfold.Make(Unfoldings.Product)
+open ProductUnfolder
 open Examples.Prod1
 open Examples.Prod2
 open Examples.Prod3
@@ -380,8 +381,8 @@ assert (
 assert (test prod5' sl_compare [ [ T "i1"; T "i2"; T "i3"; T "i4" ] ] 50);;
 print_endline "[OK] is_infinitely_executable prod5_loops"
 
-open Unfoldings.Occurrence_net
 open Examples.Onet
+open StringOccurrenceNet
 
 let m0 = marking rev_onet;;
 

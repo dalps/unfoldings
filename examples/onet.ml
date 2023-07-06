@@ -1,6 +1,7 @@
 (* Made up occurrence net *)
 
-open Unfoldings.Occurrence_net
+module StringOccurrenceNet = Unfoldings.Occurrence_net.Make (String) (Unfoldings.Product.GlobalT) (* do NOT open Make directly, always wrap in another module *)
+open StringOccurrenceNet
 
 let t1 = Event.build 1 [] [ T "t1" ]
 let u1 = Event.build 2 [] [ T "u1" ]
