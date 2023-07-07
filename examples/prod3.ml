@@ -1,7 +1,6 @@
 (* Product of Fig. 3.5 p. 27 *)
 
 open Unfoldings.Product
-open Unfoldings.Product.GlobalT
 
 let r =
   of_lists [ "r1"; "r2"; "r3" ] [ [ T "a0" ]; [ T "c0" ] ]

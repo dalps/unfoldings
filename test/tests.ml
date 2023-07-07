@@ -31,7 +31,7 @@ print_endline "[OK] prod1"
 (* --- *)
 
 open Examples.Onet
-open StringOccurrenceNet;;
+open StringOccurrenceNet
 open StringOccurrenceNet.Node;;
 
 assert (is_occurrence_sequence [ e1; t1; u1; e2 ] onet);;
@@ -58,8 +58,8 @@ assert (is_reachable (PlaceSet.of_list [ r1 ]) onet);;
 (* questionable *)
 assert (is_reachable (PlaceSet.of_list [ s1; s4 ]) onet = false)
 
-let t2 = Event.build 5 [] [ T "t2" ]
-let t3 = Event.build 6 [] [ T "t3" ]
+let t2 = Event.build 5 [] "t2"
+let t3 = Event.build 6 [] "t3"
 let s2_4 = Token.build [] "s2_4"
 let onet' = copy onet;;
 
@@ -88,7 +88,7 @@ print_endline "[OK] onet"
 
 open Examples.Prod2
 open Unfoldings.Product
-open GlobalT
+open GlobalTransition
 open Unfoldings.History_utils
 
 let t1 = [ T "t1"; Idle ]
@@ -209,7 +209,7 @@ print_endline "[OK] misc"
 
 (* --- *)
 
-module ProductUnfolder = Unfoldings.Unfold.Make(Unfoldings.Product)
+module ProductUnfolder = Unfoldings.Unfold.Make (Unfoldings.Product)
 open ProductUnfolder
 open Examples.Prod1
 open Examples.Prod2
@@ -405,11 +405,11 @@ TransSet.iter
 ;;
 
 assert (Event.compare (Rev (Rev e1)) e1 = 0);;
-assert (Event.compare (Rev (Rev e1)) e1 = compare e1 e1);;
-assert (Event.compare (Rev (Rev e1)) e2 = compare e1 e2);;
+assert (Event.compare (Rev (Rev e1)) e1 = Event.compare e1 e1);;
+assert (Event.compare (Rev (Rev e1)) e2 = Event.compare e1 e2);;
 assert (Event.compare (Rev e1) e1 = 1);;
-assert (Event.compare (Rev e1) (Rev e2) = compare e1 e2);;
-assert (Event.compare (Rev e1) (Rev e2) = compare e1 e2);;
+assert (Event.compare (Rev e1) (Rev e2) = Event.compare e1 e2);;
+assert (Event.compare (Rev e1) (Rev e2) = Event.compare e1 e2);;
 assert (PlaceSet.equal (preset_t rev_onet (Rev (Rev e1))) (preset_t rev_onet e1))
 ;;
 

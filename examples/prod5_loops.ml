@@ -1,7 +1,6 @@
 (* Product of Fig. 4.6 p. 59, but every transition is turned into a self loop *)
 
 open Unfoldings.Product
-open Unfoldings.Product.GlobalT
 
 let s =
   of_lists

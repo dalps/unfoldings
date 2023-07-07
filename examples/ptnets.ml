@@ -1,6 +1,7 @@
 (* P/T nets of Fig. 2 p. 5 (HernanClaudioIrek) *)
 
-open Unfoldings.Petrinet.Make (String) (String)
+module StringPTNet = Unfoldings.Petrinet.Make (String) (String)
+open StringPTNet
 
 let o1 =
   of_lists [ "a"; "b"; "c"; "d" ] [ "t1"; "t2" ]

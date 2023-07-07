@@ -1,4 +1,5 @@
-open Product.GlobalT
+open Product
+open Product.GlobalTransition
 
 let rec tword_equiv w1 w2 =
   match (w1, w2) with

@@ -1,7 +1,6 @@
 (* Product of Fig. 6.1 p. 99 *)
 
 open Unfoldings.Product
-open Unfoldings.Product.GlobalT
 
 let prod6 =
   of_lists

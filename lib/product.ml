@@ -1,5 +1,6 @@
-module GlobalT = struct
-  type local_t = Idle | T of string
+type local_t = Idle | T of string
+
+module GlobalTransition = struct
   type t = local_t list
 
   let is_idle = ( = ) Idle
@@ -12,7 +13,7 @@ module GlobalT = struct
   let compare = compare
 end
 
-include Petrinet.Make (String) (GlobalT)
+include Petrinet.Make (String) (GlobalTransition)
 
 let product ns sync =
   of_sets

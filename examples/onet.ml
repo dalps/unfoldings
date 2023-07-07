@@ -1,12 +1,15 @@
 (* Made up occurrence net *)
 
-module StringOccurrenceNet = Unfoldings.Occurrence_net.Make (String) (Unfoldings.Product.GlobalT) (* do NOT open Make directly, always wrap in another module *)
+module StringOccurrenceNet =
+  Unfoldings.Occurrence_net.Make (String) (String)
+(* do NOT open Make directly, always wrap in another module *)
+
 open StringOccurrenceNet
 
-let t1 = Event.build 1 [] [ T "t1" ]
-let u1 = Event.build 2 [] [ T "u1" ]
-let e1 = Event.build 3 [] [ T "e1" ]
-let e2 = Event.build 4 [] [ T "e2" ]
+let t1 = Event.build 1 [] "t1"
+let u1 = Event.build 2 [] "u1"
+let e1 = Event.build 3 [] "e1"
+let e2 = Event.build 4 [] "e2"
 let s1 = Token.build [] "s1"
 let s2 = Token.build [] "s2"
 let s3 = Token.build [] "s3"

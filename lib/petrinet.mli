@@ -12,33 +12,38 @@ module type S = sig
     val is_trans : t -> bool
     val place_of : t -> place
     val trans_of : t -> trans
-    val compare : 'a -> 'a -> int
+    val compare : t -> t -> int
   end
 
   module Place : Set.OrderedType with type t = place
   module Trans : Set.OrderedType with type t = trans
   module PlaceSet : Set.S with type elt = place
-  module TransSet : Set.S with type elt = trans 
+  module TransSet : Set.S with type elt = trans
   module NodeSet : module type of Set.Make (Node)
 
-  val bottom : 'a -> PlaceSet.t
-  val bind_pset : ('a -> PlaceSet.t) -> 'a -> PlaceSet.t -> 'a -> PlaceSet.t
-  val bind_p : ('a -> PlaceSet.t) -> 'a -> PlaceSet.elt -> 'a -> PlaceSet.t
-  val bind_f : ('a -> PlaceSet.t) -> ('a -> PlaceSet.t) -> 'a -> PlaceSet.t
+  val bottom : trans -> PlaceSet.t
+
+  val bind_pset :
+    (trans -> PlaceSet.t) -> trans -> PlaceSet.t -> trans -> PlaceSet.t
+
+  val bind_p : (trans -> PlaceSet.t) -> trans -> place -> trans -> PlaceSet.t
+
+  val bind_f :
+    (trans -> PlaceSet.t) -> (trans -> PlaceSet.t) -> trans -> PlaceSet.t
 
   val ( --> ) :
-    PlaceSet.elt list ->
-    PlaceSet.elt list ->
-    'a ->
-    ('a -> PlaceSet.t) * ('a -> PlaceSet.t)
+    place list ->
+    place list ->
+    trans ->
+    (trans -> PlaceSet.t) * (trans -> PlaceSet.t)
 
   val empty : unit -> t
 
   val of_lists :
-    PlaceSet.elt list ->
-    TransSet.elt list ->
+    place list ->
+    trans list ->
     ((trans -> PlaceSet.t) * (trans -> PlaceSet.t)) list ->
-    PlaceSet.elt list ->
+    place list ->
     t
 
   val of_sets :
@@ -55,30 +60,24 @@ module type S = sig
   val preset_t : t -> trans -> PlaceSet.t
   val postset_t : t -> trans -> PlaceSet.t
   val marking : t -> PlaceSet.t
-  val add_place : PlaceSet.elt -> t -> unit
-  val add_trans : TransSet.elt -> t -> unit
+  val add_place : place -> t -> unit
+  val add_trans : trans -> t -> unit
   val add_places : PlaceSet.t -> t -> unit
   val add_transs : TransSet.t -> t -> unit
-  val add_to_trans_arc : PlaceSet.elt -> trans -> t -> unit
-  val add_to_place_arc : trans -> PlaceSet.elt -> t -> unit
+  val add_to_trans_arc : place -> trans -> t -> unit
+  val add_to_place_arc : trans -> place -> t -> unit
   val set_marking : PlaceSet.t -> t -> unit
-  val preset_p : t -> PlaceSet.elt -> TransSet.t
-  val postset_p : t -> PlaceSet.elt -> TransSet.t
+  val preset_p : t -> place -> TransSet.t
+  val postset_p : t -> place -> TransSet.t
   val nodeset_of_placeset : PlaceSet.t -> NodeSet.t
   val nodeset_of_transset : TransSet.t -> NodeSet.t
   val preset_x : t -> Node.t -> NodeSet.t
   val postset_x : t -> Node.t -> NodeSet.t
   val enables : PlaceSet.t -> trans -> t -> bool
   val fire : trans -> t -> unit
-  val is_occurrence_sequence : TransSet.elt list -> t -> bool
-  val fire_sequence : TransSet.elt list -> t -> unit
+  val is_occurrence_sequence : trans list -> t -> bool
+  val fire_sequence : trans list -> t -> unit
 end
 
 module Make (P : Set.OrderedType) (T : Set.OrderedType) :
-  S
-    with type place = P.t
-     and type trans = T.t
-
-(* save the arguments only: 
-   S with module Place = P and module Trans = T
-*)
+  S with type place = P.t and type trans = T.t
