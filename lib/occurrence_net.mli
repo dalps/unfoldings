@@ -1,22 +1,25 @@
-module Make : functor (P : Set.OrderedType) (T : Set.OrderedType) -> sig
-  module Token : sig
-    type t = { history : T.t list; label : P.t }
+module type S = sig
+  type place1
+  type trans1
 
-    val build : T.t list -> P.t -> t
-    val history : t -> T.t list
-    val label : t -> P.t
+  module Token : sig
+    type t = { history : trans1 list; label : place1 }
+
+    val build : trans1 list -> place1 -> t
+    val history : t -> trans1 list
+    val label : t -> place1
     val compare : t -> t -> int
   end
 
   module Event : sig
-    type event = { name : int; history : T.t list; label : T.t }
+    type event = { name : int; history : trans1 list; label : trans1 }
     type t = E of event | Rev of t
 
     val event_of_t : t -> event
-    val build : int -> T.t list -> T.t -> t
+    val build : int -> trans1 list -> trans1 -> t
     val name : t -> int
-    val history : t -> T.t list
-    val label : t -> T.t
+    val history : t -> trans1 list
+    val label : t -> trans1
     val compare_event : event -> event -> int
     val compare : t -> t -> int
   end
@@ -26,11 +29,11 @@ module Make : functor (P : Set.OrderedType) (T : Set.OrderedType) -> sig
   val predecessors : NodeSet.elt -> t -> NodeSet.t
   val parents_of_event : trans -> t -> TransSet.t
   val past : trans -> t -> TransSet.elt list
-  val past_word : trans -> t -> T.t list
+  val past_word : trans -> t -> trans1 list
   val past_conf : TransSet.elt -> t -> TransSet.t
   val past_of_preset : PlaceSet.t -> t -> TransSet.elt list
-  val past_word_of_preset : PlaceSet.t -> t -> T.t -> T.t list
-  val place_history : PlaceSet.elt -> t -> T.t list
+  val past_word_of_preset : PlaceSet.t -> t -> trans1 -> trans1 list
+  val place_history : PlaceSet.elt -> t -> trans1 list
   val is_predecessor : NodeSet.elt -> NodeSet.elt -> t -> bool
   val is_causally_related : NodeSet.elt -> NodeSet.elt -> t -> bool
   val is_conflict : NodeSet.elt -> NodeSet.elt -> t -> bool
@@ -39,3 +42,6 @@ module Make : functor (P : Set.OrderedType) (T : Set.OrderedType) -> sig
   val union : t -> t -> t
   val reversible : t -> t
 end
+
+module Make (P : Set.OrderedType) (T : Set.OrderedType) :
+  S with type place1 = P.t and type trans1 = T.t

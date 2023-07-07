@@ -1,4 +1,4 @@
-module ProductUnfold = Unfold.Make(Product)
+module ProductUnfold = Unfold.Make (Product)
 open ProductUnfold
 open ProductUnfold.OccurrenceNet
 
@@ -11,8 +11,8 @@ module RepeatedExecSS : SearchScheme = struct
       (fun e' ->
         stgy (Event.history e') (Event.history e) < 0
         && Product.PlaceSet.equal
-             (labels_of_places (postset_t n e'))
-             (labels_of_places (postset_t n e))
+             (places_of_tokens (postset_t n e'))
+             (places_of_tokens (postset_t n e))
         && (is_predecessor (Node.of_trans e') (Node.of_trans e) n
            || r_occurrences e' goals >= r_occurrences e goals))
       (transitions n)
@@ -22,11 +22,11 @@ module RepeatedExecSS : SearchScheme = struct
       (fun e' ->
         stgy (Event.history e') (Event.history e) < 0
         && Product.PlaceSet.equal
-             (labels_of_places (postset_t n e'))
-             (labels_of_places (postset_t n e))
+             (places_of_tokens (postset_t n e'))
+             (places_of_tokens (postset_t n e))
         && is_predecessor (Node.of_trans e') (Node.of_trans e) n
         && r_occurrences e' goals < r_occurrences e goals)
       (transitions n)
 end
 
-include Unfold (RepeatedExecSS)
+include Tester (RepeatedExecSS)
