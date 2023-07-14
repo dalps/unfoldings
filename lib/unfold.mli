@@ -16,6 +16,8 @@ module type S = sig
 
   val unfold_1 : OccurrenceNet.t -> int -> PTNet.t -> UnfoldResult.t list
 
+  val unfold : OccurrenceNet.t -> int -> PTNet.t -> OccurrenceNet.t
+
   type strategy = PTNet.trans list -> PTNet.trans list -> int
 
   module type SearchScheme = sig

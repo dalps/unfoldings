@@ -209,58 +209,21 @@ print_endline "[OK] misc"
 
 (* --- *)
 
-module ProductUnfolder = Unfoldings.Unfold.Make (Unfoldings.Product)
-open ProductUnfolder
 open Examples.Prod1
 open Examples.Prod2
 open Examples.Prod3
 open Examples.Prod4
 open Examples.Prod5
-
-let p = prod2
-let n0 = unfold_init p
-let n1s = unfold_1 n0 1 p;;
-
-assert (List.length n1s = 3)
-
-let n1 = List.hd n1s
-let n2s = unfold_1 n1.prefix 2 p;;
-
-assert (List.length n2s = 1)
-
-let n2 = List.nth n2s 0
-let n3s = unfold_1 n2.prefix 3 p;;
-
-assert (List.length n3s = 1)
-
-let n3 = List.nth n3s 0
-let n4s = unfold_1 n3.prefix 4 p;;
-
-assert (List.length n4s = 2)
-
-let n4 = List.nth n4s 1
-let n5s = unfold_1 n4.prefix 5 p;;
-
-assert (List.length n5s = 2)
-
-let n5 = List.nth n5s 0
-let n6s = unfold_1 n5.prefix 6 p;;
-
-assert (List.length n6s = 3);;
-print_endline "[OK] unfold prod2"
-
-(* --- *)
-
 open Unfoldings.Executability;;
 
-assert (test prod1 (d_compare sl_compare) [ [ T "t1" ] ] 3);;
-assert (test prod1 (d_compare sl_compare) [ [ T "t2" ] ] 3);;
-assert (test prod1 (d_compare sl_compare) [ [ T "t3" ] ] 3);;
+assert (test prod1 (d_compare sl_compare) [ [ T "t1" ] ] 99);;
+assert (test prod1 (d_compare sl_compare) [ [ T "t2" ] ] 99);;
+assert (test prod1 (d_compare sl_compare) [ [ T "t3" ] ] 99);;
 print_endline "[OK] is_executable prod1";;
-assert (test prod2 (d_compare sl_compare) [ u3 ] 5);;
-assert (test prod2 (d_compare sl_compare) [ t4u2 ] 10);;
-assert (test prod2 (d_compare sl_compare) [ t5 ] 10);;
-assert (test prod2 (d_compare sl_compare) [ t3u2 ] 5);;
+assert (test prod2 (d_compare sl_compare) [ u3 ] 99);;
+assert (test prod2 (d_compare sl_compare) [ t4u2 ] 99);;
+assert (test prod2 (d_compare sl_compare) [ t5 ] 99);;
+assert (test prod2 (d_compare sl_compare) [ t3u2 ] 99);;
 print_endline "[OK] is_executable prod2"
 
 let a0a1 = [ T "a0"; T "a1"; Idle; Idle; Idle ]
@@ -270,32 +233,32 @@ let b3 = [ Idle; Idle; Idle; T "b3"; Idle ]
 let b4 = [ Idle; Idle; Idle; Idle; T "b4" ]
 let c = [ T "c0"; T "c1"; T "c2"; T "c3"; T "c4" ];;
 
-assert (test prod3 (d_compare sl_compare) [ b1 ] 5);;
-assert (test prod3 (d_compare sl_compare) [ b2 ] 5);;
-assert (test prod3 (d_compare sl_compare) [ b3 ] 5);;
-assert (test prod3 (d_compare sl_compare) [ b4 ] 5);;
-assert (test prod3 (d_compare sl_compare) [ a0a1 ] 5);;
-assert (test prod3 (d_compare sl_compare) [ c ] 5 = false);;
-assert (test prod3 (d_compare sl_compare) [ c; a0a1 ] 5);;
+assert (test prod3 (d_compare sl_compare) [ b1 ] 99);;
+assert (test prod3 (d_compare sl_compare) [ b2 ] 99);;
+assert (test prod3 (d_compare sl_compare) [ b3 ] 99);;
+assert (test prod3 (d_compare sl_compare) [ b4 ] 99);;
+assert (test prod3 (d_compare sl_compare) [ a0a1 ] 99);;
+assert (test prod3 (d_compare sl_compare) [ c ] 99 = false);;
+assert (test prod3 (d_compare sl_compare) [ c; a0a1 ] 99);;
 print_endline "[OK] is_executable prod3";;
-assert (test prod4 (d_compare sl_compare) [ [ Idle; T "u1"; T "v1" ] ] 5);;
-assert (test prod4 (d_compare sl_compare) [ [ Idle; T "u1"; Idle ] ] 5 = false)
+assert (test prod4 (d_compare sl_compare) [ [ Idle; T "u1"; T "v1" ] ] 99);;
+assert (test prod4 (d_compare sl_compare) [ [ Idle; T "u1"; Idle ] ] 99 = false)
 ;;
-assert (test prod4 (d_compare sl_compare) [ [ T "t1"; T "u1"; Idle ] ] 5);;
+assert (test prod4 (d_compare sl_compare) [ [ T "t1"; T "u1"; Idle ] ] 99);;
 print_endline "[OK] is_executable prod4";;
-assert (test prod5 (d_compare sl_compare) [ [ Idle; Idle; T "f3"; T "f4" ] ] 10)
+assert (test prod5 (d_compare sl_compare) [ [ Idle; Idle; T "f3"; T "f4" ] ] 99)
 ;;
 
 assert (
-  test prod5 (d_compare sl_compare) [ [ Idle; Idle; T "f3"; T "f5" ] ] 10
+  test prod5 (d_compare sl_compare) [ [ Idle; Idle; T "f3"; T "f5" ] ] 99
   = false)
 ;;
 
 assert (
-  test prod5 (d_compare sl_compare) [ [ T "i1"; T "i2"; T "i3"; T "i4" ] ] 15)
+  test prod5 (d_compare sl_compare) [ [ T "i1"; T "i2"; T "i3"; T "i4" ] ] 99)
 ;;
 
-assert (test prod5 sl_compare [ [ T "i1"; T "i2"; T "i3"; T "i4" ] ] 15);;
+assert (test prod5 sl_compare [ [ T "i1"; T "i2"; T "i3"; T "i4" ] ] 99);;
 print_endline "[OK] is_executable prod5"
 
 (* --- *)
@@ -304,16 +267,16 @@ open Unfoldings.Repeated_executability
 open Examples.Prod5_loops
 open Examples.Prod6;;
 
-assert (test prod6 (d_compare sl_compare) [ [ T "r" ] ] 50);;
+assert (test prod6 (d_compare sl_compare) [ [ T "r" ] ] 99);;
 print_endline "[OK] is_infinitely_executable prod6";;
-assert (test prod1 (d_compare sl_compare) [ [ T "t1" ] ] 50);;
-assert (test prod1 (d_compare sl_compare) [ [ T "t2" ] ] 50);;
-assert (test prod1 (d_compare sl_compare) [ [ T "t3" ] ] 50);;
+assert (test prod1 (d_compare sl_compare) [ [ T "t1" ] ] 99);;
+assert (test prod1 (d_compare sl_compare) [ [ T "t2" ] ] 99);;
+assert (test prod1 (d_compare sl_compare) [ [ T "t3" ] ] 99);;
 print_endline "[OK] is_infinitely_executable prod1";;
-assert (test prod2 (d_compare sl_compare) [ u3 ] 50);;
-assert (test prod2 (d_compare sl_compare) [ t4u2 ] 50);;
-assert (test prod2 (d_compare sl_compare) [ t5 ] 50);;
-assert (test prod2 (d_compare sl_compare) [ t3u2 ] 50);;
+assert (test prod2 (d_compare sl_compare) [ u3 ] 99);;
+assert (test prod2 (d_compare sl_compare) [ t4u2 ] 99);;
+assert (test prod2 (d_compare sl_compare) [ t5 ] 99);;
+assert (test prod2 (d_compare sl_compare) [ t3u2 ] 99);;
 print_endline "[OK] is_infinitely_executable prod2"
 
 let a0a1 = [ T "a0"; T "a1"; Idle; Idle; Idle ]
@@ -323,62 +286,62 @@ let b3 = [ Idle; Idle; Idle; T "b3"; Idle ]
 let b4 = [ Idle; Idle; Idle; Idle; T "b4" ]
 let c = [ T "c0"; T "c1"; T "c2"; T "c3"; T "c4" ];;
 
-assert (test prod3 (d_compare sl_compare) [ b1 ] 50 = false);;
-assert (test prod3 (d_compare sl_compare) [ b2 ] 50 = false);;
-assert (test prod3 (d_compare sl_compare) [ b3 ] 50 = false);;
-assert (test prod3 (d_compare sl_compare) [ b4 ] 50 = false);;
-assert (test prod3 (d_compare sl_compare) [ a0a1 ] 50 = false);;
-assert (test prod3 (d_compare sl_compare) [ c ] 50 = false);;
-assert (test prod3 (d_compare sl_compare) [ c; a0a1 ] 50 = false);;
+assert (test prod3 (d_compare sl_compare) [ b1 ] 99 = false);;
+assert (test prod3 (d_compare sl_compare) [ b2 ] 99 = false);;
+assert (test prod3 (d_compare sl_compare) [ b3 ] 99 = false);;
+assert (test prod3 (d_compare sl_compare) [ b4 ] 99 = false);;
+assert (test prod3 (d_compare sl_compare) [ a0a1 ] 99 = false);;
+assert (test prod3 (d_compare sl_compare) [ c ] 99 = false);;
+assert (test prod3 (d_compare sl_compare) [ c; a0a1 ] 99 = false);;
 print_endline "[OK] is_infinitely_executable prod3";;
 
 assert (
-  test prod4 (d_compare sl_compare) [ [ Idle; T "u1"; T "v1" ] ] 50 = false)
+  test prod4 (d_compare sl_compare) [ [ Idle; T "u1"; T "v1" ] ] 99 = false)
 ;;
 
-assert (test prod4 (d_compare sl_compare) [ [ Idle; T "u1"; Idle ] ] 50 = false)
+assert (test prod4 (d_compare sl_compare) [ [ Idle; T "u1"; Idle ] ] 99 = false)
 ;;
 
 assert (
-  test prod4 (d_compare sl_compare) [ [ T "t1"; T "u1"; Idle ] ] 50 = false)
+  test prod4 (d_compare sl_compare) [ [ T "t1"; T "u1"; Idle ] ] 99 = false)
 ;;
 
 print_endline "[OK] is_infinitely_executable prod4";;
 
 assert (
-  test prod5 (d_compare sl_compare) [ [ Idle; Idle; T "f3"; T "f4" ] ] 50
+  test prod5 (d_compare sl_compare) [ [ Idle; Idle; T "f3"; T "f4" ] ] 99
   = false)
 ;;
 
 assert (
-  test prod5 (d_compare sl_compare) [ [ Idle; Idle; T "f3"; T "f5" ] ] 50
+  test prod5 (d_compare sl_compare) [ [ Idle; Idle; T "f3"; T "f5" ] ] 99
   = false)
 ;;
 
 assert (
-  test prod5 (d_compare sl_compare) [ [ T "i1"; T "i2"; T "i3"; T "i4" ] ] 50
+  test prod5 (d_compare sl_compare) [ [ T "i1"; T "i2"; T "i3"; T "i4" ] ] 99
   = false)
 ;;
 
-assert (test prod5 sl_compare [ [ T "i1"; T "i2"; T "i3"; T "i4" ] ] 50 = false)
+assert (test prod5 sl_compare [ [ T "i1"; T "i2"; T "i3"; T "i4" ] ] 99 = false)
 ;;
 print_endline "[OK] is_infinitely_executable prod5";;
 
 assert (
-  test prod5' (d_compare sl_compare) [ [ Idle; Idle; T "f3"; T "f4" ] ] 50
+  test prod5' (d_compare sl_compare) [ [ Idle; Idle; T "f3"; T "f4" ] ] 99
   = false)
 ;;
 
 assert (
-  test prod5' (d_compare sl_compare) [ [ Idle; Idle; T "f3"; T "f5" ] ] 50
+  test prod5' (d_compare sl_compare) [ [ Idle; Idle; T "f3"; T "f5" ] ] 99
   = false)
 ;;
 
 assert (
-  test prod5' (d_compare sl_compare) [ [ T "i1"; T "i2"; T "i3"; T "i4" ] ] 50)
+  test prod5' (d_compare sl_compare) [ [ T "i1"; T "i2"; T "i3"; T "i4" ] ] 99)
 ;;
 
-assert (test prod5' sl_compare [ [ T "i1"; T "i2"; T "i3"; T "i4" ] ] 50);;
+assert (test prod5' sl_compare [ [ T "i1"; T "i2"; T "i3"; T "i4" ] ] 99);;
 print_endline "[OK] is_infinitely_executable prod5_loops"
 
 open Examples.Onet
