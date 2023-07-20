@@ -1,5 +1,5 @@
 open Examples.Prod1
-open Unfoldings.Product;;
+open Unfoldings.Product_utils.StringPTNetProduct;;
 
 fire [ T "t2" ] prod1;;
 
@@ -87,9 +87,9 @@ print_endline "[OK] onet"
 (* --- *)
 
 open Examples.Prod2
-open Unfoldings.Product
+open Unfoldings.Product_utils.StringPTNetProduct
+open Unfoldings.Product_utils
 open GlobalTransition
-open Unfoldings.History_utils
 
 let t1 = [ T "t1"; Idle ]
 let t2 = [ T "t2"; Idle ]

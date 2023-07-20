@@ -1,5 +1,7 @@
-open Product
-open Product.GlobalTransition
+module StringPTNet = Petrinet.Make (String) (String)
+module StringPTNetProduct = Product.Make (StringPTNet)
+open StringPTNetProduct
+open GlobalTransition
 
 let rec tword_equiv w1 w2 =
   match (w1, w2) with
