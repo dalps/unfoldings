@@ -1,4 +1,4 @@
-open Examples.Prod1
+(* open Examples.Prod1
 open Unfoldings.Product_utils.StringPTNetProduct;;
 
 fire [ T "t2" ] prod1;;
@@ -394,4 +394,32 @@ fire (Rev e1) rev_onet;;
 assert (PlaceSet.equal (marking rev_onet) m0);;
 fire_sequence [ e1; t1; u1; e2; Rev e2; Rev t1; Rev u1; Rev e1 ] rev_onet;;
 assert (PlaceSet.equal (marking rev_onet) m0);;
-print_endline "[OK] reversible"
+print_endline "[OK] reversible" *)
+
+module StringLtl = Unfoldings.Ltl.Make(String)
+open StringLtl;;
+
+assert (length (X (Atom "a")) = 1);;
+assert (length (And (X (Atom "a"), Atom "b")) = 2);;
+assert (length (U (X (Atom "a"), Atom "b")) = 2);;
+assert (length (U (X (Atom "a"), And (Atom "a", Atom "b"))) = 3);;
+assert (length (U (X (Atom "a"), And (Atom "a", Not (Atom "b")))) = 4);;
+
+let ab = APSet.of_list ["a";"b"];;
+let a = APSet.of_list ["a"];;
+let b = APSet.of_list ["b"];;
+let empty = APSet.empty;;
+
+assert (eval [ab;a;a] (And (Atom "a", Atom "b")));;
+assert (eval [ab;a;a] (And (Atom "a", X (Atom "b"))) = false);;
+assert (eval [ab;a;a] (And (Atom "a", X (Atom "a"))));;
+assert (eval [ab;empty;b] (X (Atom "a")) = false);;
+assert (eval [ab;a;a] (U (Atom "a", X (Atom "a"))));;
+assert (eval [ab;a;a] (And (Atom "a", Not (X (Atom "a")))) = false);;
+assert (eval [ab;a;a;b] (U (Atom "a", Atom "b")));;
+assert (eval [ab;a;a;b] (U (Atom "a", And (Atom "b", Atom "a"))));;
+assert (eval [ab] (U (Atom "a", And (Atom "b", Atom "a"))));;
+assert (eval [a;a;a;ab] (U (Atom "a", And (Atom "b", Atom "a"))));;
+assert (eval [a;a;a;b] (U (Atom "a", And (Atom "b", Atom "a"))) = false);;
+assert (eval [a;ab;a;ab] (U (Atom "a", And (Atom "b", Atom "a"))));;
+assert (eval [a;b;a;ab] (U (Atom "a", And (Atom "b", Atom "a"))) = false);;

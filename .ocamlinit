@@ -7,3 +7,11 @@ open Prod2
 open Prod3
 open Prod4
 open Prod5;;
+
+module StringLtl = Unfoldings.Ltl.Make(String)
+open StringLtl;;
+
+let ab = APSet.of_list ["a";"b"];;
+let a = APSet.of_list ["a"];;
+let b = APSet.of_list ["b"];;
+let empty = APSet.empty;;
