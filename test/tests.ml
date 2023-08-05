@@ -399,27 +399,31 @@ print_endline "[OK] reversible" *)
 module StringLtl = Unfoldings.Ltl.Make(String)
 open StringLtl;;
 
-assert (length (X (Atom "a")) = 1);;
-assert (length (And (X (Atom "a"), Atom "b")) = 2);;
-assert (length (U (X (Atom "a"), Atom "b")) = 2);;
-assert (length (U (X (Atom "a"), And (Atom "a", Atom "b"))) = 3);;
-assert (length (U (X (Atom "a"), And (Atom "a", Not (Atom "b")))) = 4);;
+assert (length (X (AP "a")) = 1);;
+assert (length (And (X (AP "a"), AP "b")) = 2);;
+assert (length (U (X (AP "a"), AP "b")) = 2);;
+assert (length (U (X (AP "a"), And (AP "a", AP "b"))) = 3);;
+assert (length (U (X (AP "a"), And (AP "a", Not (AP "b")))) = 4);;
 
 let ab = APSet.of_list ["a";"b"];;
 let a = APSet.of_list ["a"];;
 let b = APSet.of_list ["b"];;
 let empty = APSet.empty;;
 
-assert (eval [ab;a;a] (And (Atom "a", Atom "b")));;
-assert (eval [ab;a;a] (And (Atom "a", X (Atom "b"))) = false);;
-assert (eval [ab;a;a] (And (Atom "a", X (Atom "a"))));;
-assert (eval [ab;empty;b] (X (Atom "a")) = false);;
-assert (eval [ab;a;a] (U (Atom "a", X (Atom "a"))));;
-assert (eval [ab;a;a] (And (Atom "a", Not (X (Atom "a")))) = false);;
-assert (eval [ab;a;a;b] (U (Atom "a", Atom "b")));;
-assert (eval [ab;a;a;b] (U (Atom "a", And (Atom "b", Atom "a"))));;
-assert (eval [ab] (U (Atom "a", And (Atom "b", Atom "a"))));;
-assert (eval [a;a;a;ab] (U (Atom "a", And (Atom "b", Atom "a"))));;
-assert (eval [a;a;a;b] (U (Atom "a", And (Atom "b", Atom "a"))) = false);;
-assert (eval [a;ab;a;ab] (U (Atom "a", And (Atom "b", Atom "a"))));;
-assert (eval [a;b;a;ab] (U (Atom "a", And (Atom "b", Atom "a"))) = false);;
+assert (eval [ab;a;a] (And (AP "a", AP "b")));;
+assert (eval [ab;a;a] (And (AP "a", X (AP "b"))) = false);;
+assert (eval [ab;a;a] (And (AP "a", X (AP "a"))));;
+assert (eval [ab;empty;b] (X (AP "a")) = false);;
+assert (eval [ab;a;a] (U (AP "a", X (AP "a"))));;
+assert (eval [ab;a;a] (And (AP "a", Not (X (AP "a")))) = false);;
+assert (eval [ab;a;a;b] (U (AP "a", AP "b")));;
+assert (eval [ab;a;a;b] (U (AP "a", And (AP "b", AP "a"))));;
+assert (eval [ab] (U (AP "a", And (AP "b", AP "a"))));;
+assert (eval [a;a;a;ab] (U (AP "a", And (AP "b", AP "a"))));;
+assert (eval [a;a;a;b] (U (AP "a", And (AP "b", AP "a"))) = false);;
+assert (eval [a;ab;a;ab] (U (AP "a", And (AP "b", AP "a"))));;
+assert (eval [a;b;a;ab] (U (AP "a", And (AP "b", AP "a"))) = false);;
+assert (eval [empty;ab;a;ab] (U (AP "a", And (AP "b", AP "a"))) = false);;
+assert (eval [a;a;a;ab;a] (U (True, And (AP "b", AP "a"))));;
+assert (eval [a;a;a;ab] (U (True, And (AP "b", X (AP "a")))) = false);;
+assert (eval [a;a;a;ab;a] (U (True, And (AP "b", X (AP "a")))));;
