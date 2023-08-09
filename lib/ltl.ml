@@ -30,4 +30,19 @@ module Make (AP : Set.OrderedType) = struct
         | X f' -> eval s1 f'
         | U (True, f2) -> eval s (Or (f2, X f))
         | U (f1, f2) -> eval s (Or (f2, And (f1, X f))))
+
+  module PowerAPSet = Set.Make (APSet)
+
+  let rec powerset apset =
+    match APSet.elements apset with
+    | [] -> PowerAPSet.singleton APSet.empty
+    | a :: aps' ->
+        let p = powerset (APSet.of_list aps') in
+        PowerAPSet.union p (PowerAPSet.map (fun x -> APSet.add a x) p)
+
+  let labels_of_formula aps f =
+    let p = powerset aps in
+    PowerAPSet.filter (fun apset -> eval [ apset ] f) p
+
+  let compare = compare
 end

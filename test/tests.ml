@@ -427,3 +427,10 @@ assert (eval [empty;ab;a;ab] (U (AP "a", And (AP "b", AP "a"))) = false);;
 assert (eval [a;a;a;ab;a] (U (True, And (AP "b", AP "a"))));;
 assert (eval [a;a;a;ab] (U (True, And (AP "b", X (AP "a")))) = false);;
 assert (eval [a;a;a;ab;a] (U (True, And (AP "b", X (AP "a")))));;
+
+let f = Or (AP "a", Not (AP "b"));;
+assert (PowerAPSet.equal (labels_of_formula ab f) (PowerAPSet.of_list [ab;a;empty]));;
+let f = And (AP "a", Not (AP "b"));;
+assert (PowerAPSet.equal (labels_of_formula ab f) (PowerAPSet.of_list [a]));;
+let f = Not (AP "b");;
+assert (PowerAPSet.equal (labels_of_formula ab f) (PowerAPSet.of_list [empty;a]));;
