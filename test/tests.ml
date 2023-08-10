@@ -450,3 +450,56 @@ assert (FormulaSet.equal (closure f) (FormulaSet.of_list [
   AP "a"; Not (AP "a");
   f; Not f
 ]));;
+
+let f = U (AP "a", And (Not (AP "a"), AP "b"));;
+let cl = closure f;;
+let pcl = powerformulaset cl;;
+assert (PowerFormulaSet.cardinal pcl = 256);;
+
+let bs = elementary_sets f;;
+assert(PowerFormulaSet.cardinal bs = 6);;
+
+(* Elementary sets from Example 5.36 p. 277 Baier *)
+let b1 = FormulaSet.of_list ([
+  AP "a"; 
+  AP "b"; 
+  Not (And (Not (AP "a"), AP "b"));
+  f
+]);;
+
+let b2 = FormulaSet.of_list ([
+  AP "a"; 
+  AP "b"; 
+  Not (And (Not (AP "a"), AP "b"));
+  Not f
+]);;
+
+let b3 = FormulaSet.of_list ([
+  AP "a";
+  Not (AP "b");
+  Not (And (Not (AP "a"), AP "b"));
+  f
+]);;
+
+let b4 = FormulaSet.of_list ([
+  AP "a"; 
+  Not (AP "b"); 
+  Not (And (Not (AP "a"), AP "b"));
+  Not f
+]);;
+
+let b5 = FormulaSet.of_list ([
+  Not (AP "a"); 
+  Not (AP "b"); 
+  Not (And (Not (AP "a"), AP "b"));
+  Not f
+]);;
+
+let b6 = FormulaSet.of_list ([
+  Not (AP "a"); 
+  AP "b"; 
+  And (Not (AP "a"), AP "b");
+  f
+]);;
+
+assert(PowerFormulaSet.equal bs (PowerFormulaSet.of_list [b1;b2;b3;b4;b5;b6]));;
