@@ -398,6 +398,7 @@ print_endline "[OK] reversible" *)
 
 module StringLtl = Unfoldings.Ltl.Make(String)
 open StringLtl;;
+open StringLtl.Formula;;
 
 assert (length (X (AP "a")) = 1);;
 assert (length (And (X (AP "a"), AP "b")) = 2);;
@@ -434,3 +435,18 @@ let f = And (AP "a", Not (AP "b"));;
 assert (PowerAPSet.equal (labels_of_formula ab f) (PowerAPSet.of_list [a]));;
 let f = Not (AP "b");;
 assert (PowerAPSet.equal (labels_of_formula ab f) (PowerAPSet.of_list [empty;a]));;
+
+let f = U (AP "a", And (Not (AP "a"), AP "b"));;
+assert (FormulaSet.cardinal (closure f) = 8);;
+assert (FormulaSet.equal (closure f) (FormulaSet.of_list [
+  AP "a"; Not (AP "a");
+  AP "b";  Not (AP "b");
+  And (Not (AP "a"), AP "b"); Not (And (Not (AP "a"), AP "b"));
+  f; Not f
+]));;
+
+let f = X (AP "a");;
+assert (FormulaSet.equal (closure f) (FormulaSet.of_list [
+  AP "a"; Not (AP "a");
+  f; Not f
+]));;
