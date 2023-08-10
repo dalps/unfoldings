@@ -1,6 +1,5 @@
 module Make (State : Set.OrderedType) (Alpha : Set.OrderedType) = struct
-  module StateSet = Set.Make (State)
-  module AlphaSet = Set.Make (Alpha)
+  include Nba.Make (State) (Alpha)
   module PowerStateSet = Set.Make (StateSet)
 
   type t = {
@@ -11,17 +10,6 @@ module Make (State : Set.OrderedType) (Alpha : Set.OrderedType) = struct
     fin : PowerStateSet.t;
   }
 
-  let bottom _ _ = StateSet.empty
-
-  let bind_states f q a post q' a' =
-    if q' = q && a' = a then StateSet.union post (f q a) else f q' a'
-
-  let bind_state f q a r q' a' =
-    if q' = q && a' = a then StateSet.add r (f q a) else f q' a'
-
-  let bind_f f f' q a = StateSet.union (f q a) (f' q a)
-  let delta q a post = bind_states bottom q a (StateSet.of_list post)
-
   let of_lists states alpha func init fin =
     {
       states = StateSet.of_list states;
@@ -30,4 +18,45 @@ module Make (State : Set.OrderedType) (Alpha : Set.OrderedType) = struct
       init = StateSet.of_list init;
       fin = PowerStateSet.of_list (List.map StateSet.of_list fin);
     }
+
+  module NumberedNba =
+    Nba.Make
+      (struct
+        type t = State.t * int
+
+        let compare = compare
+      end)
+      (Alpha)
+
+  let to_nba gnba =
+    let k = PowerStateSet.cardinal gnba.fin in
+    let rec range k = if k = 0 then [] else range (k - 1) @ [k] in
+    let numbered_fin =
+      List.combine (range k) (PowerStateSet.elements gnba.fin)
+    in
+
+    NumberedNba.of_sets
+      (List.fold_left
+         (fun acc i ->
+           StateSet.fold
+             (fun q acc' -> NumberedNba.StateSet.add (q, i) acc')
+             gnba.states acc)
+         NumberedNba.StateSet.empty (range k))
+      gnba.alpha
+      (fun (q, i) a ->
+        if not (StateSet.mem q (List.assoc i numbered_fin)) then
+          StateSet.fold
+            (fun q' -> NumberedNba.StateSet.add (q', i))
+            (gnba.func q a) NumberedNba.StateSet.empty
+        else
+          StateSet.fold
+            (fun q' -> NumberedNba.StateSet.add (q', (i mod k) + 1))
+            (gnba.func q a) NumberedNba.StateSet.empty)
+      (StateSet.fold
+         (fun q0 -> NumberedNba.StateSet.add (q0, 1))
+         gnba.init NumberedNba.StateSet.empty)
+      (StateSet.fold
+         (fun qf -> NumberedNba.StateSet.add (qf, 1))
+         (List.assoc 1 numbered_fin)
+         NumberedNba.StateSet.empty)
 end

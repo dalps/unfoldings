@@ -503,3 +503,22 @@ let b6 = FormulaSet.of_list ([
 ]);;
 
 assert(PowerFormulaSet.equal bs (PowerFormulaSet.of_list [b1;b2;b3;b4;b5;b6]));;
+
+(* --- *)
+
+open Examples.Live_gnba
+open Examples.Live_gnba.CritGNBA
+
+let g' = to_nba g;;
+
+assert (List.map StateSet.elements (PowerStateSet.elements g.fin) = [["q1"]; ["q2"]]);;
+let n = CritGNBA.StateSet.cardinal g.states * CritGNBA.PowerStateSet.cardinal g.fin;;
+assert (n = 6);;
+assert (NumberedNba.StateSet.cardinal g'.states = n);;
+assert (NumberedNba.StateSet.equal g'.init (NumberedNba.StateSet.of_list [("q0", 1)]));;
+assert (NumberedNba.StateSet.equal g'.fin (NumberedNba.StateSet.of_list [("q1", 1)]));;
+assert (NumberedNba.StateSet.equal (g'.func ("q2", 2) True) (NumberedNba.StateSet.of_list [("q0", 1)]));;
+assert (NumberedNba.StateSet.equal (g'.func ("q1", 1) True) (NumberedNba.StateSet.of_list [("q0", 2)]));;
+assert (NumberedNba.StateSet.equal (g'.func ("q0", 1) (AP Crit1)) (NumberedNba.StateSet.of_list [("q1", 1)]));;
+assert (NumberedNba.StateSet.equal (g'.func ("q0", 1) True) (NumberedNba.StateSet.of_list [("q0", 1)]));;
+assert (NumberedNba.StateSet.equal (g'.func ("q0", 2) True) (NumberedNba.StateSet.of_list [("q0", 2)]));;
