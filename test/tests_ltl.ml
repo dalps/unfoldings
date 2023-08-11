@@ -176,3 +176,42 @@ assert (
 ;;
 
 print_endline "[OK] to_nba"
+
+let f = X (AP "a")
+let ap = APSet.of_list [ "a"; "b" ]
+let g = gnba_of_formula ap f
+let b1 = FormulaSet.of_list [ AP "a"; f ]
+let b2 = FormulaSet.of_list [ AP "a"; Not f ]
+let b3 = FormulaSet.of_list [ Not (AP "a"); f ]
+let b4 = FormulaSet.of_list [ Not (AP "a"); Not f ];;
+
+assert (
+  PowerFormulaSet.equal g.states (PowerFormulaSet.of_list [ b1; b2; b3; b4 ]))
+;;
+
+assert (PowerFormulaSet.equal g.init (PowerFormulaSet.of_list [ b1; b3 ]));;
+assert (PowerFormulaSet.equal g.fin PowerFormulaSet.empty);;
+assert (PowerFormulaSet.equal (g.func b1 a) (PowerFormulaSet.of_list [ b1; b2 ]))
+;;
+assert (PowerFormulaSet.equal (g.func b1 ab) (g.func b1 a));;
+
+(* "{a,b}" counts as "a" *)
+assert (PowerFormulaSet.equal (g.func b1 empty) PowerFormulaSet.empty);;
+assert (PowerFormulaSet.equal (g.func b2 a) (PowerFormulaSet.of_list [ b3; b4 ]))
+;;
+assert (PowerFormulaSet.equal (g.func b2 b) PowerFormulaSet.empty);;
+
+assert (
+  PowerFormulaSet.equal (g.func b3 empty) (PowerFormulaSet.of_list [ b1; b2 ]))
+;;
+
+assert (PowerFormulaSet.equal (g.func b3 b) (g.func b3 empty));;
+
+(* "{b}" counts as "not a" *)
+assert (
+  PowerFormulaSet.equal (g.func b4 empty) (PowerFormulaSet.of_list [ b3; b4 ]))
+;;
+
+assert (PowerFormulaSet.equal (g.func b4 a) PowerFormulaSet.empty);;
+assert (PowerFormulaSet.equal (g.func b4 a) (g.func b4 ab));;
+print_endline "[OK] gnba_of_formula"

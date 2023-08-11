@@ -111,4 +111,44 @@ module Make (AP : Set.OrderedType) = struct
       (fun b ->
         is_logically_consistent b && is_locally_consistent b && is_maximal b)
       pcl
+
+  module FormulaGNBA = Gnba.Make (FormulaSet) (APSet)
+
+  let gnba_of_formula ap f =
+    let cl = closure f in
+    let states = elementary_sets f in
+    let formulas_of apset =
+      APSet.fold (fun a -> FormulaSet.add (AP a)) apset FormulaSet.empty
+    in
+    let formulas_of_ap = formulas_of ap in
+    FormulaGNBA.of_sets states (powerapset ap)
+      (fun b a ->
+        if
+          FormulaSet.equal
+            (FormulaSet.inter (formulas_of a) cl)
+            (FormulaSet.inter formulas_of_ap b)
+        then
+          PowerFormulaSet.filter
+            (fun b' ->
+              FormulaSet.for_all
+                (function
+                  | X g' as g -> FormulaSet.mem g b <=> FormulaSet.mem g' b'
+                  | U (g1, g2) as g ->
+                      FormulaSet.mem g b
+                      <=> (FormulaSet.mem g2 b
+                          || (FormulaSet.mem g1 b && FormulaSet.mem g b'))
+                  | _ -> true)
+                cl)
+            states
+        else PowerFormulaSet.empty)
+      (PowerFormulaSet.filter (FormulaSet.mem f) states)
+      (FormulaSet.fold
+         (function
+           | U (_, g2) as g ->
+               PowerFormulaSet.union
+                 (PowerFormulaSet.filter
+                    (fun b -> (not (FormulaSet.mem g b)) || FormulaSet.mem g2 b)
+                    states)
+           | _ -> PowerFormulaSet.union PowerFormulaSet.empty)
+         cl PowerFormulaSet.empty)
 end
