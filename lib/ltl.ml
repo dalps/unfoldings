@@ -43,25 +43,23 @@ module Make (AP : Set.OrderedType) = struct
   module PowerAPSet = Set.Make (APSet)
   module PowerFormulaSet = Set.Make (FormulaSet)
 
-  let rec powerapset apset =
+  let rec power_apset apset =
     match APSet.elements apset with
     | [] -> PowerAPSet.singleton APSet.empty
     | a :: aps' ->
-        let p = powerapset (APSet.of_list aps') in
+        let p = power_apset (APSet.of_list aps') in
         PowerAPSet.union p (PowerAPSet.map (fun x -> APSet.add a x) p)
 
-  let rec powerformulaset apset =
+  let rec power_formulaset apset =
     match FormulaSet.elements apset with
     | [] -> PowerFormulaSet.singleton FormulaSet.empty
     | a :: aps' ->
-        let p = powerformulaset (FormulaSet.of_list aps') in
+        let p = power_formulaset (FormulaSet.of_list aps') in
         PowerFormulaSet.union p
           (PowerFormulaSet.map (fun x -> FormulaSet.add a x) p)
 
-  let labels_of_formula aps f =
-    PowerAPSet.filter (fun apset -> eval [ apset ] f) (powerapset aps)
-
-  let ( #@ ) l1 l2 = List.filter (fun x -> not (List.mem x l2)) l1 @ l2
+  let labels_of_formula ap f =
+    PowerAPSet.filter (fun apset -> eval [ apset ] f) (power_apset ap)
 
   let rec closure f =
     FormulaSet.union
@@ -77,40 +75,23 @@ module Make (AP : Set.OrderedType) = struct
 
   let elementary_sets f =
     let cl = closure f in
-    let pcl = powerformulaset cl in
-    let is_logically_consistent b =
-      FormulaSet.mem True cl => FormulaSet.mem True b
-      && FormulaSet.for_all
-           (fun g -> FormulaSet.mem g b => not (FormulaSet.mem (Not g) b))
-           cl
-      && FormulaSet.for_all
-           (function
-             | And (g1, g2) as g ->
-                 FormulaSet.mem g b
-                 <=> (FormulaSet.mem g1 b && FormulaSet.mem g2 b)
-             | _ -> true)
-           cl
-    in
-    let is_locally_consistent b =
-      FormulaSet.for_all
-        (function
-          | U (g1, g2) as g ->
-              FormulaSet.mem g2 b => FormulaSet.mem g b
-              && (FormulaSet.mem g b && not (FormulaSet.mem g2 b))
-                 => FormulaSet.mem g1 b
-          | _ -> true)
-        cl
-    in
-    let is_maximal b =
-      FormulaSet.for_all
-        (fun g -> (not (FormulaSet.mem g b)) => FormulaSet.mem (Not g) b)
-        cl
-    in
-
     PowerFormulaSet.filter
       (fun b ->
-        is_logically_consistent b && is_locally_consistent b && is_maximal b)
-      pcl
+        FormulaSet.mem True cl => FormulaSet.mem True b
+        && (FormulaSet.for_all (fun g ->
+                FormulaSet.mem g b <=> not (FormulaSet.mem (Not g) b)
+                &&
+                match g with
+                | And (g1, g2) as g ->
+                    FormulaSet.mem g b
+                    <=> (FormulaSet.mem g1 b && FormulaSet.mem g2 b)
+                | U (g1, g2) as g ->
+                    FormulaSet.mem g2 b => FormulaSet.mem g b
+                    && (FormulaSet.mem g b && not (FormulaSet.mem g2 b))
+                       => FormulaSet.mem g1 b
+                | _ -> true))
+             cl)
+      (power_formulaset cl)
 
   module FormulaGNBA = Gnba.Make (FormulaSet) (APSet)
 
@@ -121,7 +102,7 @@ module Make (AP : Set.OrderedType) = struct
       APSet.fold (fun a -> FormulaSet.add (AP a)) apset FormulaSet.empty
     in
     let formulas_of_ap = formulas_of ap in
-    FormulaGNBA.of_sets states (powerapset ap)
+    FormulaGNBA.of_sets states (power_apset ap)
       (fun b a ->
         if
           FormulaSet.equal

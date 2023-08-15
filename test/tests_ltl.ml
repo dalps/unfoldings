@@ -81,7 +81,7 @@ print_endline "[OK] closure"
 
 let f = U (AP "a", And (Not (AP "a"), AP "b"))
 let cl = closure f
-let pcl = powerformulaset cl;;
+let pcl = power_formulaset cl;;
 
 assert (PowerFormulaSet.cardinal pcl = 256)
 
@@ -213,5 +213,30 @@ assert (
 ;;
 
 assert (PowerFormulaSet.equal (g.func b4 a) PowerFormulaSet.empty);;
-assert (PowerFormulaSet.equal (g.func b4 a) (g.func b4 ab));;
+assert (PowerFormulaSet.equal (g.func b4 a) (g.func b4 ab))
+
+let f = U (AP "a", AP "b")
+let ap = APSet.of_list [ "a"; "b" ]
+let g = gnba_of_formula ap f
+let b1 = FormulaSet.of_list [ AP "a"; AP "b"; f ]
+let b2 = FormulaSet.of_list [ Not (AP "a"); AP "b"; f ]
+let b3 = FormulaSet.of_list [ AP "a"; Not (AP "b"); f ]
+let b4 = FormulaSet.of_list [ Not (AP "a"); Not (AP "b"); Not f ]
+let b5 = FormulaSet.of_list [ AP "a"; Not (AP "b"); Not f ];;
+
+assert (
+  PowerFormulaSet.equal g.states
+    (PowerFormulaSet.of_list [ b1; b2; b3; b4; b5 ]))
+;;
+
+assert (PowerFormulaSet.equal g.init (PowerFormulaSet.of_list [ b1; b2; b3 ]));;
+assert (PowerFormulaSet.equal g.fin (PowerFormulaSet.of_list [ b1; b2; b4; b5 ]))
+;;
+assert (PowerFormulaSet.equal (g.func b1 ab) g.states);;
+assert (PowerFormulaSet.equal (g.func b2 b) g.states);;
+assert (PowerFormulaSet.equal (g.func b2 a) PowerFormulaSet.empty);;
+assert (PowerFormulaSet.equal (g.func b3 a) (PowerFormulaSet.of_list [ b1; b2; b3 ]));;
+assert (PowerFormulaSet.equal (g.func b4 empty) g.states);;
+assert (PowerFormulaSet.equal (g.func b4 ab) PowerFormulaSet.empty);;
+assert (PowerFormulaSet.equal (g.func b5 a) (PowerFormulaSet.of_list [ b4; b5 ]));;
 print_endline "[OK] gnba_of_formula"
