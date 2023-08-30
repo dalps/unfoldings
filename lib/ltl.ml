@@ -63,9 +63,13 @@ module Make (AP : Set.OrderedType) = struct
 
   let rec closure f =
     FormulaSet.union
-      (FormulaSet.of_list [ f; Not f ])
+      (FormulaSet.of_list
+         (match f with
+         | Formula.True | False -> [ True; False ]
+         | Not f' -> [ f; f' ]
+         | _ -> [ f; Not f ]))
       (match f with
-      | Formula.True | False | AP _ -> FormulaSet.empty
+      | True | False | AP _ -> FormulaSet.empty
       | Not f' | X f' -> closure f'
       | And (f1, f2) | Or (f1, f2) | U (f1, f2) ->
           FormulaSet.union (closure f1) (closure f2))
@@ -77,23 +81,21 @@ module Make (AP : Set.OrderedType) = struct
     let cl = closure f in
     PowerFormulaSet.filter
       (fun b ->
-        FormulaSet.mem True cl => FormulaSet.mem True b
-        && (FormulaSet.for_all (fun g ->
-                FormulaSet.mem g b <=> not (FormulaSet.mem (Not g) b)
-                &&
-                match g with
-                | And (g1, g2) as g ->
-                    FormulaSet.mem g b
-                    <=> (FormulaSet.mem g1 b && FormulaSet.mem g2 b)
-                | U (g1, g2) as g ->
-                    FormulaSet.mem g2 b => FormulaSet.mem g b
-                    && (FormulaSet.mem g b && not (FormulaSet.mem g2 b))
-                       => FormulaSet.mem g1 b
-                | _ -> true))
-             cl)
+        (FormulaSet.for_all (function
+          | True -> FormulaSet.mem True b
+          | Not g' as g -> FormulaSet.mem g' b <=> not (FormulaSet.mem g b)
+          | And (g1, g2) as g ->
+              FormulaSet.mem g b <=> (FormulaSet.mem g1 b && FormulaSet.mem g2 b)
+          | U (g1, g2) as g ->
+              FormulaSet.mem g2 b => FormulaSet.mem g b
+              && (FormulaSet.mem g b && not (FormulaSet.mem g2 b))
+                 => FormulaSet.mem g1 b
+          | _ -> true))
+          cl)
       (power_formulaset cl)
 
   module FormulaGNBA = Gnba.Make (FormulaSet) (APSet)
+  module PowerPowerFormulaSet = Set.Make (FormulaGNBA.StateSet)
 
   let gnba_of_formula ap f =
     let cl = closure f in
@@ -126,10 +128,55 @@ module Make (AP : Set.OrderedType) = struct
       (FormulaSet.fold
          (function
            | U (_, g2) as g ->
-               PowerFormulaSet.union
+               PowerPowerFormulaSet.add
                  (PowerFormulaSet.filter
                     (fun b -> (not (FormulaSet.mem g b)) || FormulaSet.mem g2 b)
                     states)
-           | _ -> PowerFormulaSet.union PowerFormulaSet.empty)
-         cl PowerFormulaSet.empty)
+           | _ -> PowerPowerFormulaSet.union PowerPowerFormulaSet.empty)
+         cl PowerPowerFormulaSet.empty)
+
+  let nba_of_formula ap f = FormulaGNBA.to_nba (gnba_of_formula ap f)
+
+  module NumberedAPSet = struct
+    type t = int * APSet.t
+
+    let label = snd
+    let compare = compare
+  end
+
+  module FormulaPTNet =
+    Petrinet.Make (FormulaGNBA.NumberedState) (NumberedAPSet)
+
+  type flow = {
+    source : FormulaPTNet.place;
+    label : APSet.t;
+    target : FormulaPTNet.place;
+  }
+
+  let petrinet_of_formula ap f =
+    let b = nba_of_formula ap f in
+    let powerapset = power_apset ap in
+    (* awful construction *)
+    let flow =
+      PowerAPSet.fold
+        (fun label ->
+          FormulaGNBA.NumberedNba.StateSet.fold
+            (fun source ->
+              FormulaGNBA.NumberedNba.StateSet.fold
+                (fun target -> List.cons { source; label; target })
+                (b.func source label))
+            b.states)
+        powerapset []
+    in
+    FormulaPTNet.of_sets b.states
+      (FormulaPTNet.TransSet.of_list (List.mapi (fun i r -> (i, r.label)) flow))
+      (fun (i, apset) ->
+        let r = List.nth flow i in
+        if APSet.equal apset r.label then
+          FormulaPTNet.PlaceSet.singleton r.source
+        else FormulaPTNet.PlaceSet.empty)
+      (fun t ->
+        let r = List.nth flow (fst t) in
+        FormulaPTNet.PlaceSet.singleton r.target)
+      b.init
 end
