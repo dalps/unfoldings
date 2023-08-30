@@ -19,7 +19,7 @@ module type S = sig
   module Trans : Set.OrderedType with type t = trans
   module PlaceSet : Set.S with type elt = place
   module TransSet : Set.S with type elt = trans
-  module NodeSet : module type of Set.Make (Node)
+  module NodeSet : Set.S with type elt = Node.t
 
   val bottom : trans -> PlaceSet.t
 
@@ -77,6 +77,7 @@ module type S = sig
   val fire : trans -> t -> unit
   val is_occurrence_sequence : trans list -> t -> bool
   val fire_sequence : trans list -> t -> unit
+  val is_freechoice : t -> bool
 end
 
 module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
@@ -202,4 +203,14 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
   let fire_sequence ts n =
     assert (is_occurrence_sequence ts n);
     List.iter (fun t -> fire t n) ts
+
+  let preset_tset n tset =
+    TransSet.fold (fun t -> PlaceSet.union (n.preset t)) tset PlaceSet.empty
+
+  let is_freechoice n =
+    PlaceSet.for_all
+      (fun p ->
+        TransSet.cardinal (postset_p n p) = 1
+        || PlaceSet.equal (preset_tset n (postset_p n p)) (PlaceSet.singleton p))
+      n.places
 end

@@ -1,4 +1,5 @@
 print_endline "#### Running unfold tests..."
+
 open Examples.Prod1
 open Unfoldings.Product_utils.StringPTNetProduct;;
 
@@ -215,7 +216,23 @@ open Examples.Prod2
 open Examples.Prod3
 open Examples.Prod4
 open Examples.Prod5
-open Unfoldings.Executability;;
+open Examples.Prod5_loops
+open Unfoldings.Product_utils;;
+
+assert (StringPTNetProduct.is_freechoice prod1);;
+assert (StringPTNetProduct.is_freechoice prod2 = false);;
+assert (StringPTNetProduct.is_freechoice prod3 = false);;
+assert (StringPTNetProduct.is_freechoice prod4 = false);;
+assert (StringPTNetProduct.is_freechoice prod5 = false);;
+assert (StringPTNetProduct.is_freechoice prod5' = false)
+
+module ProductUnfold = Unfoldings.Executability.Make(StringPTNetProduct)
+open ProductUnfold
+
+let fc1 = Unfolder.(unfold (unfold_init prod1) 10 prod1);;
+
+assert (Unfolder.OccurrenceNet.is_freechoice fc1 = false);;
+print_endline "[OK] is_freechoice";;
 
 assert (test prod1 (d_compare sl_compare) [ [ T "t1" ] ] 99);;
 assert (test prod1 (d_compare sl_compare) [ [ T "t2" ] ] 99);;
@@ -264,7 +281,7 @@ print_endline "[OK] is_executable prod5"
 
 (* --- *)
 
-open Unfoldings.Repeated_executability
+open Unfoldings.Repeated_executability.Make(StringPTNetProduct)
 open Examples.Prod5_loops
 open Examples.Prod6;;
 
