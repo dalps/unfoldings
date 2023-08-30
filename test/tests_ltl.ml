@@ -75,6 +75,22 @@ let f = X (AP "a");;
 assert (
   FormulaSet.equal (closure f)
     (FormulaSet.of_list [ AP "a"; Not (AP "a"); f; Not f ]))
+
+let f = U (AP "t1", Not (X (AP "u1")));;
+
+assert (
+  FormulaSet.equal (closure f)
+    (FormulaSet.of_list
+       [
+         AP "t1";
+         Not (AP "t1");
+         AP "u1";
+         Not (AP "u1");
+         X (AP "u1");
+         Not (X (AP "u1"));
+         f;
+         Not f;
+       ]))
 ;;
 
 print_endline "[OK] closure"
@@ -190,7 +206,7 @@ assert (
 ;;
 
 assert (PowerFormulaSet.equal g.init (PowerFormulaSet.of_list [ b1; b3 ]));;
-assert (PowerFormulaSet.equal g.fin PowerFormulaSet.empty);;
+assert (PowerPowerFormulaSet.equal g.fin PowerPowerFormulaSet.empty);;
 assert (PowerFormulaSet.equal (g.func b1 a) (PowerFormulaSet.of_list [ b1; b2 ]))
 ;;
 assert (PowerFormulaSet.equal (g.func b1 ab) (g.func b1 a));;
@@ -230,13 +246,48 @@ assert (
 ;;
 
 assert (PowerFormulaSet.equal g.init (PowerFormulaSet.of_list [ b1; b2; b3 ]));;
-assert (PowerFormulaSet.equal g.fin (PowerFormulaSet.of_list [ b1; b2; b4; b5 ]))
+
+assert (
+  PowerPowerFormulaSet.equal g.fin
+    (PowerPowerFormulaSet.singleton
+       (PowerFormulaSet.of_list [ b1; b2; b4; b5 ])))
 ;;
+
 assert (PowerFormulaSet.equal (g.func b1 ab) g.states);;
 assert (PowerFormulaSet.equal (g.func b2 b) g.states);;
 assert (PowerFormulaSet.equal (g.func b2 a) PowerFormulaSet.empty);;
-assert (PowerFormulaSet.equal (g.func b3 a) (PowerFormulaSet.of_list [ b1; b2; b3 ]));;
+
+assert (
+  PowerFormulaSet.equal (g.func b3 a) (PowerFormulaSet.of_list [ b1; b2; b3 ]))
+;;
+
 assert (PowerFormulaSet.equal (g.func b4 empty) g.states);;
 assert (PowerFormulaSet.equal (g.func b4 ab) PowerFormulaSet.empty);;
-assert (PowerFormulaSet.equal (g.func b5 a) (PowerFormulaSet.of_list [ b4; b5 ]));;
+assert (PowerFormulaSet.equal (g.func b5 a) (PowerFormulaSet.of_list [ b4; b5 ]))
+;;
 print_endline "[OK] gnba_of_formula"
+
+let f = U (AP "a", Not (X (AP "b")))
+let ap = APSet.of_list [ "a"; "b" ]
+let g = gnba_of_formula ap f
+let b = nba_of_formula ap f;;
+
+assert (FormulaGNBA.PowerStateSet.cardinal g.fin = 1);;
+
+assert (
+  FormulaGNBA.NumberedNba.StateSet.cardinal b.states
+  = FormulaGNBA.StateSet.cardinal g.states)
+;;
+
+assert (
+  FormulaGNBA.NumberedNba.StateSet.cardinal b.init
+  = FormulaGNBA.StateSet.cardinal g.init)
+;;
+
+assert (
+  FormulaGNBA.NumberedNba.StateSet.cardinal b.fin
+  = FormulaGNBA.StateSet.cardinal
+      (List.nth (FormulaGNBA.PowerStateSet.elements g.fin) 0))
+;;
+
+print_endline "[OK] nba_of_formula"
