@@ -78,6 +78,11 @@ module type S = sig
   val is_occurrence_sequence : trans list -> t -> bool
   val fire_sequence : trans list -> t -> unit
   val is_freechoice : t -> bool
+  val is_statemachine : t -> bool
+  val is_marked_graph : t -> bool
+
+  val print_graph :
+    t -> ?vertex_name:(Node.t -> string) -> ?vertex_label:(Node.t -> string) -> ?file_name:string -> unit -> int
 end
 
 module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
@@ -252,25 +257,29 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
     g
 
   let print_graph n ?(vertex_name = fun v -> string_of_int (G.V.hash v))
+      ?(vertex_label = fun _ -> "")
       ?(file_name = "mygraph") () =
-    let module Dot = Graph.Graphviz.Dot (struct
+    let module Plotter = Graph.Graphviz.Neato (struct
       include G
 
-      let graph_attributes _ = [ `Center false; `Rankdir `LeftToRight ]
-      let edge_attributes (_, e, _) = [ `Label e ]
+      let graph_attributes _ =
+        [ `Center true; `Margin (1.0, 1.0); `Overlap false ]
+
+      let edge_attributes _ = [ `Dir `Forward ]
       let default_edge_attributes _ = []
       let get_subgraph _ = None
 
       let vertex_attributes v =
-        match v with Node.P _ -> [ `Shape `Circle ] | T _ -> [ `Shape `Box ]
+        (match v with Node.P _ -> [ `Shape `Circle ] | T _ -> [ `Shape `Box ]) @
+        [ `Label (vertex_label v) ]
 
-      let vertex_name = vertex_name
+      let vertex_name v = "\"" ^ vertex_name v ^ "\""
       let default_vertex_attributes _ = []
     end) in
     let g = get_graph n in
     let file = open_out_bin (file_name ^ ".dot") in
-    Dot.output_graph file g;
-    Sys.command ("dot -Tpng " ^ file_name ^ ".dot -o " ^ file_name ^ ".png")
+    Plotter.output_graph file g;
+    Sys.command ("neato -Tpng " ^ file_name ^ ".dot -o " ^ file_name ^ ".png")
 
   module M = Graph.Traverse.Dfs (G)
 end
