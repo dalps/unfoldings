@@ -45,8 +45,8 @@ module Make (Net : Petrinet.S) = struct
   module OccurrenceNet = Occurrence_net.Make (Net.Place) (Net.Trans)
   open OccurrenceNet
 
-  let tokens_of_places states history =
-    PlaceSet.of_list (List.map (Token.build history) states)
+  let tokens_of_places step states history =
+    PlaceSet.of_list (List.map (Token.build ~name:step history) states)
 
   let places_of_tokens ps =
     PlaceSet.fold
@@ -56,13 +56,13 @@ module Make (Net : Petrinet.S) = struct
   let places_labeled_as st places =
     PlaceSet.filter (fun p -> Token.label p = st) places
 
-  let extend e postset n preset =
+  let extend ?(step = 0) e postset n preset =
     assert (PlaceSet.subset preset (places n));
     let n' = copy n in
     add_trans e n';
     PlaceSet.iter (fun p -> add_to_trans_arc p e n') preset;
     let places_of_postset =
-      tokens_of_places (Net.PlaceSet.elements postset) (Event.history e)
+      tokens_of_places step (Net.PlaceSet.elements postset) (Event.history e)
     in
     add_places places_of_postset n';
     PlaceSet.iter (fun p -> add_to_place_arc e p n') places_of_postset;
@@ -115,7 +115,7 @@ module Make (Net : Petrinet.S) = struct
         List.fold_right
           (fun c acc' ->
             let e = Event.build step (past_word_of_preset c n t) t in
-            let n' = extend e (Net.postset_t net t) n c in
+            let n' = extend ~step e (Net.postset_t net t) n c in
             fire e n';
             { UnfoldResult.event = e; UnfoldResult.prefix = n' } :: acc')
           (List.filter (fun c -> is_reachable c n) (candidates t n))

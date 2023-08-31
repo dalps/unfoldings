@@ -3,9 +3,10 @@ module type S = sig
   type trans1
 
   module Token : sig
-    type t = { history : trans1 list; label : place1 }
+    type t = { name : int; history : trans1 list; label : place1 }
 
     val build : trans1 list -> place1 -> t
+    val name : t -> int
     val history : t -> trans1 list
     val label : t -> place1
     val compare : t -> t -> int
@@ -49,9 +50,10 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
 
   (* expose Token and Event outside of Make *)
   module Token = struct
-    type t = { history : T.t list; label : P.t }
+    type t = { name : int; history : T.t list; label : P.t }
 
-    let build history label = { history; label }
+    let build ?(name=0) history label = { name; history; label }
+    let name p = p.name
     let history p = p.history
     let label p = p.label
 
