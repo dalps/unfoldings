@@ -229,7 +229,7 @@ assert (StringPTNetProduct.is_freechoice prod5' = false)
 module ProductUnfold = Unfoldings.Executability.Make(StringPTNetProduct)
 open ProductUnfold
 
-let fc1 = Unfolder.(unfold (unfold_init prod1) 10 prod1);;
+let fc1 = Unfolder.(unfold 10 prod1);;
 
 assert (Unfolder.OccurrenceNet.is_freechoice fc1 = false);;
 print_endline "[OK] is_freechoice";;

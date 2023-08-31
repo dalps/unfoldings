@@ -91,7 +91,7 @@ module Make (Net : Petrinet.S) = struct
 
       let options =
         Net.PlaceSet.fold
-          (fun st acc -> places_labeled_as st (places n) :: acc)
+          (fun st acc -> places_labeled_as st (marking n) :: acc)
           inputs_of_t []
       in
 
@@ -112,22 +112,102 @@ module Make (Net : Petrinet.S) = struct
     in
     Net.TransSet.fold
       (fun t acc ->
-        List.filter_map
-          (fun c ->
+        List.fold_right
+          (fun c acc' ->
             let e = Event.build step (past_word_of_preset c n t) t in
-            if not (TransSet.mem e (transitions n)) then
-              let n' = extend e (Net.postset_t net t) n c in
-              Some { UnfoldResult.event = e; UnfoldResult.prefix = n' }
-            else None)
+            let n' = extend e (Net.postset_t net t) n c in
+            fire e n';
+            { UnfoldResult.event = e; UnfoldResult.prefix = n' } :: acc')
           (List.filter (fun c -> is_reachable c n) (candidates t n))
-        @ acc)
+          acc)
       (Net.transitions net) []
 
-  let rec unfold n0 steps net =
-    match unfold_1 n0 steps net with
-    | _ when steps <= 0 -> n0
-    | [] -> n0
-    | n :: _ -> unfold n.prefix (steps - 1) net
+  module Extensions = struct
+    module Elt = struct
+      type t = Extension of UnfoldResult.t | Leftover of UnfoldResult.t
+
+      let is_extension = function Extension _ -> true | _ -> false
+      let untag = function Extension r | Leftover r -> r
+
+      let compare e1 e2 =
+        let r1, r2 = (untag e1, untag e2) in
+        compare (Event.history r1.event) (Event.history r2.event)
+    end
+
+    module UnfoldResultSet = Set.Make (UnfoldResult)
+    module EltSet = Set.Make (Elt)
+
+    type s = { mutable pool : EltSet.t }
+
+    let empty () = { pool = EltSet.empty }
+
+    let update cond n step ext net =
+      assert (not (EltSet.exists Elt.is_extension ext.pool));
+
+      let new_xts = unfold_1 n step net in
+
+      (* Add all results of the unfolding as Extension tagged elements *)
+      let pool =
+        List.fold_right
+          (fun r acc -> EltSet.add (Elt.Extension r) acc)
+          new_xts EltSet.empty
+      in
+
+      (* Combine with previous elements (Leftovers) *)
+      let pool = EltSet.union pool ext.pool in
+
+      let pool = EltSet.filter (fun e -> cond (Elt.untag e)) pool in
+
+      if not (EltSet.is_empty pool) then (
+        let e = List.hd (EltSet.elements pool) in
+
+        let result =
+          match e with
+          | Extension r -> r
+          | Leftover r ->
+              {
+                event =
+                  Event.build step (Event.history r.event) (Event.label r.event);
+                prefix = union n r.prefix;
+              }
+        in
+
+        let pool = EltSet.remove e pool in
+        ext.pool <- EltSet.remove e ext.pool;
+
+        let conflicts =
+          EltSet.filter
+            (fun e' ->
+              let r, r' = (Elt.untag e, Elt.untag e') in
+              not
+                (PlaceSet.is_empty
+                   (PlaceSet.inter
+                      (preset_t r'.prefix r'.event)
+                      (preset_t r.prefix r.event))))
+            (EltSet.filter Elt.is_extension pool)
+        in
+
+        let conflicts =
+          EltSet.fold
+            (fun e' acc -> EltSet.add (Leftover (Elt.untag e')) acc)
+            conflicts EltSet.empty
+        in
+
+        ext.pool <- EltSet.union ext.pool conflicts;
+
+        Some result)
+      else None
+  end
+
+  let unfold i net =
+    let u0 = unfold_init net in
+    let rec helper ext n steps net =
+      match Extensions.update (fun _ -> true) n steps ext net with
+      | _ when steps <= 0 -> n
+      | None -> n
+      | Some r -> helper ext r.prefix (steps - 1) net
+    in
+    helper (Extensions.empty ()) u0 i net
 
   type strategy = Net.TransSet.elt list -> Net.TransSet.elt list -> int
 
@@ -146,26 +226,25 @@ module Make (Net : Petrinet.S) = struct
       in
       let n0 = unfold_init net in
       let terms0 = TransSet.empty in
-      let rec unfold step n terms =
+      let rec unfold ext step n terms =
         step <= max_steps
         &&
-        let ext =
-          List.filter
-            (fun (r : UnfoldResult.t) -> is_feasible r.event r.prefix terms)
-            (unfold_1 n step net)
-        in
-        List.length ext <> 0
-        &&
-        let r = List.hd ext in
-        SS.is_successful r.event r.prefix stgy goals
-        ||
-        let terms' =
-          if SS.is_terminal r.event r.prefix stgy goals then
-            TransSet.add r.event terms
-          else terms
-        in
-        unfold (step + 1) r.prefix terms'
+        match
+          Extensions.update
+            (fun r -> is_feasible r.event r.prefix terms)
+            n step ext net
+        with
+        | None -> false
+        | Some r ->
+            SS.is_successful r.event r.prefix stgy goals
+            ||
+            let terms' =
+              if SS.is_terminal r.event r.prefix stgy goals then
+                TransSet.add r.event terms
+              else terms
+            in
+            unfold ext (step + 1) r.prefix terms'
       in
-      unfold 1 n0 terms0
+      unfold (Extensions.empty ()) 1 n0 terms0
   end
 end
