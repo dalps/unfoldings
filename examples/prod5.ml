@@ -1,6 +1,6 @@
 (* Product of Fig. 4.6 p. 59, but every transition is turned into a self loop *)
 
-open Unfoldings.Product_utils.StringPTNet
+open Unfoldings.String_product.StringPTNet
 
 let s =
   of_lists
@@ -58,7 +58,7 @@ let v =
     ]
     [ "v1" ]
 
-open Unfoldings.Product_utils.StringPTNetProduct
+open Unfoldings.String_product.StringPTNetProduct
 
 let prod5 =
   product [ s; t; u; v ]

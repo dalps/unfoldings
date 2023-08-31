@@ -3,6 +3,14 @@ module StringPTNetProduct = Product.Make (StringPTNet)
 open StringPTNetProduct
 open GlobalTransition
 
+let string_of_node = function
+  | Node.P p -> p
+  | T t ->
+      List.fold_right
+        (fun lt acc ->
+          match lt with StringPTNetProduct.T s -> s ^ acc | Idle -> "_" ^ acc)
+        t ""
+
 let rec tword_equiv w1 w2 =
   match (w1, w2) with
   | [], [] -> true

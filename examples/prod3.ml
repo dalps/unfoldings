@@ -1,6 +1,6 @@
 (* Product of Fig. 3.5 p. 27 *)
 
-open Unfoldings.Product_utils.StringPTNet
+open Unfoldings.String_product.StringPTNet
 
 let r =
   of_lists [ "r1"; "r2"; "r3" ] [ "a0"; "c0" ]
@@ -31,7 +31,7 @@ let v =
     [ ([ "v1" ] --> [ "v2" ]) "b4"; ([ "v2" ] --> [ "v3" ]) "c4" ]
     [ "v1" ]
 
-open Unfoldings.Product_utils.StringPTNetProduct
+open Unfoldings.String_product.StringPTNetProduct
 
 let prod3 =
   product [ r; s; t; u; v ]

@@ -1,7 +1,7 @@
 print_endline "#### Running unfold tests..."
 
 open Examples.Prod1
-open Unfoldings.Product_utils.StringPTNetProduct;;
+open Unfoldings.String_product.StringPTNetProduct;;
 
 fire [ T "t2" ] prod1;;
 
@@ -89,8 +89,8 @@ print_endline "[OK] onet"
 (* --- *)
 
 open Examples.Prod2
-open Unfoldings.Product_utils.StringPTNetProduct
-open Unfoldings.Product_utils
+open Unfoldings.String_product.StringPTNetProduct
+open Unfoldings.String_product
 open GlobalTransition
 
 let t1 = [ T "t1"; Idle ]
@@ -217,7 +217,7 @@ open Examples.Prod3
 open Examples.Prod4
 open Examples.Prod5
 open Examples.Prod5_loops
-open Unfoldings.Product_utils;;
+open Unfoldings.String_product;;
 
 assert (StringPTNetProduct.is_freechoice prod1);;
 assert (StringPTNetProduct.is_freechoice prod2 = false);;

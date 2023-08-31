@@ -1,6 +1,6 @@
 (* Product of Fig. 2.2 p. 7 *)
 
-open Unfoldings.Product_utils.StringPTNet
+open Unfoldings.String_product.StringPTNet
 
 let s =
   of_lists [ "s1"; "s2"; "s3"; "s4" ]
@@ -23,7 +23,7 @@ let r =
     ]
     [ "r1" ]
 
-open Unfoldings.Product_utils.StringPTNetProduct
+open Unfoldings.String_product.StringPTNetProduct
 
 let prod2 =
   product [ s; r ]
@@ -84,7 +84,7 @@ module Dot = Graph.Graphviz.Dot (struct
         List.fold_right
           (fun lt acc ->
             match lt with
-            | Unfoldings.Product_utils.StringPTNetProduct.T s -> s ^ acc
+            | Unfoldings.String_product.StringPTNetProduct.T s -> s ^ acc
             | Idle -> "_" ^ acc)
           t ""
 
