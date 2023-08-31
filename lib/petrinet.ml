@@ -97,6 +97,16 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
     let place_of = function P p -> p | _ -> raise NotAPlace
     let trans_of = function T e -> e | _ -> raise NotATransition
     let compare = compare
+    let equal = ( = )
+    let hash = Hashtbl.hash
+  end
+
+  module Edge = struct
+    type t = string
+
+    let compare = compare
+    let equal = ( = )
+    let default = ""
   end
 
   module Place = P
@@ -213,4 +223,40 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
         TransSet.cardinal (postset_p n p) = 1
         || PlaceSet.equal (preset_tset n (postset_p n p)) (PlaceSet.singleton p))
       n.places
+
+  module G = Graph.Imperative.Digraph.ConcreteBidirectionalLabeled (Node) (Edge)
+
+  let get_graph n =
+    let g = G.create () in
+    PlaceSet.iter (fun p -> G.add_vertex g (P p)) n.places;
+    TransSet.iter (fun t -> G.add_vertex g (T t)) n.transitions;
+    TransSet.iter
+      (fun t ->
+        PlaceSet.iter (fun p -> G.add_edge g (P p) (T t)) (n.preset t);
+        PlaceSet.iter (fun p -> G.add_edge g (T t) (P p)) (n.postset t))
+      n.transitions;
+    g
+
+  let print_graph n ?(vertex_name = fun v -> string_of_int (G.V.hash v))
+      ?(file_name = "mygraph") () =
+    let module Dot = Graph.Graphviz.Dot (struct
+      include G
+
+      let graph_attributes _ = [ `Center false; `Rankdir `LeftToRight ]
+      let edge_attributes (_, e, _) = [ `Label e ]
+      let default_edge_attributes _ = []
+      let get_subgraph _ = None
+
+      let vertex_attributes v =
+        match v with Node.P _ -> [ `Shape `Circle ] | T _ -> [ `Shape `Box ]
+
+      let vertex_name = vertex_name
+      let default_vertex_attributes _ = []
+    end) in
+    let g = get_graph n in
+    let file = open_out_bin (file_name ^ ".dot") in
+    Dot.output_graph file g;
+    Sys.command ("dot -Tpng " ^ file_name ^ ".dot -o " ^ file_name ^ ".png")
+
+  module M = Graph.Traverse.Dfs (G)
 end

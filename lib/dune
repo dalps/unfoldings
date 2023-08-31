@@ -1,2 +1,3 @@
 (library
- (name unfoldings))
+ (name unfoldings)
+ (libraries ocamlgraph))
