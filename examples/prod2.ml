@@ -36,3 +36,63 @@ let prod2 =
       [ Idle; T "u1" ];
       [ Idle; T "u3" ];
     ]
+
+module Node = struct
+  type t = P of place | T of trans
+
+  let compare = compare
+  let hash = Hashtbl.hash
+  let equal = ( = )
+end
+
+module Edge = struct
+  type t = string
+
+  let compare = compare
+  let equal = ( = )
+  let default = ""
+end
+
+module G = Graph.Imperative.Digraph.ConcreteBidirectionalLabeled (Node) (Edge)
+
+let get_graph () =
+  let g = G.create () in
+  PlaceSet.iter (fun p -> G.add_vertex g (P p)) prod2.places;
+  TransSet.iter (fun t -> G.add_vertex g (T t)) prod2.transitions;
+  TransSet.iter
+    (fun t ->
+      PlaceSet.iter (fun p -> G.add_edge g (P p) (T t)) (prod2.preset t);
+      PlaceSet.iter (fun p -> G.add_edge g (T t) (P p)) (prod2.postset t))
+    prod2.transitions;
+  g
+
+module Dot = Graph.Graphviz.Dot (struct
+  include G
+
+  let graph_attributes _ = [ `Center true; `Rankdir `LeftToRight ]
+  let edge_attributes (_, e, _) = [ `Label e; `Color 4711 ]
+  let default_edge_attributes _ = []
+  let get_subgraph _ = None
+
+  let vertex_attributes v =
+    match v with Node.P _ -> [ `Shape `Circle ] | T _ -> [ `Shape `Box ]
+
+  let vertex_name v =
+    match v with
+    | Node.P p -> p
+    | T t ->
+        List.fold_right
+          (fun lt acc ->
+            match lt with
+            | Unfoldings.Product_utils.StringPTNetProduct.T s -> s ^ acc
+            | Idle -> "_" ^ acc)
+          t ""
+
+  let default_vertex_attributes _ = []
+end)
+
+let print_graph () =
+  let g = get_graph () in
+  let file = open_out_bin "mygraph.dot" in
+  let _ = Dot.output_graph file g in
+  Sys.command "dot -Tpng mygraph.dot -o mygraph.png"
