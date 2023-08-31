@@ -224,6 +224,20 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
         || PlaceSet.equal (preset_tset n (postset_p n p)) (PlaceSet.singleton p))
       n.places
 
+  let is_statemachine n =
+    TransSet.for_all
+      (fun t ->
+        let postcard = PlaceSet.cardinal (n.postset t) in
+        PlaceSet.cardinal (n.preset t) = postcard && postcard = 1)
+      n.transitions
+
+  let is_marked_graph n =
+    PlaceSet.for_all
+      (fun p ->
+        let postcard = TransSet.cardinal (postset_p n p) in
+        TransSet.cardinal (preset_p n p) = postcard && postcard = 1)
+      n.places
+
   module G = Graph.Imperative.Digraph.ConcreteBidirectionalLabeled (Node) (Edge)
 
   let get_graph n =

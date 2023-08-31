@@ -291,3 +291,9 @@ assert (
 ;;
 
 print_endline "[OK] nba_of_formula"
+
+let f = U (AP "a", Not (X (AP "b")))
+let ap = APSet.of_list [ "a"; "b" ]
+let n = petrinet_of_formula ap f;;
+
+assert (FormulaPTNet.is_statemachine n)
