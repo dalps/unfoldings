@@ -63,7 +63,7 @@ module Make (State : Set.OrderedType) (Alpha : Set.OrderedType) = struct
     g
 
   let print_graph n ?(vertex_name = fun v -> string_of_int (G.V.hash v))
-      ?(edge_name = fun _ -> "") ?(file_name = "mygraph") () =
+      ?(edge_label = fun _ -> "") ?(file_name = "mygraph") () =
     let module Plotter = Graph.Graphviz.Neato (struct
       include G
 
@@ -72,7 +72,7 @@ module Make (State : Set.OrderedType) (Alpha : Set.OrderedType) = struct
 
       let edge_attributes (_, e, _) =
         [
-          `Label (match e with Edge.AP ap -> edge_name ap | Def -> "");
+          `Label (match e with Edge.AP ap -> edge_label ap | Def -> "");
           `Dir `Forward;
         ]
 

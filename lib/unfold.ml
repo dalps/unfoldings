@@ -163,12 +163,19 @@ module Make (Net : Petrinet.S) = struct
 
         let result =
           match e with
-          | Extension r -> r
+          | Extension r ->
+              print_endline (string_of_int step ^ " [Fresh]");
+              r
           | Leftover r ->
+              print_endline
+                (string_of_int step ^ " [Leftover from step "
+                ^ string_of_int (Event.name r.event)
+                ^ "]");
               {
                 event =
                   Event.build step (Event.history r.event) (Event.label r.event);
                 prefix = union n r.prefix;
+                (* update event name in r.prefix!!! *)
               }
         in
 
@@ -187,27 +194,28 @@ module Make (Net : Petrinet.S) = struct
             (EltSet.filter Elt.is_extension pool)
         in
 
-        let conflicts =
+        let new_leftovers =
           EltSet.fold
-            (fun e' acc -> EltSet.add (Leftover (Elt.untag e')) acc)
+            (fun e' -> EltSet.add (Leftover (Elt.untag e')))
             conflicts EltSet.empty
         in
 
-        ext.pool <- EltSet.union ext.pool conflicts;
+        ext.pool <- EltSet.union ext.pool new_leftovers;
 
         Some result)
       else None
   end
 
-  let unfold i net =
+  let unfold steps net =
     let u0 = unfold_init net in
-    let rec helper ext n steps net =
-      match Extensions.update (fun _ -> true) n steps ext net with
-      | _ when steps <= 0 -> n
-      | None -> n
-      | Some r -> helper ext r.prefix (steps - 1) net
+    let rec helper ext n i net =
+      if i > steps then n
+      else
+        match Extensions.update (fun _ -> true) n i ext net with
+        | None -> n
+        | Some r -> helper ext r.prefix (i + 1) net
     in
-    helper (Extensions.empty ()) u0 i net
+    helper (Extensions.empty ()) u0 1 net
 
   type strategy = Net.TransSet.elt list -> Net.TransSet.elt list -> int
 
@@ -219,6 +227,10 @@ module Make (Net : Petrinet.S) = struct
     val is_successful : Event.t -> t -> strategy -> Net.Trans.t list -> bool
   end
 
+  module TestResult = struct
+    type t = { res : bool; prefix : OccurrenceNet.t; terms : TransSet.t }
+  end
+
   module Tester (SS : SearchScheme) = struct
     let test net stgy goals max_steps =
       let is_feasible e n terms =
@@ -227,23 +239,24 @@ module Make (Net : Petrinet.S) = struct
       let n0 = unfold_init net in
       let terms0 = TransSet.empty in
       let rec unfold ext step n terms =
-        step <= max_steps
-        &&
-        match
-          Extensions.update
-            (fun r -> is_feasible r.event r.prefix terms)
-            n step ext net
-        with
-        | None -> false
-        | Some r ->
-            SS.is_successful r.event r.prefix stgy goals
-            ||
-            let terms' =
-              if SS.is_terminal r.event r.prefix stgy goals then
-                TransSet.add r.event terms
-              else terms
-            in
-            unfold ext (step + 1) r.prefix terms'
+        if step > max_steps then { TestResult.res = false; prefix = n; terms }
+        else
+          match
+            Extensions.update
+              (fun r -> is_feasible r.event r.prefix terms)
+              n step ext net
+          with
+          | None -> { res = false; prefix = n; terms }
+          | Some r ->
+              if SS.is_successful r.event r.prefix stgy goals then
+                { TestResult.res = true; prefix = r.prefix; terms }
+              else
+                let terms' =
+                  if SS.is_terminal r.event r.prefix stgy goals then
+                    TransSet.add r.event terms
+                  else terms
+                in
+                unfold ext (step + 1) r.prefix terms'
       in
       unfold (Extensions.empty ()) 1 n0 terms0
   end
