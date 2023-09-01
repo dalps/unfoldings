@@ -289,5 +289,88 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
     Plotter.output_graph file g;
     Sys.command ("neato -Tpng " ^ file_name ^ ".dot -o " ^ file_name ^ ".png")
 
-  module M = Graph.Traverse.Dfs (G)
+  module MV = struct
+    type t = PlaceSet.t
+
+    let compare = PlaceSet.compare
+    let equal = ( = )
+    let hash = Hashtbl.hash
+  end
+
+  module ME = struct
+    type t = E of Trans.t | Def
+
+    let compare = compare
+    let equal = ( = )
+    let default = Def
+  end
+
+  module MG = Graph.Imperative.Digraph.ConcreteBidirectionalLabeled (MV) (ME)
+
+  let get_marking_graph n ?(max_steps = 999) () =
+    let module LabeledMarkingMap = Map.Make (MV) in
+    let g = MG.create () in
+    let m0 = n.marking in
+    let l0 = LabeledMarkingMap.singleton m0 `New in
+    (* assumes n.marking is the initial marking *)
+    let rec helper i l =
+      if i > max_steps then ()
+      else
+        let feasibles =
+          LabeledMarkingMap.filter (fun _ label -> label = `New) l
+        in
+        print_string (string_of_int (LabeledMarkingMap.cardinal feasibles));
+        let opt = LabeledMarkingMap.choose_opt feasibles in
+        match opt with
+        | Some (m1, `New) ->
+            let l' =
+              TransSet.fold
+                (fun t ->
+                  let m2 =
+                    PlaceSet.union (PlaceSet.diff m1 (n.preset t)) (n.postset t)
+                  in
+                  MG.add_edge_e g (m1, E t, m2);
+                  LabeledMarkingMap.update m2 (function
+                    | None -> Some `New
+                    | _ as o -> o))
+                (TransSet.filter (fun t -> enables m1 t n) n.transitions)
+                l
+            in
+            helper (i + 1) (LabeledMarkingMap.update m1 (fun _ -> Some `Old) l')
+        | _ -> ()
+    in
+    helper 0 l0;
+    g
+
+  let print_marking_graph n
+      ?(vertex_name = fun v -> string_of_int (MG.V.hash v))
+      ?(vertex_label = fun _ -> "") ?(vertex_attrs = fun _ -> [])
+      ?(edge_label = fun _ -> "") ?(edge_attrs = fun _ -> [])
+      ?(file_name = "mygraph") () =
+    let module Plotter = Graph.Graphviz.Neato (struct
+      include MG
+
+      let graph_attributes _ =
+        [ `Center true; `Margin (1.0, 1.0); `Overlap false ]
+
+      let edge_attributes (_, e, _) =
+        [
+          `Label (match e with ME.E t -> edge_label t | Def -> "");
+          `Dir `Forward;
+        ]
+        @ edge_attrs e
+
+      let default_edge_attributes _ = []
+      let get_subgraph _ = None
+
+      let vertex_attributes v =
+        [] @ [ `Label (vertex_label v) ] @ vertex_attrs v
+
+      let vertex_name v = "\"" ^ vertex_name v ^ "\""
+      let default_vertex_attributes _ = []
+    end) in
+    let g = get_marking_graph n () in
+    let file = open_out_bin (file_name ^ ".dot") in
+    Plotter.output_graph file g;
+    Sys.command ("neato -Tpng " ^ file_name ^ ".dot -o " ^ file_name ^ ".png")
 end
