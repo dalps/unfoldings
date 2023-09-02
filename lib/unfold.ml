@@ -215,7 +215,9 @@ module Make (Net : Petrinet.S) = struct
         | None -> n
         | Some r -> helper ext r.prefix (i + 1) net
     in
-    helper (Extensions.empty ()) u0 1 net
+    let res = helper (Extensions.empty ()) u0 1 net in
+    set_marking u0.marking res;
+    res
 
   type strategy = Net.TransSet.elt list -> Net.TransSet.elt list -> int
 
@@ -246,9 +248,12 @@ module Make (Net : Petrinet.S) = struct
               (fun r -> is_feasible r.event r.prefix terms)
               n step ext net
           with
-          | None -> { res = false; prefix = n; terms }
+          | None ->
+              let _ = set_marking n0.marking n in
+              { res = false; prefix = n; terms }
           | Some r ->
               if SS.is_successful r.event r.prefix stgy goals then
+                let _ = set_marking n0.marking n in
                 { TestResult.res = true; prefix = r.prefix; terms }
               else
                 let terms' =
