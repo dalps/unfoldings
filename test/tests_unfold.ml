@@ -211,6 +211,7 @@ print_endline "[OK] misc"
 
 (* --- *)
 
+open Examples
 open Examples.Prod1
 open Examples.Prod2
 open Examples.Prod3
@@ -276,13 +277,29 @@ assert (
 ;;
 
 assert (let r = test prod5 sl_compare [ [ T "i1"; T "i2"; T "i3"; T "i4" ] ] 99 in r.res);;
-print_endline "[OK] is_executable prod5"
+print_endline "[OK] is_executable prod5";;
+
+assert (let r = test Prod8.prod8 (d_compare sl_compare) [ [T "A"] ] 99 in r.res) ;;
+assert (let r = test Prod8.prod8 (d_compare sl_compare) [ [T "B"] ] 99 in r.res) ;;
+assert (let r = test Prod8.prod8 (d_compare sl_compare) [ [T "C"] ] 99 in r.res) ;;
+assert (let r = test Prod8.prod8 (d_compare sl_compare) [ [T "D"] ] 99 in r.res) ;;
+assert (let r = test Prod8.prod8 (d_compare sl_compare) [ [T "E"] ] 99 in r.res) ;;
+assert (let r = test Prod8.prod8 (d_compare sl_compare) [ [T "G"] ] 99 in r.res) ;;
+print_endline "[OK] is_executable prod8"
 
 (* --- *)
 
 open Unfoldings.Repeated_executability.Make (StringPTNetProduct)
 open Examples.Prod5_loops
 open Examples.Prod6;;
+
+assert (let r = test Prod8.prod8 (d_compare sl_compare) [ [T "A"] ] 99 in r.res) ;;
+assert (let r = test Prod8.prod8 (d_compare sl_compare) [ [T "B"] ] 99 in r.res) ;;
+assert (let r = test Prod8.prod8 (d_compare sl_compare) [ [T "C"] ] 99 in r.res) ;;
+assert (let r = test Prod8.prod8 (d_compare sl_compare) [ [T "D"] ] 99 in r.res) ;;
+assert (let r = test Prod8.prod8 (d_compare sl_compare) [ [T "E"] ] 99 in r.res) ;;
+assert (let r = test Prod8.prod8 (d_compare sl_compare) [ [T "G"] ] 99 in r.res) ;;
+print_endline "[OK] is_infinitely_executable prod8";;
 
 assert (let r = test prod6 (d_compare sl_compare) [ [ T "r" ] ] 99 in r.res);;
 assert (let r = test prod6 (d_compare sl_compare) [ [ T "c" ] ] 99 in r.res);;

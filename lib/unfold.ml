@@ -112,14 +112,23 @@ module Make (Net : Petrinet.S) = struct
     in
     Net.TransSet.fold
       (fun t acc ->
-        List.fold_right
-          (fun c acc' ->
+        List.filter_map
+          (fun c ->
             let e = Event.build step (past_word_of_preset c n t) t in
-            let n' = extend ~step e (Net.postset_t net t) n c in
-            fire e n';
-            { UnfoldResult.event = e; UnfoldResult.prefix = n' } :: acc')
+            if not (TransSet.mem e (transitions n)) then (
+              let n' = extend ~step e (Net.postset_t net t) n c in
+              fire e n';
+              if
+                Net.TransSet.exists
+                  (fun t ->
+                    Net.PlaceSet.subset (Net.preset_t net t)
+                      (places_of_tokens n.marking))
+                  (Net.transitions net)
+              then set_marking (PlaceSet.union n.marking n'.marking) n';
+              Some { UnfoldResult.event = e; UnfoldResult.prefix = n' })
+            else None)
           (List.filter (fun c -> is_reachable c n) (candidates t n))
-          acc)
+        @ acc)
       (Net.transitions net) []
 
   module Extensions = struct
