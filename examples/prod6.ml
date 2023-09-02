@@ -4,7 +4,7 @@ open Unfoldings.String_product.StringPTNetProduct
 
 let prod6 =
   of_lists
-    [ "s1"; "s2"; "s3"; "s4"; "s5"; "s6" ]
+    [ "s1"; "s2"; "s3" ]
     [ [ T "a" ]; [ T "b" ]; [ T "c" ]; [ T "r" ] ]
     [
       ([ "s1" ] --> [ "s2" ]) [ T "a" ];

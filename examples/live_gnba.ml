@@ -1,4 +1,4 @@
-(* GNBA of Fig. 4.19 p. 194 Baier *)
+(* GNBA of Fig. 4.19 p. 194 (Baier-Katoen) *)
 module CritAP = struct
   type t = Crit1 | Crit2
 
