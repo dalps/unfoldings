@@ -1,0 +1,79 @@
+module Make (Net : Petrinet.S) = struct
+  (* atomic propositions: places or transitions? *)
+  module TesterLtl = Ltl.Make (Net.Trans)
+
+  module Node = struct
+    type t = Net.MV.t * TesterLtl.FormulaGNBA.NumberedNba.Node.t
+
+    let compare = compare
+    let hash = Hashtbl.hash
+    let equal = ( = )
+  end
+
+  module Edge = Net.ME
+
+  module TG =
+    Graph.Imperative.Digraph.ConcreteBidirectionalLabeled (Node) (Edge)
+
+  let sync ts f =
+    let open TesterLtl.FormulaGNBA in
+    let marking_graph = Net.get_marking_graph ts () in
+    let _ = TesterLtl.ap_of_formula f in
+    let apset_of_transet tset =
+      Net.TransSet.fold
+        (fun t -> TesterLtl.APSet.add t)
+        tset TesterLtl.APSet.empty
+    in
+    let label t =
+      Net.MG.fold_pred_e
+        (fun (_, a, _) ->
+          match a with
+          | `E a -> TesterLtl.APSet.add a
+          | `Def -> fun _ -> TesterLtl.APSet.empty)
+        marking_graph t TesterLtl.APSet.empty
+    in
+    let tester =
+      TesterLtl.nba_of_formula (apset_of_transet (Net.transitions ts)) f
+    in
+
+    let g = TG.create () in
+    Net.MG.iter_edges_e
+      (fun (s, a, t) ->
+        NumberedNba.StateSet.iter
+          (fun q ->
+            NumberedNba.StateSet.iter
+              (fun p -> TG.add_edge_e g ((s, q), a, (t, p)))
+              (tester.func q (label t)))
+          tester.states)
+      marking_graph;
+    g
+
+  let print_graph g ?(vertex_name = fun v -> string_of_int (TG.V.hash v))
+      ?(vertex_label = fun _ -> "") ?(vertex_attrs = fun _ -> [])
+      ?(edge_label = fun _ -> "") ?(edge_attrs = fun _ -> [])
+      ?(graph_label = "") ?(file_name = "mygraph") () =
+    let module Plotter = Graph.Graphviz.Neato (struct
+      include TG
+
+      let graph_attributes _ =
+        [ `Label graph_label; `Center true; `Margin (1.0, 1.0); `Overlap false ]
+
+      let edge_attributes (_, e, _) =
+        [
+          `Label (match e with `E t -> edge_label t | _ -> ""); `Dir `Forward;
+        ]
+        @ edge_attrs e
+
+      let default_edge_attributes _ = []
+      let get_subgraph _ = None
+
+      let vertex_attributes v =
+        [] @ [ `Label (vertex_label v) ] @ vertex_attrs v
+
+      let vertex_name v = "\"" ^ vertex_name v ^ "\""
+      let default_vertex_attributes _ = []
+    end) in
+    let file = open_out_bin (file_name ^ ".dot") in
+    Plotter.output_graph file g;
+    Sys.command ("neato -Tpng " ^ file_name ^ ".dot -o " ^ file_name ^ ".png")
+end

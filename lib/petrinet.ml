@@ -80,6 +80,15 @@ module type S = sig
   val is_freechoice : t -> bool
   val is_statemachine : t -> bool
   val is_marked_graph : t -> bool
+
+  module MV : Graph.Sig.COMPARABLE
+  module ME : Graph.Sig.ORDERED_TYPE_DFT with type t = [ `E of Trans.t | `Def ]
+
+  module MG :
+      module type of
+        Graph.Imperative.Digraph.ConcreteBidirectionalLabeled (MV) (ME)
+
+  val get_marking_graph : t -> ?max_steps:int -> unit -> MG.t
 end
 
 module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
@@ -289,11 +298,11 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
   end
 
   module ME = struct
-    type t = E of Trans.t | Def
+    type t = [ `E of Trans.t | `Def ]
 
     let compare = compare
     let equal = ( = )
-    let default = Def
+    let default = `Def
   end
 
   module MG = Graph.Imperative.Digraph.ConcreteBidirectionalLabeled (MV) (ME)
@@ -319,7 +328,7 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
                     PlaceSet.union (PlaceSet.diff m1 (n.preset t)) (n.postset t)
                   in
                   (* if not (MG.mem_edge g m1 m2) then *)
-                  MG.add_edge_e g (m1, E t, m2);
+                  MG.add_edge_e g (m1, `E t, m2);
                   LabelMap.update m2 (function
                     | None -> Some `New
                     | _ as o -> o))
@@ -345,8 +354,7 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
 
       let edge_attributes (_, e, _) =
         [
-          `Label (match e with ME.E t -> edge_label t | Def -> "");
-          `Dir `Forward;
+          `Label (match e with `E t -> edge_label t | _ -> ""); `Dir `Forward;
         ]
         @ edge_attrs e
 
