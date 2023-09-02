@@ -80,16 +80,6 @@ module type S = sig
   val is_freechoice : t -> bool
   val is_statemachine : t -> bool
   val is_marked_graph : t -> bool
-
-  val print_graph :
-    t ->
-    ?vertex_name:(Node.t -> string) ->
-    ?vertex_label:(Node.t -> string) ->
-    ?vertex_attrs:(Node.t -> Graph.Graphviz.NeatoAttributes.vertex list) ->
-    ?edge_attrs:(string -> Graph.Graphviz.NeatoAttributes.edge list) ->
-    ?file_name:string ->
-    unit ->
-    int
 end
 
 module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
@@ -265,12 +255,13 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
 
   let print_graph n ?(vertex_name = fun v -> string_of_int (G.V.hash v))
       ?(vertex_label = fun _ -> "") ?(vertex_attrs = fun _ -> [])
-      ?(edge_attrs = fun _ -> []) ?(file_name = "mygraph") () =
+      ?(edge_attrs = fun _ -> []) ?(graph_label = "") ?(file_name = "mygraph")
+      () =
     let module Plotter = Graph.Graphviz.Neato (struct
       include G
 
       let graph_attributes _ =
-        [ `Center true; `Margin (1.0, 1.0); `Overlap false ]
+        [ `Label graph_label; `Center true; `Margin (1.0, 1.0); `Overlap false ]
 
       let edge_attributes (_, e, _) = [ `Dir `Forward ] @ edge_attrs e
       let default_edge_attributes _ = []
@@ -308,19 +299,17 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
   module MG = Graph.Imperative.Digraph.ConcreteBidirectionalLabeled (MV) (ME)
 
   let get_marking_graph n ?(max_steps = 999) () =
-    let module LabeledMarkingMap = Map.Make (MV) in
+    let module LabelMap = Map.Make (MV) in
     let g = MG.create () in
     let m0 = n.marking in
-    let l0 = LabeledMarkingMap.singleton m0 `New in
+    let l0 = LabelMap.singleton m0 `New in
     (* assumes n.marking is the initial marking *)
     let rec helper i l =
-      if i > max_steps then ()
+      if i > max_steps then print_endline "Exceeded step limit!"
       else
-        let feasibles =
-          LabeledMarkingMap.filter (fun _ label -> label = `New) l
-        in
-        print_string (string_of_int (LabeledMarkingMap.cardinal feasibles));
-        let opt = LabeledMarkingMap.choose_opt feasibles in
+        let feasibles = LabelMap.filter (fun _ label -> label = `New) l in
+        print_string (string_of_int (LabelMap.cardinal feasibles));
+        let opt = LabelMap.choose_opt feasibles in
         match opt with
         | Some (m1, `New) ->
             let l' =
@@ -329,14 +318,15 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
                   let m2 =
                     PlaceSet.union (PlaceSet.diff m1 (n.preset t)) (n.postset t)
                   in
+                  (* if not (MG.mem_edge g m1 m2) then *)
                   MG.add_edge_e g (m1, E t, m2);
-                  LabeledMarkingMap.update m2 (function
+                  LabelMap.update m2 (function
                     | None -> Some `New
                     | _ as o -> o))
                 (TransSet.filter (fun t -> enables m1 t n) n.transitions)
                 l
             in
-            helper (i + 1) (LabeledMarkingMap.update m1 (fun _ -> Some `Old) l')
+            helper (i + 1) (LabelMap.update m1 (fun _ -> Some `Old) l')
         | _ -> ()
     in
     helper 0 l0;
@@ -346,12 +336,12 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
       ?(vertex_name = fun v -> string_of_int (MG.V.hash v))
       ?(vertex_label = fun _ -> "") ?(vertex_attrs = fun _ -> [])
       ?(edge_label = fun _ -> "") ?(edge_attrs = fun _ -> [])
-      ?(file_name = "mygraph") () =
+      ?(graph_label = "") ?(file_name = "mygraph") () =
     let module Plotter = Graph.Graphviz.Neato (struct
       include MG
 
       let graph_attributes _ =
-        [ `Center true; `Margin (1.0, 1.0); `Overlap false ]
+        [ `Label graph_label; `Center true; `Margin (1.0, 1.0); `Overlap false ]
 
       let edge_attributes (_, e, _) =
         [

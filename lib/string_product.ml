@@ -22,7 +22,9 @@ let string_of_node = function Node.P p -> p | T t -> string_of_globaltrans t
 
 let name_of_token t =
   string_of_int (Unfolder.OccurrenceNet.Token.name t)
+  ^ " "
   ^ Unfolder.OccurrenceNet.Token.label t
+  ^ " "
   ^ string_of_history (Unfolder.OccurrenceNet.Token.history t)
 
 let label_of_token t = Unfolder.OccurrenceNet.Token.label t
@@ -41,6 +43,36 @@ let label_of_unfold_node = function
 let name_of_unfold_node = function
   | Unfolder.OccurrenceNet.Node.P p -> name_of_token p
   | T t -> name_of_event t
+
+let string_of_event e =
+  let open Unfolder.OccurrenceNet.Event in
+  string_of_int (name e) ^ " " ^ string_of_globaltrans (label e)
+
+let string_of_token = label_of_token
+
+let string_of_placeset pset =
+  "{" ^ String.concat "," (StringPTNetProduct.PlaceSet.elements pset) ^ "}"
+
+let string_of_transset tset =
+  "{"
+  ^ String.concat ","
+      (List.map string_of_globaltrans
+         (StringPTNetProduct.TransSet.elements tset))
+  ^ "}"
+
+let string_of_eventset eset =
+  "{"
+  ^ String.concat ","
+      (List.map string_of_event (Unfolder.OccurrenceNet.TransSet.elements eset))
+  ^ "}"
+
+let string_of_tokenset pset =
+  "{"
+  ^ String.concat ","
+      (List.map name_of_token (Unfolder.OccurrenceNet.PlaceSet.elements pset))
+  ^ "}"
+
+let print_eventset eset = print_endline (string_of_eventset eset)
 
 let rec tword_equiv w1 w2 =
   match (w1, w2) with

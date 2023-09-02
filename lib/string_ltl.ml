@@ -6,9 +6,10 @@ let rec string_of_formula = function
   | True -> "true"
   | False -> "false"
   | AP a -> a
-  | Not f -> "¬" ^ string_of_formula f
+  | Not (AP _ as f) -> "¬" ^ string_of_formula f
+  | Not f -> "¬(" ^ string_of_formula f ^ ")"
   | X f -> "X " ^ string_of_formula f
-  | Or (f1, f2) -> string_of_formula f1 ^ " V " ^ string_of_formula f2
+  | Or (f1, f2) -> string_of_formula f1 ^ " ∨ " ^ string_of_formula f2
   | And (f1, f2) -> string_of_formula f1 ^ " ∧ " ^ string_of_formula f2
   | U (f1, f2) -> string_of_formula f1 ^ " U " ^ string_of_formula f2
 
