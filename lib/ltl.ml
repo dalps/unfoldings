@@ -9,8 +9,12 @@ module Make (AP : Set.OrderedType) = struct
       | Or of t * t
       | And of t * t
       | Not of t
+      | If of t * t
+      | Iff of t * t
       | X of t
       | U of t * t
+      | F of t
+      | G of t
 
     let compare f1 f2 =
       match (f1, f2) with
@@ -22,8 +26,12 @@ module Make (AP : Set.OrderedType) = struct
 
   let rec length = function
     | Formula.True | False | AP _ -> 0
-    | Not t | X t -> 1 + length t
-    | And (t1, t2) | Or (t1, t2) | U (t1, t2) -> 1 + length t1 + length t2
+    | Not t | X t | F t | G t -> 1 + length t
+    | And (t1, t2) | Or (t1, t2) | U (t1, t2) | If (t1, t2) | Iff (t1, t2) ->
+        1 + length t1 + length t2
+
+  let ( => ) x y = (not x) || y
+  let ( <=> ) x y = x => y && y => x
 
   let rec eval s f =
     match s with
@@ -36,9 +44,24 @@ module Make (AP : Set.OrderedType) = struct
         | Or (f1, f2) -> eval s f1 || eval s f2
         | And (f1, f2) -> eval s f1 && eval s f2
         | Not f' -> not (eval s f')
+        | If (f1, f2) -> eval s f1 => eval s f2
+        | Iff (f1, f2) -> eval s f1 <=> eval s f2
         | X f' -> eval s1 f'
-        | U (True, f2) -> eval s (Or (f2, X f))
+        | G f' -> eval s (Not (F (Not f')))
+        | U (True, f2) | F f2 -> eval s (Or (f2, X f))
         | U (f1, f2) -> eval s (Or (f2, And (f1, X f))))
+
+  let rec expand = function
+    | (Formula.True | False | AP _) as f -> f
+    | Or (f1, f2) -> Or (expand f1, expand f2)
+    | And (f1, f2) -> And (expand f1, expand f2)
+    | Not f' -> Not (expand f')
+    | X f' -> X (expand f')
+    | If (f1, f2) -> Or (Not (expand f1), expand f2)
+    | Iff (f1, f2) -> And (expand (If (f1, f2)), expand (If (f2, f1)))
+    | F f' -> U (True, expand f')
+    | G f' -> Not (expand (F (Not f')))
+    | U (f1, f2) -> U (expand f1, expand f2)
 
   module PowerAPSet = Set.Make (APSet)
   module PowerFormulaSet = Set.Make (FormulaSet)
@@ -61,21 +84,29 @@ module Make (AP : Set.OrderedType) = struct
   let labels_of_formula ap f =
     PowerAPSet.filter (fun apset -> eval [ apset ] f) (power_apset ap)
 
-  let rec closure f =
-    FormulaSet.union
-      (FormulaSet.of_list
-         (match f with
-         | Formula.True | False -> [ True; False ]
-         | Not f' -> [ f; f' ]
-         | _ -> [ f; Not f ]))
-      (match f with
-      | True | False | AP _ -> FormulaSet.empty
-      | Not f' | X f' -> closure f'
-      | And (f1, f2) | Or (f1, f2) | U (f1, f2) ->
-          FormulaSet.union (closure f1) (closure f2))
+  let closure g =
+    let rec helper f =
+      FormulaSet.union
+        (FormulaSet.of_list
+           (match f with
+           | Formula.True | False -> [ True; False ]
+           | Not f' -> [ f; f' ]
+           | _ -> [ f; Not f ]))
+        (match f with
+        | True | False | AP _ -> FormulaSet.empty
+        | Not f' | X f' -> helper f'
+        | And (f1, f2) | Or (f1, f2) | U (f1, f2) ->
+            FormulaSet.union (helper f1) (helper f2)
+        | _ -> FormulaSet.empty)
+    in
+    helper (expand g)
 
-  let ( => ) x y = (not x) || y
-  let ( <=> ) x y = x => y && y => x
+  let ap_of_formula f =
+    FormulaSet.fold
+      (fun f' ->
+        APSet.union
+          (match f' with AP ap -> APSet.singleton ap | _ -> APSet.empty))
+      (closure f) APSet.empty
 
   let elementary_sets f =
     let cl = closure f in

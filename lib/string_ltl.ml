@@ -10,6 +10,10 @@ let rec string_of_formula = function
   | Not (AP _ as f) -> "¬" ^ string_of_formula f
   | Not f -> "¬(" ^ string_of_formula f ^ ")"
   | X f -> "X " ^ string_of_formula f
+  | F f -> "F " ^ string_of_formula f
+  | G f -> "G " ^ string_of_formula f
+  | If (f1, f2) -> string_of_formula f1 ^ " => " ^ string_of_formula f2
+  | Iff (f1, f2) -> string_of_formula f1 ^ " <=> " ^ string_of_formula f2
   | Or (f1, f2) -> string_of_formula f1 ^ " ∨ " ^ string_of_formula f2
   | And (f1, f2) -> string_of_formula f1 ^ " ∧ " ^ string_of_formula f2
   | U (f1, f2) -> string_of_formula f1 ^ " U " ^ string_of_formula f2
@@ -31,6 +35,12 @@ let rec string_of_syncformula =
     | Not (AP _ as f) -> "¬" ^ string_of_syncformula f
     | Not f -> "¬(" ^ string_of_syncformula f ^ ")"
     | X f -> "X " ^ string_of_syncformula f
+    | F f -> "F " ^ string_of_syncformula f
+    | G f -> "G " ^ string_of_syncformula f
+    | If (f1, f2) ->
+        string_of_syncformula f1 ^ " => " ^ string_of_syncformula f2
+    | Iff (f1, f2) ->
+        string_of_syncformula f1 ^ " <=> " ^ string_of_syncformula f2
     | Or (f1, f2) -> string_of_syncformula f1 ^ " ∨ " ^ string_of_syncformula f2
     | And (f1, f2) ->
         string_of_syncformula f1 ^ " ∧ " ^ string_of_syncformula f2
