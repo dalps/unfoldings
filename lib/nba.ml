@@ -2,6 +2,24 @@ module Make (State : Set.OrderedType) (Alpha : Set.OrderedType) = struct
   module StateSet = Set.Make (State)
   module AlphaSet = Set.Make (Alpha)
 
+  module Node = struct
+    type t = State.t
+
+    let compare = compare
+    let hash = Hashtbl.hash
+    let equal = ( = )
+  end
+
+  module Edge = struct
+    type t = AP of Alpha.t | Def
+
+    let compare = compare
+    let equal = ( = )
+    let default = Def
+  end
+
+  module G = Graph.Imperative.Digraph.ConcreteBidirectionalLabeled (Node) (Edge)
+
   type t = {
     states : StateSet.t;
     alpha : AlphaSet.t;
@@ -31,4 +49,45 @@ module Make (State : Set.OrderedType) (Alpha : Set.OrderedType) = struct
     }
 
   let of_sets states alpha func init fin = { states; alpha; func; init; fin }
+
+  let get_graph gnba =
+    let g = G.create () in
+    StateSet.iter
+      (fun s ->
+        AlphaSet.iter
+          (fun a ->
+            StateSet.iter (fun r -> G.add_edge_e g (s, AP a, r)) (gnba.func s a))
+          gnba.alpha)
+      gnba.states;
+    g
+
+  let print_graph n ?(vertex_name = fun v -> string_of_int (G.V.hash v))
+      ?(edge_label = fun _ -> "") ?(file_name = "mygraph") () =
+    let module Plotter = Graph.Graphviz.Neato (struct
+      include G
+
+      let graph_attributes _ =
+        [ `Center true; `Margin (1.0, 1.0); `Overlap false ]
+
+      let edge_attributes (_, e, _) =
+        [
+          `Label (match e with Edge.AP ap -> edge_label ap | Def -> "");
+          `Dir `Forward;
+        ]
+
+      let default_edge_attributes _ = []
+      let get_subgraph _ = None
+
+      let vertex_attributes v =
+        if StateSet.mem v  n.fin then
+          [ `Shape `Doublecircle ]
+        else [ `Shape `Circle ]
+
+      let vertex_name v = "\"" ^ vertex_name v ^ "\""
+      let default_vertex_attributes _ = []
+    end) in
+    let g = get_graph n in
+    let file = open_out_bin (file_name ^ ".dot") in
+    Plotter.output_graph file g;
+    Sys.command ("neato -Tpng " ^ file_name ^ ".dot -o " ^ file_name ^ ".png")
 end

@@ -15,15 +15,16 @@ module Make (Net : Petrinet.S) = struct
   module TG =
     Graph.Imperative.Digraph.ConcreteBidirectionalLabeled (Node) (Edge)
 
-  let sync ts f =
-    let open TesterLtl.FormulaGNBA in
+  let apset_of_transet tset =
+    Net.TransSet.fold
+      (fun t -> TesterLtl.APSet.add t)
+      tset TesterLtl.APSet.empty
+
+  let sync ts nba =
+    let open TesterLtl.FormulaGNBA.NumberedNba in
     let marking_graph = Net.get_marking_graph ts () in
-    let _ = TesterLtl.ap_of_formula f in
-    let apset_of_transet tset =
-      Net.TransSet.fold
-        (fun t -> TesterLtl.APSet.add t)
-        tset TesterLtl.APSet.empty
-    in
+
+    (* L(t) is the set of incoming transitions of marking t *)
     let label t =
       Net.MG.fold_pred_e
         (fun (_, a, _) ->
@@ -32,21 +33,24 @@ module Make (Net : Petrinet.S) = struct
           | `Def -> fun _ -> TesterLtl.APSet.empty)
         marking_graph t TesterLtl.APSet.empty
     in
-    let tester =
-      TesterLtl.nba_of_formula (apset_of_transet (Net.transitions ts)) f
-    in
 
     let g = TG.create () in
     Net.MG.iter_edges_e
       (fun (s, a, t) ->
-        NumberedNba.StateSet.iter
+        StateSet.iter
           (fun q ->
-            NumberedNba.StateSet.iter
+            StateSet.iter
               (fun p -> TG.add_edge_e g ((s, q), a, (t, p)))
-              (tester.func q (label t)))
-          tester.states)
+              (nba.func q (label t)))
+          nba.states)
       marking_graph;
     g
+
+  let tester_of_formula ts f =
+    let _ = TesterLtl.ap_of_formula f in
+    TesterLtl.nba_of_formula (apset_of_transet (Net.transitions ts)) f
+
+  let sync_f ts f = sync ts (tester_of_formula ts f)
 
   let print_graph g ?(vertex_name = fun v -> string_of_int (TG.V.hash v))
       ?(vertex_label = fun _ -> "") ?(vertex_attrs = fun _ -> [])
@@ -66,10 +70,7 @@ module Make (Net : Petrinet.S) = struct
 
       let default_edge_attributes _ = []
       let get_subgraph _ = None
-
-      let vertex_attributes v =
-        [] @ [ `Label (vertex_label v) ] @ vertex_attrs v
-
+      let vertex_attributes v = [ `Label (vertex_label v) ] @ vertex_attrs v
       let vertex_name v = "\"" ^ vertex_name v ^ "\""
       let default_vertex_attributes _ = []
     end) in
