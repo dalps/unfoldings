@@ -253,8 +253,6 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
 
   let get_graph n =
     let g = G.create () in
-    PlaceSet.iter (fun p -> G.add_vertex g (P p)) n.places;
-    TransSet.iter (fun t -> G.add_vertex g (T t)) n.transitions;
     TransSet.iter
       (fun t ->
         PlaceSet.iter (fun p -> G.add_edge g (P p) (T t)) (n.preset t);
@@ -264,21 +262,25 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
 
   let print_graph n ?(vertex_name = fun v -> string_of_int (G.V.hash v))
       ?(vertex_label = fun _ -> "") ?(vertex_attrs = fun _ -> [])
-      ?(edge_attrs = fun _ -> []) ?(graph_label = "") ?(file_name = "mygraph")
-      () =
-    let module Plotter = Graph.Graphviz.Neato (struct
+      ?(edge_attrs = fun _ -> []) ?(graph_label = "") ?(file_name = "net") () =
+    let module Plotter = Graph.Graphviz.Dot (struct
       include G
 
-      let graph_attributes _ =
-        [ `Label graph_label; `Center true; `Margin (1.0, 1.0); `Overlap false ]
-
+      let graph_attributes _ = [ `Label graph_label ]
       let edge_attributes (_, e, _) = [ `Dir `Forward ] @ edge_attrs e
       let default_edge_attributes _ = []
       let get_subgraph _ = None
 
       let vertex_attributes v =
-        (match v with Node.P _ -> [ `Shape `Circle ] | T _ -> [ `Shape `Box ])
-        @ [ `Label (vertex_label v) ]
+        (match v with
+        | Node.P p ->
+            [ `Shape `Circle; `Fixedsize true ]
+            @ [
+                `Label
+                  (vertex_label v
+                  ^ if PlaceSet.mem p n.marking then "\n&#9679;" else "");
+              ]
+        | T _ -> [ `Shape `Box ])
         @ vertex_attrs v
 
       let vertex_name v = "\"" ^ vertex_name v ^ "\""
@@ -345,16 +347,16 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
       ?(vertex_name = fun v -> string_of_int (MG.V.hash v))
       ?(vertex_label = fun _ -> "") ?(vertex_attrs = fun _ -> [])
       ?(edge_label = fun _ -> "") ?(edge_attrs = fun _ -> [])
-      ?(graph_label = "") ?(file_name = "mygraph") () =
+      ?(graph_label = "") ?(file_name = "marking") () =
     let module Plotter = Graph.Graphviz.Neato (struct
       include MG
 
-      let graph_attributes _ =
-        [ `Label graph_label; `Center true; `Margin (1.0, 1.0); `Overlap false ]
+      let graph_attributes _ = [ `Label graph_label; `Overlap false ]
 
       let edge_attributes (_, e, _) =
         [
-          `Label (match e with `E t -> edge_label t | _ -> ""); `Dir `Forward;
+          `Label (match e with `E t -> edge_label t | `Def -> "");
+          `Dir `Forward;
         ]
         @ edge_attrs e
 
@@ -362,7 +364,7 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
       let get_subgraph _ = None
 
       let vertex_attributes v =
-        [] @ [ `Label (vertex_label v) ] @ vertex_attrs v
+        [ `Shape `Plaintext; `Label (vertex_label v) ] @ vertex_attrs v
 
       let vertex_name v = "\"" ^ vertex_name v ^ "\""
       let default_vertex_attributes _ = []

@@ -62,12 +62,11 @@ module Make (State : Set.OrderedType) (Alpha : Set.OrderedType) = struct
     g
 
   let print_graph n ?(vertex_name = fun v -> string_of_int (G.V.hash v))
-      ?(edge_label = fun _ -> "") ?(file_name = "mygraph") () =
+      ?(edge_label = fun _ -> "") ?(file_name = "nba") () =
     let module Plotter = Graph.Graphviz.Neato (struct
       include G
 
-      let graph_attributes _ =
-        [ `Center true; `Margin (1.0, 1.0); `Overlap false ]
+      let graph_attributes _ = [ `Overlap false ]
 
       let edge_attributes (_, e, _) =
         [
@@ -79,8 +78,7 @@ module Make (State : Set.OrderedType) (Alpha : Set.OrderedType) = struct
       let get_subgraph _ = None
 
       let vertex_attributes v =
-        if StateSet.mem v  n.fin then
-          [ `Shape `Doublecircle ]
+        if StateSet.mem v n.fin then [ `Shape `Doublecircle ]
         else [ `Shape `Circle ]
 
       let vertex_name v = "\"" ^ vertex_name v ^ "\""
