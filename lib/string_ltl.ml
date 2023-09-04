@@ -1,5 +1,6 @@
 module StringLtl = Ltl.Make (String)
 module StringFullsync = Fullsync.Make (String_product.StringPTNetProduct)
+module StringNetfullsync = Fullsync.MakeEH (String_product.StringPTNetProduct)
 open StringLtl
 open StringLtl.Formula
 
@@ -54,6 +55,35 @@ let string_of_syncformulaset fset =
       ^ String.concat ", "
           (FormulaSet.fold
              (fun f -> List.cons (string_of_syncformula f))
+             fset [])
+      ^ "}")
+
+let rec string_of_netformula =
+  StringNetfullsync.TesterLtl.Formula.(
+    function
+    | True -> "true"
+    | False -> "false"
+    | AP a -> a
+    | Not (AP _ as f) -> "¬" ^ string_of_netformula f
+    | Not f -> "¬(" ^ string_of_netformula f ^ ")"
+    | X f -> "X " ^ string_of_netformula f
+    | F f -> "F " ^ string_of_netformula f
+    | G f -> "G " ^ string_of_netformula f
+    | If (f1, f2) -> string_of_netformula f1 ^ " => " ^ string_of_netformula f2
+    | Iff (f1, f2) ->
+        string_of_netformula f1 ^ " <=> " ^ string_of_netformula f2
+    | Or (f1, f2) -> string_of_netformula f1 ^ " ∨ " ^ string_of_netformula f2
+    | And (f1, f2) -> string_of_netformula f1 ^ " ∧ " ^ string_of_netformula f2
+    | U (f1, f2) -> string_of_netformula f1 ^ " U " ^ string_of_netformula f2)
+
+let string_of_netformulaset fset =
+  StringNetfullsync.TesterLtl.(
+    if FormulaSet.is_empty fset then "∅"
+    else
+      "{"
+      ^ String.concat ", "
+          (FormulaSet.fold
+             (fun f -> List.cons (string_of_netformula f))
              fset [])
       ^ "}")
 

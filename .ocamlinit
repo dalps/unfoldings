@@ -6,22 +6,17 @@ open Prod1
 open Prod2
 open Prod3
 open Prod4
-open Prod5;;
+open Prod5
+open Prod6
+open Prod7
+open Prod8;;
 
-module StringLtl = Unfoldings.Ltl.Make(String)
-open StringLtl;;
-open StringLtl.Formula;;
+open String_product
+open String_ltl
+open StringPTNetProduct
+open StringNetfullsync
+open TesterLtl
+open Formula
 
-let ab = APSet.of_list ["a";"b"];;
-let a = APSet.of_list ["a"];;
-let b = APSet.of_list ["b"];;
-let empty = APSet.empty;;
-
-
-let f = U (AP "a", And (Not (AP "a"), AP "b"))
-let ap = APSet.of_list [ "a"; "b" ]
-let g = gnba_of_formula ap f
-let b1 = FormulaSet.of_list [ AP "a"; f ]
-let b2 = FormulaSet.of_list [ AP "a"; Not f ]
-let b3 = FormulaSet.of_list [ Not (AP "a"); f ]
-let b4 = FormulaSet.of_list [ Not (AP "a"); Not f ];;
+let f = U (AP "u1", AP "t2")
+let gnba = StringNetfullsync.gnba_of_formula prod7 f;;

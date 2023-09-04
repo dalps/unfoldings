@@ -101,12 +101,15 @@ module Make (AP : Set.OrderedType) = struct
     in
     helper (expand g)
 
-  let ap_of_formula f =
+  let ap_of_formulaset b =
     FormulaSet.fold
-      (fun f' ->
-        APSet.union
-          (match f' with AP ap -> APSet.singleton ap | _ -> APSet.empty))
-      (closure f) APSet.empty
+      (fun f b' -> match f with AP ap -> APSet.add ap b' | _ -> b')
+      b APSet.empty
+
+  let ap_of_formula f = ap_of_formulaset (closure f)
+
+  let ap_of_formulaset_f b =
+    FormulaSet.filter_map (function AP _ as f -> Some f | _ -> None) b
 
   let elementary_sets f =
     let cl = closure f in
@@ -126,7 +129,6 @@ module Make (AP : Set.OrderedType) = struct
       (power_formulaset cl)
 
   module FormulaGNBA = Gnba.Make (FormulaSet) (APSet)
-  module PowerPowerFormulaSet = Set.Make (FormulaGNBA.StateSet)
 
   let gnba_of_formula ap f =
     let cl = closure f in
@@ -135,7 +137,8 @@ module Make (AP : Set.OrderedType) = struct
       APSet.fold (fun a -> FormulaSet.add (AP a)) apset FormulaSet.empty
     in
     let formulas_of_ap = formulas_of ap in
-    FormulaGNBA.of_sets states (power_apset ap)
+    let open FormulaGNBA in
+    of_sets states (power_apset ap)
       (fun b a ->
         if
           FormulaSet.equal
@@ -159,12 +162,12 @@ module Make (AP : Set.OrderedType) = struct
       (FormulaSet.fold
          (function
            | U (_, g2) as g ->
-               PowerPowerFormulaSet.add
+               PowerStateSet.add
                  (PowerFormulaSet.filter
                     (fun b -> (not (FormulaSet.mem g b)) || FormulaSet.mem g2 b)
                     states)
-           | _ -> PowerPowerFormulaSet.union PowerPowerFormulaSet.empty)
-         cl PowerPowerFormulaSet.empty)
+           | _ -> PowerStateSet.union PowerStateSet.empty)
+         cl PowerStateSet.empty)
 
   let nba_of_formula ap f = FormulaGNBA.to_nba (gnba_of_formula ap f)
 

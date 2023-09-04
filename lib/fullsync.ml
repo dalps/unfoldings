@@ -144,18 +144,78 @@ module MakeEH (Net : Petrinet.S) = struct
           (fun (m, a', n) acc ->
             Net.MG.fold_edges_e
               (fun (x, b', y) ->
-                (||) (match (a', b') with
-                | `E a', `E b' ->
-                    Net.Trans.compare a a' = 0
-                    && Net.Trans.compare b b' = 0
-                    &&
-                    let ((_, _, r1) as fstep), ((r1', _, _) as fstep') =
-                      (f_step_set_of (m, a', n) f, f_step_set_of (x, b', y) f)
-                    in
-                    is_f_step fstep mg f && is_f_step fstep' mg f
-                    && TesterLtl.APSet.equal r1 r1'
-                | _ -> false))
+                ( || )
+                  (match (a', b') with
+                  | `E a', `E b' ->
+                      Net.Trans.compare a a' = 0
+                      && Net.Trans.compare b b' = 0
+                      &&
+                      let ((_, _, r1) as fstep), ((r1', _, _) as fstep') =
+                        (f_step_set_of (m, a', n) f, f_step_set_of (x, b', y) f)
+                      in
+                      is_f_step fstep mg f && is_f_step fstep' mg f
+                      && TesterLtl.APSet.equal r1 r1'
+                  | _ -> false))
               mg acc)
           mg false
         && is_f_occurrence_sequence (b :: ts) mg f
+
+  module NetGNBA = Gnba.Make (TesterLtl.FormulaSet) (Net.Trans)
+  open NetGNBA
+
+  let apset_of_transset tset =
+    Net.TransSet.fold
+      (fun t -> NetGNBA.AlphaSet.add t)
+      tset NetGNBA.AlphaSet.empty
+
+  let gnba_of_formula net f =
+    let open TesterLtl in
+    let f = expand f in
+    let mg = Net.get_marking_graph net () in
+    let cl = closure f in
+    let apset = ap_of_formula f in
+    let states = elementary_sets f in
+    let is_f = f_state_set (Net.marking net) f in
+    print_endline "";
+    print_int (APSet.cardinal is_f);
+    print_endline "";
+    NetGNBA.of_sets states
+      (apset_of_transset (Net.transitions net))
+      (fun b a ->
+        PowerFormulaSet.filter
+          (fun b' ->
+            (* condition (6) *)
+            let r, r' =
+              ( APSet.inter (ap_of_formulaset b) apset,
+                APSet.inter (ap_of_formulaset b') apset )
+            in
+            is_f_step (r, a, r') mg f
+            (* conditions (3)-(4) *)
+            && FormulaSet.for_all
+                 (function
+                   | X g' as g -> FormulaSet.mem g b <=> FormulaSet.mem g' b'
+                   | U (g1, g2) as g ->
+                       FormulaSet.mem g b
+                       <=> (FormulaSet.mem g2 b
+                           || (FormulaSet.mem g1 b && FormulaSet.mem g b'))
+                   | _ -> true)
+                 cl)
+          states)
+      (PowerFormulaSet.filter
+         (fun b ->
+           (* condition (1) *)
+           FormulaSet.mem f b
+           (* condition (2) *)
+           && APSet.equal (ap_of_formulaset b) is_f)
+         states)
+      (* condition (5) is encoded in the acceptance sets *)
+      (FormulaSet.fold
+         (function
+           | U (_, g2) as g ->
+               PowerStateSet.add
+                 (PowerFormulaSet.filter
+                    (fun b -> (not (FormulaSet.mem g b)) || FormulaSet.mem g2 b)
+                    states)
+           | _ -> PowerStateSet.union PowerStateSet.empty)
+         cl PowerStateSet.empty)
 end

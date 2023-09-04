@@ -208,7 +208,7 @@ assert (
 ;;
 
 assert (PowerFormulaSet.equal g.init (PowerFormulaSet.of_list [ b1; b3 ]));;
-assert (PowerPowerFormulaSet.equal g.fin PowerPowerFormulaSet.empty);;
+assert (FormulaGNBA.PowerStateSet.equal g.fin FormulaGNBA.PowerStateSet.empty);;
 assert (PowerFormulaSet.equal (g.func b1 a) (PowerFormulaSet.of_list [ b1; b2 ]))
 ;;
 assert (PowerFormulaSet.equal (g.func b1 ab) (g.func b1 a));;
@@ -250,8 +250,8 @@ assert (
 assert (PowerFormulaSet.equal g.init (PowerFormulaSet.of_list [ b1; b2; b3 ]));;
 
 assert (
-  PowerPowerFormulaSet.equal g.fin
-    (PowerPowerFormulaSet.singleton
+  FormulaGNBA.PowerStateSet.equal g.fin
+    (FormulaGNBA.PowerStateSet.singleton
        (PowerFormulaSet.of_list [ b1; b2; b4; b5 ])))
 ;;
 
