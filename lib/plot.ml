@@ -64,3 +64,8 @@ let plot_sync_graph net f =
         [ `ColorWithTransparency 0xff000088l; `Style `Filled ]
       else [])
     ~edge_label:string_of_globaltrans
+
+let plot_netgnba gnba =
+  let open StringNetfullsync.NetGNBA in
+  print_graph gnba ~vertex_name:String_ltl.string_of_netformulaset
+    ~edge_label:string_of_globaltrans

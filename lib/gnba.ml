@@ -78,9 +78,13 @@ module Make (State : Set.OrderedType) (Alpha : Set.OrderedType) = struct
       let get_subgraph _ = None
 
       let vertex_attributes v =
-        if PowerStateSet.exists (fun accset -> StateSet.mem v accset) n.fin then
-          [ `Shape `Doublecircle ]
-        else [ `Shape `Circle ]
+        (if PowerStateSet.exists (fun accset -> StateSet.mem v accset) n.fin
+         then [ `Shape `Ellipse; `Peripheries 2 ]
+         else [ `Shape `Ellipse ])
+        @
+        if StateSet.mem v n.init then
+          [ `Style `Filled; `ColorWithTransparency 0x00000044l ]
+        else []
 
       let vertex_name v = "\"" ^ vertex_name v ^ "\""
       let default_vertex_attributes _ = []
