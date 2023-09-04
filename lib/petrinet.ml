@@ -81,7 +81,7 @@ module type S = sig
   val is_statemachine : t -> bool
   val is_marked_graph : t -> bool
 
-  module MV : Graph.Sig.COMPARABLE
+  module MV : Graph.Sig.COMPARABLE with type t = PlaceSet.t
   module ME : Graph.Sig.ORDERED_TYPE_DFT with type t = [ `E of Trans.t | `Def ]
 
   module MG :

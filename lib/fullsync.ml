@@ -78,3 +78,84 @@ module Make (Net : Petrinet.S) = struct
     Plotter.output_graph file g;
     Sys.command ("neato -Tpng " ^ file_name ^ ".dot -o " ^ file_name ^ ".png")
 end
+
+module MakeEH (Net : Petrinet.S) = struct
+  (* atomic propositions: places *)
+  module TesterLtl = Ltl.Make (Net.Place)
+
+  module Node = struct
+    type t = Net.MV.t * TesterLtl.FormulaGNBA.NumberedNba.Node.t
+
+    let compare = compare
+    let hash = Hashtbl.hash
+    let equal = ( = )
+  end
+
+  module Edge = Net.ME
+
+  module TG =
+    Graph.Imperative.Digraph.ConcreteBidirectionalLabeled (Node) (Edge)
+
+  let apset_of_placeset tset =
+    Net.PlaceSet.fold
+      (fun t -> TesterLtl.APSet.add t)
+      tset TesterLtl.APSet.empty
+
+  let placeset_of_apset apset =
+    TesterLtl.APSet.fold (fun t -> Net.PlaceSet.add t) apset Net.PlaceSet.empty
+
+  let f_state_set s f =
+    TesterLtl.APSet.inter (apset_of_placeset s) (TesterLtl.ap_of_formula f)
+
+  let f_state_list s f =
+    let ap_of_f = TesterLtl.ap_of_formula f in
+    List.fold_right
+      (fun si ->
+        if TesterLtl.APSet.mem si ap_of_f then ( @ ) [ `P si ]
+        else ( @ ) [ `Bottom ])
+      s []
+
+  let f_step_set_of (m, t, m') f = (f_state_set m f, t, f_state_set m' f)
+  let f_step_list_of (m, t, m') f = (f_state_list m f, t, f_state_list m' f)
+
+  let is_f_step (r, t, r') mg f =
+    Net.MG.fold_edges_e
+      (fun (m, u, m') b ->
+        let n, n' = (f_state_set m f, f_state_set m' f) in
+        (match u with `E u -> Net.Trans.compare t u = 0 | `Def -> false)
+        && TesterLtl.APSet.equal n r
+        && TesterLtl.APSet.equal n' r'
+        || b)
+      mg false
+
+  let rec is_f_occurrence_sequence h mg f =
+    match h with
+    | [] -> true
+    | [ a ] ->
+        Net.MG.fold_edges_e
+          (fun (_, a', _) b ->
+            (match a' with
+            | `E a' -> Net.Trans.compare a a' = 0
+            | `Def -> false)
+            || b)
+          mg false
+    | a :: b :: ts ->
+        Net.MG.fold_edges_e
+          (fun (m, a', n) acc ->
+            Net.MG.fold_edges_e
+              (fun (x, b', y) ->
+                (||) (match (a', b') with
+                | `E a', `E b' ->
+                    Net.Trans.compare a a' = 0
+                    && Net.Trans.compare b b' = 0
+                    &&
+                    let ((_, _, r1) as fstep), ((r1', _, _) as fstep') =
+                      (f_step_set_of (m, a', n) f, f_step_set_of (x, b', y) f)
+                    in
+                    is_f_step fstep mg f && is_f_step fstep' mg f
+                    && TesterLtl.APSet.equal r1 r1'
+                | _ -> false))
+              mg acc)
+          mg false
+        && is_f_occurrence_sequence (b :: ts) mg f
+end

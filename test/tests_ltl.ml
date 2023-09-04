@@ -1,5 +1,7 @@
 print_endline "#### Running ltl tests..."
 
+open Unfoldings
+open Examples
 module StringLtl = Unfoldings.Ltl.Make (String)
 open StringLtl
 open StringLtl.Formula;;
@@ -297,3 +299,71 @@ let ap = APSet.of_list [ "a"; "b" ]
 let n = petrinet_of_formula ap f;;
 
 assert (FormulaPTNet.is_statemachine n)
+
+open String_product
+open StringPTNetProduct
+module StringFullsync = Fullsync.MakeEH (StringPTNetProduct)
+open StringFullsync
+open TesterLtl
+open Formula
+
+let f = X (AP "u1")
+let mg = get_marking_graph Prod7.prod7 ()
+let m1 = PlaceSet.of_list [ "t1"; "u1" ]
+let m2 = PlaceSet.of_list [ "t2"; "u1" ]
+let m3 = PlaceSet.of_list [ "t1"; "u2" ]
+let m4 = PlaceSet.of_list [ "t2"; "u2" ]
+let e = APSet.empty
+let ru1 = APSet.of_list [ "u1" ]
+let rt1 = APSet.of_list [ "t1" ]
+let rt2 = APSet.of_list [ "t2" ]
+let a = [ Idle; T "a" ]
+let b = [ Idle; T "b" ]
+let c = [ T "c"; Idle ];;
+
+assert (
+  APSet.equal (f_state_set m1 f) (apset_of_placeset (PlaceSet.of_list [ "u1" ])))
+;;
+
+assert (
+  APSet.equal (f_state_set m2 f) (apset_of_placeset (PlaceSet.of_list [ "u1" ])))
+;;
+
+assert (APSet.equal (f_state_set m3 f) APSet.empty);;
+assert (APSet.equal (f_state_set m4 f) APSet.empty);;
+assert (is_f_step (ru1, c, ru1) mg f);;
+assert (is_f_step (ru1, c, e) mg f = false);;
+assert (is_f_step (e, c, ru1) mg f = false);;
+assert (is_f_step (e, c, e) mg f);;
+assert (is_f_step (ru1, a, ru1) mg f = false);;
+assert (is_f_step (ru1, b, ru1) mg f = false);;
+assert (is_f_step (ru1, b, e) mg f = false);;
+assert (is_f_step (e, b, ru1) mg f);;
+assert (is_f_step (ru1, a, e) mg f);;
+assert (is_f_step (e, a, ru1) mg f = false);;
+assert (is_f_step (e, a, e) mg f = false);;
+assert (is_f_step (ru1, c, rt1) mg f = false);;
+assert (is_f_step (rt1, c, rt1) mg f = false);;
+assert (is_f_step (rt1, a, rt1) mg f = false);;
+
+assert (is_f_occurrence_sequence [ c; c ] mg f);;
+assert (is_occurrence_sequence [ c; c ] Prod7.prod7 = false);;
+
+assert (is_f_occurrence_sequence [ a; a ] mg f = false);;
+
+let f = X (AP "t1");;
+
+assert (is_f_step (rt1, c, rt1) mg f = false);;
+assert (is_f_step (rt1, c, rt2) mg f = false);;
+assert (is_f_step (rt1, c, e) mg f);;
+assert (is_f_step (e, c, rt1) mg f = false);;
+assert (is_f_step (rt1, a, rt1) mg f);;
+assert (is_f_step (e, a, e) mg f);;
+assert (is_f_step (rt1, b, rt1) mg f);;
+
+let f = U (AP "u1", AP "t2");;
+assert (is_f_step (ru1, a, rt2) mg f = false);;
+assert (is_f_step (ru1, b, rt2) mg f = false);;
+assert (is_f_step (ru1, c, rt2) mg f = false);;
+
+print_endline "[OK] phi steps and histories"
