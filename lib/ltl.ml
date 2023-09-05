@@ -18,6 +18,8 @@ module Make (AP : Set.OrderedType) = struct
 
     let compare f1 f2 =
       match (f1, f2) with
+      | False, Not True | Not True, False -> 0
+      | True, Not False | Not False, True -> 0
       | f1, Not (Not f2) | Not (Not f1), f2 -> Stdlib.compare f1 f2
       | f1, f2 -> Stdlib.compare f1 f2
   end
@@ -53,6 +55,9 @@ module Make (AP : Set.OrderedType) = struct
 
   let rec expand = function
     | (Formula.True | False | AP _) as f -> f
+    | Or (True, _) | Or (_, True) | Not False -> True
+    | And (False, _) | And (_, False) | Not True -> False
+    | Or (False, f) | Or (f, False) | And (True, f) | And (f, True) -> f
     | Or (f1, f2) -> Or (expand f1, expand f2)
     | And (f1, f2) -> And (expand f1, expand f2)
     | Not f' -> Not (expand f')
@@ -89,7 +94,8 @@ module Make (AP : Set.OrderedType) = struct
       FormulaSet.union
         (FormulaSet.of_list
            (match f with
-           | Formula.True | False -> [ True; False ]
+           | Formula.True | Not False -> [ True ]
+           | False | Not True -> [ False ]
            | Not f' -> [ f; f' ]
            | _ -> [ f; Not f ]))
         (match f with
