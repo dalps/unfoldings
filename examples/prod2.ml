@@ -28,13 +28,13 @@ open Unfoldings.String_product.StringPTNetProduct
 let prod2 =
   product [ s; r ]
     [
-      [ T "t1"; Idle ];
-      [ T "t2"; Idle ];
-      [ T "t3"; T "u2" ];
-      [ T "t4"; T "u2" ];
-      [ T "t5"; Idle ];
-      [ Idle; T "u1" ];
-      [ Idle; T "u3" ];
+      [ `T "t1"; `Idle ];
+      [ `T "t2"; `Idle ];
+      [ `T "t3"; `T "u2" ];
+      [ `T "t4"; `T "u2" ];
+      [ `T "t5"; `Idle ];
+      [ `Idle; `T "u1" ];
+      [ `Idle; `T "u3" ];
     ]
 
 module Node = struct
@@ -84,8 +84,8 @@ module Dot = Graph.Graphviz.Dot (struct
         List.fold_right
           (fun lt acc ->
             match lt with
-            | Unfoldings.String_product.StringPTNetProduct.T s -> s ^ acc
-            | Idle -> "_" ^ acc)
+            | `T s -> s ^ acc
+            | `Idle -> "_" ^ acc)
           t ""
 
   let default_vertex_attributes _ = []

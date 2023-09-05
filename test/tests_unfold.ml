@@ -1,33 +1,35 @@
 print_endline "#### Running unfold tests..."
 
+open Unfoldings
+open Product
 open Examples.Prod1
-open Unfoldings.String_product.StringPTNetProduct;;
+open String_product.StringPTNetProduct;;
 
-fire [ T "t2" ] prod1;;
+fire [ `T "t2" ] prod1;;
 
 (* {p1,p2} ---> m1 := {p3,p4} *)
-fire [ T "t1" ] prod1;;
+fire [ `T "t1" ] prod1;;
 
 (* {p3,p4} ---> m2 := {p1,p4} *)
-fire [ T "t3" ] prod1;;
+fire [ `T "t3" ] prod1;;
 
 (* {p1,p4} ---> {p1,p2} = m0 *)
-fire [ T "t1" ] prod1;;
+fire [ `T "t1" ] prod1;;
 
 (* not enabled *)
-fire [ T "t9" ] prod1;;
+fire [ `T "t9" ] prod1;;
 
 (* not an event in n *)
 
-assert (is_occurrence_sequence [ [ T "t2" ]; [ T "t1" ]; [ T "t3" ] ] prod1);;
-assert (is_occurrence_sequence [ [ T "t2" ]; [ T "t3" ]; [ T "t1" ] ] prod1);;
-assert (is_occurrence_sequence [ [ T "t1" ] ] prod1 = false);;
+assert (is_occurrence_sequence [ [ `T "t2" ]; [ `T "t1" ]; [ `T "t3" ] ] prod1);;
+assert (is_occurrence_sequence [ [ `T "t2" ]; [ `T "t3" ]; [ `T "t1" ] ] prod1);;
+assert (is_occurrence_sequence [ [ `T "t1" ] ] prod1 = false);;
 
 assert (
-  is_occurrence_sequence [ [ T "t2" ]; [ T "t3" ]; [ T "t2" ] ] prod1 = false)
+  is_occurrence_sequence [ [ `T "t2" ]; [ `T "t3" ]; [ `T "t2" ] ] prod1 = false)
 ;;
 
-assert (is_occurrence_sequence [ [ T "t2" ]; [ T "t2" ] ] prod1 = false);;
+assert (is_occurrence_sequence [ [ `T "t2" ]; [ `T "t2" ] ] prod1 = false);;
 print_endline "[OK] prod1"
 
 (* --- *)
@@ -89,18 +91,17 @@ print_endline "[OK] onet"
 (* --- *)
 
 open Examples.Prod2
-open Unfoldings.String_product.StringPTNetProduct
-open Unfoldings.String_product
-open GlobalTransition
+open String_product.StringPTNetProduct
+open String_product
 
-let t1 = [ T "t1"; Idle ]
-let t2 = [ T "t2"; Idle ]
-let u1 = [ Idle; T "u1" ]
-let t3u2 = [ T "t3"; T "u2" ]
-let t4u2 = [ T "t4"; T "u2" ]
-let t4 = [ T "t4"; Idle ]
-let t5 = [ T "t5"; Idle ]
-let u3 = [ Idle; T "u3" ];;
+let t1 = [ `T "t1"; `Idle ]
+let t2 = [ `T "t2"; `Idle ]
+let u1 = [ `Idle; `T "u1" ]
+let t3u2 = [ `T "t3"; `T "u2" ]
+let t4u2 = [ `T "t4"; `T "u2" ]
+let t4 = [ `T "t4"; `Idle ]
+let t5 = [ `T "t5"; `Idle ]
+let u3 = [ `Idle; `T "u3" ];;
 
 assert (is_occurrence_sequence [ t1; u1; t3u2; t5 ] prod2);;
 assert (is_occurrence_sequence [ u1; t1; t3u2; u3 ] prod2);;
@@ -125,10 +126,10 @@ assert (tword_equiv [ u1; t1; t3u2; t5; u3 ] [ u1; t1; t3u2; t4; u3 ] = false);;
 assert (tword_equiv [ u1; t1; t3u2; t5; u3 ] [ u1; t1; t3u2; t4 ] = false);;
 assert (tword_equiv [ u1; t1; t3u2; t5; u3 ] [ u1; t1; t3u2; t5; t4u2 ] = false)
 
-let a = [ T "a"; Idle; Idle ]
-let b = [ Idle; T "b"; Idle ]
-let c = [ Idle; Idle; T "c" ]
-let c1 = [ Idle; Idle; T "c1" ];;
+let a = [ `T "a"; `Idle; `Idle ]
+let b = [ `Idle; `T "b"; `Idle ]
+let c = [ `Idle; `Idle; `T "c" ]
+let c1 = [ `Idle; `Idle; `T "c1" ];;
 
 assert (tword_equiv [ a; b; c ] [ b; a; c ]);;
 assert (tword_equiv [ a; b; c ] [ a; c; b ]);;
@@ -139,15 +140,15 @@ print_endline "[OK] prod2"
 
 (* --- *)
 
-let d = [ T "d"; Idle; Idle ]
-let ef = [ Idle; T "e"; T "f" ]
-let gc = [ T "g"; Idle; T "c" ]
-let t4u4 = [ T "t4"; T "u4" ]
+let d = [ `T "d"; `Idle; `Idle ]
+let ef = [ `Idle; `T "e"; `T "f" ]
+let gc = [ `T "g"; `Idle; `T "c" ]
+let t4u4 = [ `T "t4"; `T "u4" ]
 let h1 = [ t1; u1; t3u2; t5; u3 ]
 let h21 = [ a; b; c ]
 let h22 = [ d; ef; gc ]
 let h3 = [ t1; u1; t5; u3; t1; u1; t3u2; t5; u3; t4u4 ]
-let h4 = [ [ T "t" ] ]
+let h4 = [ [ `T "t" ] ]
 let traceh3 = trace h3
 let traceh21 = trace h21
 let traceh22 = trace h22
@@ -218,7 +219,7 @@ open Examples.Prod3
 open Examples.Prod4
 open Examples.Prod5
 open Examples.Prod5_loops
-open Unfoldings.String_product;;
+open String_product;;
 
 assert (StringPTNetProduct.is_freechoice prod1);;
 assert (StringPTNetProduct.is_freechoice prod2 = false);;
@@ -227,16 +228,16 @@ assert (StringPTNetProduct.is_freechoice prod4 = false);;
 assert (StringPTNetProduct.is_freechoice prod5 = false);;
 assert (StringPTNetProduct.is_freechoice prod5' = false)
 
-module ProductUnfold = Unfoldings.Executability.Make (StringPTNetProduct)
+module ProductUnfold = Executability.Make (StringPTNetProduct)
 open ProductUnfold
 
 let fc1 = Unfolder.(unfold 10 prod1);;
 
 assert (Unfolder.OccurrenceNet.is_freechoice fc1 = false);;
 print_endline "[OK] is_freechoice";;
-assert (let r = test prod1 (d_compare sl_compare) [ [ T "t1" ] ] 99 in r.res);;
-assert (let r = test prod1 (d_compare sl_compare) [ [ T "t2" ] ] 99 in r.res);;
-assert (let r = test prod1 (d_compare sl_compare) [ [ T "t3" ] ] 99 in r.res);;
+assert (let r = test prod1 (d_compare sl_compare) [ [ `T "t1" ] ] 99 in r.res);;
+assert (let r = test prod1 (d_compare sl_compare) [ [ `T "t2" ] ] 99 in r.res);;
+assert (let r = test prod1 (d_compare sl_compare) [ [ `T "t3" ] ] 99 in r.res);;
 print_endline "[OK] is_executable prod1";;
 assert (let r = test prod2 (d_compare sl_compare) [ u3 ] 99 in r.res);;
 assert (let r = test prod2 (d_compare sl_compare) [ t4u2 ] 99 in r.res);;
@@ -244,12 +245,12 @@ assert (let r = test prod2 (d_compare sl_compare) [ t5 ] 99 in r.res);;
 assert (let r = test prod2 (d_compare sl_compare) [ t3u2 ] 99 in r.res);;
 print_endline "[OK] is_executable prod2"
 
-let a0a1 = [ T "a0"; T "a1"; Idle; Idle; Idle ]
-let b1 = [ Idle; T "b1"; Idle; Idle; Idle ]
-let b2 = [ Idle; Idle; T "b2"; Idle; Idle ]
-let b3 = [ Idle; Idle; Idle; T "b3"; Idle ]
-let b4 = [ Idle; Idle; Idle; Idle; T "b4" ]
-let c = [ T "c0"; T "c1"; T "c2"; T "c3"; T "c4" ];;
+let a0a1 = [ `T "a0"; `T "a1"; `Idle; `Idle; `Idle ]
+let b1 = [ `Idle; `T "b1"; `Idle; `Idle; `Idle ]
+let b2 = [ `Idle; `Idle; `T "b2"; `Idle; `Idle ]
+let b3 = [ `Idle; `Idle; `Idle; `T "b3"; `Idle ]
+let b4 = [ `Idle; `Idle; `Idle; `Idle; `T "b4" ]
+let c = [ `T "c0"; `T "c1"; `T "c2"; `T "c3"; `T "c4" ];;
 
 assert (let r = test prod3 (d_compare sl_compare) [ b1 ] 99 in r.res);;
 assert (let r = test prod3 (d_compare sl_compare) [ b2 ] 99 in r.res);;
@@ -259,56 +260,56 @@ assert (let r = test prod3 (d_compare sl_compare) [ a0a1 ] 99 in r.res);;
 assert (let r = test prod3 (d_compare sl_compare) [ c ] 99 in r.res = false);;
 assert (let r = test prod3 (d_compare sl_compare) [ c; a0a1 ] 99 in r.res);;
 print_endline "[OK] is_executable prod3";;
-assert (let r = test prod4 (d_compare sl_compare) [ [ Idle; T "u1"; T "v1" ] ] 99 in r.res);;
-assert (let r = test prod4 (d_compare sl_compare) [ [ Idle; T "u1"; Idle ] ] 99 in r.res = false)
+assert (let r = test prod4 (d_compare sl_compare) [ [ `Idle; `T "u1"; `T "v1" ] ] 99 in r.res);;
+assert (let r = test prod4 (d_compare sl_compare) [ [ `Idle; `T "u1"; `Idle ] ] 99 in r.res = false)
 ;;
-assert (let r = test prod4 (d_compare sl_compare) [ [ T "t1"; T "u1"; Idle ] ] 99 in r.res);;
+assert (let r = test prod4 (d_compare sl_compare) [ [ `T "t1"; `T "u1"; `Idle ] ] 99 in r.res);;
 print_endline "[OK] is_executable prod4";;
-assert (let r = test prod5 (d_compare sl_compare) [ [ Idle; Idle; T "f3"; T "f4" ] ] 99 in r.res)
+assert (let r = test prod5 (d_compare sl_compare) [ [ `Idle; `Idle; `T "f3"; `T "f4" ] ] 99 in r.res)
 ;;
 
 assert (
-  let r = test prod5 (d_compare sl_compare) [ [ Idle; Idle; T "f3"; T "f5" ] ] 99 in r.res
+  let r = test prod5 (d_compare sl_compare) [ [ `Idle; `Idle; `T "f3"; `T "f5" ] ] 99 in r.res
   = false)
 ;;
 
 assert (
-  let r = test prod5 (d_compare sl_compare) [ [ T "i1"; T "i2"; T "i3"; T "i4" ] ] 99 in r.res)
+  let r = test prod5 (d_compare sl_compare) [ [ `T "i1"; `T "i2"; `T "i3"; `T "i4" ] ] 99 in r.res)
 ;;
 
-assert (let r = test prod5 sl_compare [ [ T "i1"; T "i2"; T "i3"; T "i4" ] ] 99 in r.res);;
+assert (let r = test prod5 sl_compare [ [ `T "i1"; `T "i2"; `T "i3"; `T "i4" ] ] 99 in r.res);;
 print_endline "[OK] is_executable prod5";;
 
-assert (let r = test Prod8.prod8 (d_compare sl_compare) [ [T "A"] ] 99 in r.res) ;;
-assert (let r = test Prod8.prod8 (d_compare sl_compare) [ [T "B"] ] 99 in r.res) ;;
-assert (let r = test Prod8.prod8 (d_compare sl_compare) [ [T "C"] ] 99 in r.res) ;;
-assert (let r = test Prod8.prod8 (d_compare sl_compare) [ [T "D"] ] 99 in r.res) ;;
-assert (let r = test Prod8.prod8 (d_compare sl_compare) [ [T "E"] ] 99 in r.res) ;;
-assert (let r = test Prod8.prod8 (d_compare sl_compare) [ [T "G"] ] 99 in r.res) ;;
+assert (let r = test Prod8.prod8 (d_compare sl_compare) [ [`T "A"] ] 99 in r.res) ;;
+assert (let r = test Prod8.prod8 (d_compare sl_compare) [ [`T "B"] ] 99 in r.res) ;;
+assert (let r = test Prod8.prod8 (d_compare sl_compare) [ [`T "C"] ] 99 in r.res) ;;
+assert (let r = test Prod8.prod8 (d_compare sl_compare) [ [`T "D"] ] 99 in r.res) ;;
+assert (let r = test Prod8.prod8 (d_compare sl_compare) [ [`T "E"] ] 99 in r.res) ;;
+assert (let r = test Prod8.prod8 (d_compare sl_compare) [ [`T "G"] ] 99 in r.res) ;;
 print_endline "[OK] is_executable prod8"
 
 (* --- *)
 
-open Unfoldings.Repeated_executability.Make (StringPTNetProduct)
+open Repeated_executability.Make (StringPTNetProduct)
 open Examples.Prod5_loops
 open Examples.Prod6;;
 
-assert (let r = test Prod8.prod8 (d_compare sl_compare) [ [T "A"] ] 99 in r.res) ;;
-assert (let r = test Prod8.prod8 (d_compare sl_compare) [ [T "B"] ] 99 in r.res) ;;
-assert (let r = test Prod8.prod8 (d_compare sl_compare) [ [T "C"] ] 99 in r.res) ;;
-assert (let r = test Prod8.prod8 (d_compare sl_compare) [ [T "D"] ] 99 in r.res) ;;
-assert (let r = test Prod8.prod8 (d_compare sl_compare) [ [T "E"] ] 99 in r.res) ;;
-assert (let r = test Prod8.prod8 (d_compare sl_compare) [ [T "G"] ] 99 in r.res) ;;
+assert (let r = test Prod8.prod8 (d_compare sl_compare) [ [`T "A"] ] 99 in r.res) ;;
+assert (let r = test Prod8.prod8 (d_compare sl_compare) [ [`T "B"] ] 99 in r.res) ;;
+assert (let r = test Prod8.prod8 (d_compare sl_compare) [ [`T "C"] ] 99 in r.res) ;;
+assert (let r = test Prod8.prod8 (d_compare sl_compare) [ [`T "D"] ] 99 in r.res) ;;
+assert (let r = test Prod8.prod8 (d_compare sl_compare) [ [`T "E"] ] 99 in r.res) ;;
+assert (let r = test Prod8.prod8 (d_compare sl_compare) [ [`T "G"] ] 99 in r.res) ;;
 print_endline "[OK] is_infinitely_executable prod8";;
 
-assert (let r = test prod6 (d_compare sl_compare) [ [ T "r" ] ] 99 in r.res);;
-assert (let r = test prod6 (d_compare sl_compare) [ [ T "c" ] ] 99 in r.res);;
-assert (let r = test prod6 (d_compare sl_compare) [ [ T "a" ] ] 99 in r.res = false);;
-assert (let r = test prod6 (d_compare sl_compare) [ [ T "b" ] ] 99 in r.res = false);;
+assert (let r = test prod6 (d_compare sl_compare) [ [ `T "r" ] ] 99 in r.res);;
+assert (let r = test prod6 (d_compare sl_compare) [ [ `T "c" ] ] 99 in r.res);;
+assert (let r = test prod6 (d_compare sl_compare) [ [ `T "a" ] ] 99 in r.res = false);;
+assert (let r = test prod6 (d_compare sl_compare) [ [ `T "b" ] ] 99 in r.res = false);;
 print_endline "[OK] is_infinitely_executable prod6";;
-assert (let r = test prod1 (d_compare sl_compare) [ [ T "t1" ] ] 99 in r.res);;
-assert (let r = test prod1 (d_compare sl_compare) [ [ T "t2" ] ] 99 in r.res);;
-assert (let r = test prod1 (d_compare sl_compare) [ [ T "t3" ] ] 99 in r.res);;
+assert (let r = test prod1 (d_compare sl_compare) [ [ `T "t1" ] ] 99 in r.res);;
+assert (let r = test prod1 (d_compare sl_compare) [ [ `T "t2" ] ] 99 in r.res);;
+assert (let r = test prod1 (d_compare sl_compare) [ [ `T "t3" ] ] 99 in r.res);;
 print_endline "[OK] is_infinitely_executable prod1";;
 assert (let r = test prod2 (d_compare sl_compare) [ u3 ] 99 in r.res);;
 assert (let r = test prod2 (d_compare sl_compare) [ t4u2 ] 99 in r.res);;
@@ -316,12 +317,12 @@ assert (let r = test prod2 (d_compare sl_compare) [ t5 ] 99 in r.res);;
 assert (let r = test prod2 (d_compare sl_compare) [ t3u2 ] 99 in r.res);;
 print_endline "[OK] is_infinitely_executable prod2"
 
-let a0a1 = [ T "a0"; T "a1"; Idle; Idle; Idle ]
-let b1 = [ Idle; T "b1"; Idle; Idle; Idle ]
-let b2 = [ Idle; Idle; T "b2"; Idle; Idle ]
-let b3 = [ Idle; Idle; Idle; T "b3"; Idle ]
-let b4 = [ Idle; Idle; Idle; Idle; T "b4" ]
-let c = [ T "c0"; T "c1"; T "c2"; T "c3"; T "c4" ];;
+let a0a1 = [ `T "a0"; `T "a1"; `Idle; `Idle; `Idle ]
+let b1 = [ `Idle; `T "b1"; `Idle; `Idle; `Idle ]
+let b2 = [ `Idle; `Idle; `T "b2"; `Idle; `Idle ]
+let b3 = [ `Idle; `Idle; `Idle; `T "b3"; `Idle ]
+let b4 = [ `Idle; `Idle; `Idle; `Idle; `T "b4" ]
+let c = [ `T "c0"; `T "c1"; `T "c2"; `T "c3"; `T "c4" ];;
 
 assert (let r = test prod3 (d_compare sl_compare) [ b1 ] 99 in r.res = false);;
 assert (let r = test prod3 (d_compare sl_compare) [ b2 ] 99 in r.res = false);;
@@ -333,52 +334,52 @@ assert (let r = test prod3 (d_compare sl_compare) [ c; a0a1 ] 99 in r.res = fals
 print_endline "[OK] is_infinitely_executable prod3";;
 
 assert (
-  let r = test prod4 (d_compare sl_compare) [ [ Idle; T "u1"; T "v1" ] ] 99 in r.res = false)
+  let r = test prod4 (d_compare sl_compare) [ [ `Idle; `T "u1"; `T "v1" ] ] 99 in r.res = false)
 ;;
 
-assert (let r = test prod4 (d_compare sl_compare) [ [ Idle; T "u1"; Idle ] ] 99 in r.res = false)
+assert (let r = test prod4 (d_compare sl_compare) [ [ `Idle; `T "u1"; `Idle ] ] 99 in r.res = false)
 ;;
 
 assert (
-  let r = test prod4 (d_compare sl_compare) [ [ T "t1"; T "u1"; Idle ] ] 99 in r.res = false)
+  let r = test prod4 (d_compare sl_compare) [ [ `T "t1"; `T "u1"; `Idle ] ] 99 in r.res = false)
 ;;
 
 print_endline "[OK] is_infinitely_executable prod4";;
 
 assert (
-  let r = test prod5 (d_compare sl_compare) [ [ Idle; Idle; T "f3"; T "f4" ] ] 99 in r.res
+  let r = test prod5 (d_compare sl_compare) [ [ `Idle; `Idle; `T "f3"; `T "f4" ] ] 99 in r.res
   = false)
 ;;
 
 assert (
-  let r = test prod5 (d_compare sl_compare) [ [ Idle; Idle; T "f3"; T "f5" ] ] 99 in r.res
+  let r = test prod5 (d_compare sl_compare) [ [ `Idle; `Idle; `T "f3"; `T "f5" ] ] 99 in r.res
   = false)
 ;;
 
 assert (
-  let r = test prod5 (d_compare sl_compare) [ [ T "i1"; T "i2"; T "i3"; T "i4" ] ] 99 in r.res
+  let r = test prod5 (d_compare sl_compare) [ [ `T "i1"; `T "i2"; `T "i3"; `T "i4" ] ] 99 in r.res
   = false)
 ;;
 
-assert (let r = test prod5 sl_compare [ [ T "i1"; T "i2"; T "i3"; T "i4" ] ] 99 in r.res = false)
+assert (let r = test prod5 sl_compare [ [ `T "i1"; `T "i2"; `T "i3"; `T "i4" ] ] 99 in r.res = false)
 ;;
 print_endline "[OK] is_infinitely_executable prod5";;
 
 assert (
-  let r = test prod5' (d_compare sl_compare) [ [ Idle; Idle; T "f3"; T "f4" ] ] 99 in r.res
+  let r = test prod5' (d_compare sl_compare) [ [ `Idle; `Idle; `T "f3"; `T "f4" ] ] 99 in r.res
   = false)
 ;;
 
 assert (
-  let r = test prod5' (d_compare sl_compare) [ [ Idle; Idle; T "f3"; T "f5" ] ] 99 in r.res
+  let r = test prod5' (d_compare sl_compare) [ [ `Idle; `Idle; `T "f3"; `T "f5" ] ] 99 in r.res
   = false)
 ;;
 
 assert (
-  let r = test prod5' (d_compare sl_compare) [ [ T "i1"; T "i2"; T "i3"; T "i4" ] ] 99 in r.res)
+  let r = test prod5' (d_compare sl_compare) [ [ `T "i1"; `T "i2"; `T "i3"; `T "i4" ] ] 99 in r.res)
 ;;
 
-assert (let r = test prod5' sl_compare [ [ T "i1"; T "i2"; T "i3"; T "i4" ] ] 99 in r.res);;
+assert (let r = test prod5' sl_compare [ [ `T "i1"; `T "i2"; `T "i3"; `T "i4" ] ] 99 in r.res);;
 print_endline "[OK] is_infinitely_executable prod5_loops"
 
 open Examples.Onet

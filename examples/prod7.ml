@@ -23,7 +23,7 @@ open Unfoldings.String_product.StringPTNetProduct
 let prod7 =
   product [ s; r ]
     [
-      [ T "c"; Idle ];
-      [ Idle; T "a" ];
-      [ Idle; T "b" ];
+      [ `T "c"; `Idle ];
+      [ `Idle; `T "a" ];
+      [ `Idle; `T "b" ];
     ]

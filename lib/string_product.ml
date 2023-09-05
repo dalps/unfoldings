@@ -3,7 +3,7 @@ module StringPTNetProduct = Product.Make (StringPTNet)
 module StringProductUnfolder = Executability.Make (StringPTNetProduct)
 open StringPTNetProduct
 open StringProductUnfolder
-open GlobalTransition
+open Product
 open Setprintr
 
 
@@ -13,7 +13,7 @@ let string_of_globaltrans t =
   ^ String.concat ","
       (List.fold_right
          (fun lt ->
-           List.cons (match lt with StringPTNetProduct.T s -> s | Idle -> "ϵ"))
+           List.cons (match lt with `T s -> s | `Idle -> "ϵ"))
          t [])
   ^ if n > 1 then ")" else ""
 
@@ -112,7 +112,7 @@ let concat_traces w w' = trace (w @ w')
 
 let sl_compare w w' =
   let string_of_t t =
-    String.concat "" (List.map (function Idle -> "" | T s -> s) t)
+    String.concat "" (List.map (function `Idle -> "" | `T s -> s) t)
   in
   let string_of_tword w = String.concat "" (List.map string_of_t w) in
   let len_diff = List.length w - List.length w' in

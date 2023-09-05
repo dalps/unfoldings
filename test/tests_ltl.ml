@@ -316,9 +316,9 @@ let e = APSet.empty
 let ru1 = APSet.of_list [ "u1" ]
 let rt1 = APSet.of_list [ "t1" ]
 let rt2 = APSet.of_list [ "t2" ]
-let a = [ Idle; T "a" ]
-let b = [ Idle; T "b" ]
-let c = [ T "c"; Idle ];;
+let a = [ `Idle; `T "a" ]
+let b = [ `Idle; `T "b" ]
+let c = [ `T "c"; `Idle];;
 
 assert (
   APSet.equal (f_state_set m1 f) (apset_of_placeset (PlaceSet.of_list [ "u1" ])))

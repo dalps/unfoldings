@@ -36,10 +36,10 @@ open Unfoldings.String_product.StringPTNetProduct
 let prod3 =
   product [ r; s; t; u; v ]
     [
-      [ T "a0"; T "a1"; Idle; Idle; Idle ];
-      [ Idle; T "b1"; Idle; Idle; Idle ];
-      [ Idle; Idle; T "b2"; Idle; Idle ];
-      [ Idle; Idle; Idle; T "b3"; Idle ];
-      [ Idle; Idle; Idle; Idle; T "b4" ];
-      [ T "c0"; T "c1"; T "c2"; T "c3"; T "c4" ];
+      [ `T "a0"; `T "a1"; `Idle; `Idle; `Idle ];
+      [ `Idle; `T "b1"; `Idle; `Idle; `Idle ];
+      [ `Idle; `Idle; `T "b2"; `Idle; `Idle ];
+      [ `Idle; `Idle; `Idle; `T "b3"; `Idle ];
+      [ `Idle; `Idle; `Idle; `Idle; `T "b4" ];
+      [ `T "c0"; `T "c1"; `T "c2"; `T "c3"; `T "c4" ];
     ]

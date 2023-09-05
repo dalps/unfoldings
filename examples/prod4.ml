@@ -18,8 +18,8 @@ open Unfoldings.String_product.StringPTNetProduct
 let prod4 =
   product [ s; r; q ]
     [
-      [ T "t1"; T "u1"; Idle ];
-      [ Idle; T "u1"; T "v1" ];
-      [ T "t1"; T "u2"; Idle ];
-      [ Idle; T "u2"; T "v1" ];
+      [ `T "t1"; `T "u1"; `Idle ];
+      [ `Idle; `T "u1"; `T "v1" ];
+      [ `T "t1"; `T "u2"; `Idle ];
+      [ `Idle; `T "u2"; `T "v1" ];
     ]
