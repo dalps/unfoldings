@@ -3,8 +3,8 @@ print_endline "#### Running ltl tests..."
 open Unfoldings
 open Examples
 module StringLtl = Unfoldings.Ltl.Make (String)
-open StringLtl
-open StringLtl.Formula;;
+open Ltl
+open StringLtl;;
 
 assert (length (X (AP "a")) = 1);;
 assert (length (And (X (AP "a"), AP "b")) = 2);;
@@ -305,7 +305,6 @@ open StringPTNetProduct
 module StringFullsync = Fullsync.MakeEH (StringPTNetProduct)
 open StringFullsync
 open TesterLtl
-open Formula
 
 let f = X (AP "u1")
 let mg = get_marking_graph Prod7.prod7 ()

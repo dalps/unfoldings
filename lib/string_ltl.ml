@@ -1,107 +1,40 @@
+open Ltl
+open Setprintr
 module StringLtl = Ltl.Make (String)
 module StringFullsync = Fullsync.Make (String_product.StringPTNetProduct)
 module StringNetfullsync = Fullsync.MakeEH (String_product.StringPTNetProduct)
-open StringLtl
-open StringLtl.Formula
 
-let rec string_of_formula = function
-  | True -> "true"
-  | False -> "false"
-  | AP a -> a
-  | Not (AP _ as f) -> "¬" ^ string_of_formula f
-  | Not f -> "¬(" ^ string_of_formula f ^ ")"
-  | X f -> "X " ^ string_of_formula f
-  | F f -> "F " ^ string_of_formula f
-  | G f -> "G " ^ string_of_formula f
-  | If (f1, f2) -> string_of_formula f1 ^ " => " ^ string_of_formula f2
-  | Iff (f1, f2) -> string_of_formula f1 ^ " <=> " ^ string_of_formula f2
-  | Or (f1, f2) -> string_of_formula f1 ^ " ∨ " ^ string_of_formula f2
-  | And (f1, f2) -> string_of_formula f1 ^ " ∧ " ^ string_of_formula f2
-  | U (f1, f2) -> string_of_formula f1 ^ " U " ^ string_of_formula f2
+let string_of_stringformula = string_of_formula Fun.id
 
-let string_of_formulaset fset =
-  if FormulaSet.is_empty fset then "∅"
-  else
-    "{"
-    ^ String.concat ", "
-        (FormulaSet.fold (fun f -> List.cons (string_of_formula f)) fset [])
-    ^ "}"
+let string_of_transformula =
+  string_of_formula String_product.string_of_globaltrans
 
-let rec string_of_syncformula =
-  StringFullsync.TesterLtl.Formula.(
-    function
-    | True -> "true"
-    | False -> "false"
-    | AP a -> String_product.string_of_globaltrans a
-    | Not (AP _ as f) -> "¬" ^ string_of_syncformula f
-    | Not f -> "¬(" ^ string_of_syncformula f ^ ")"
-    | X f -> "X " ^ string_of_syncformula f
-    | F f -> "F " ^ string_of_syncformula f
-    | G f -> "G " ^ string_of_syncformula f
-    | If (f1, f2) ->
-        string_of_syncformula f1 ^ " => " ^ string_of_syncformula f2
-    | Iff (f1, f2) ->
-        string_of_syncformula f1 ^ " <=> " ^ string_of_syncformula f2
-    | Or (f1, f2) -> string_of_syncformula f1 ^ " ∨ " ^ string_of_syncformula f2
-    | And (f1, f2) ->
-        string_of_syncformula f1 ^ " ∧ " ^ string_of_syncformula f2
-    | U (f1, f2) -> string_of_syncformula f1 ^ " U " ^ string_of_syncformula f2)
+let string_of_tokenformula =
+  string_of_formula String_product.string_of_token
 
-let string_of_syncformulaset fset =
-  StringFullsync.TesterLtl.(
-    if FormulaSet.is_empty fset then "∅"
-    else
-      "{"
-      ^ String.concat ", "
-          (FormulaSet.fold
-             (fun f -> List.cons (string_of_syncformula f))
-             fset [])
-      ^ "}")
+let string_of_formulaset =
+  string_of_set (module StringLtl.FormulaSet) string_of_stringformula
 
-let rec string_of_netformula =
-  StringNetfullsync.TesterLtl.Formula.(
-    function
-    | True -> "true"
-    | False -> "false"
-    | AP a -> a
-    | Not (AP _ as f) -> "¬" ^ string_of_netformula f
-    | Not f -> "¬(" ^ string_of_netformula f ^ ")"
-    | X f -> "X " ^ string_of_netformula f
-    | F f -> "F " ^ string_of_netformula f
-    | G f -> "G " ^ string_of_netformula f
-    | If (f1, f2) -> string_of_netformula f1 ^ " => " ^ string_of_netformula f2
-    | Iff (f1, f2) ->
-        string_of_netformula f1 ^ " <=> " ^ string_of_netformula f2
-    | Or (f1, f2) -> string_of_netformula f1 ^ " ∨ " ^ string_of_netformula f2
-    | And (f1, f2) -> string_of_netformula f1 ^ " ∧ " ^ string_of_netformula f2
-    | U (f1, f2) -> string_of_netformula f1 ^ " U " ^ string_of_netformula f2)
+let string_of_syncformulaset =
+  string_of_set
+    (module StringFullsync.TesterLtl.FormulaSet)
+    string_of_transformula
 
-let string_of_netformulaset fset =
-  StringNetfullsync.TesterLtl.(
-    if FormulaSet.is_empty fset then "∅"
-    else
-      "{"
-      ^ String.concat ", "
-          (FormulaSet.fold
-             (fun f -> List.cons (string_of_netformula f))
-             fset [])
-      ^ "}")
+let string_of_netformulaset =
+  string_of_set
+    (module StringNetfullsync.TesterLtl.FormulaSet)
+    string_of_stringformula
 
-let string_of_apset apset =
-  if APSet.is_empty apset then "∅"
-  else
-    "{"
-    ^ String.concat ", " (APSet.fold (fun ap -> List.cons ap) apset [])
-    ^ "}"
+let string_of_apset = string_of_set (module StringLtl.APSet) Fun.id
 
 let label_of_node =
-  FormulaPTNet.Node.(
+  StringLtl.FormulaPTNet.Node.(
     function
     | P (p, i) -> string_of_formulaset p ^ string_of_int i
     | T (i, t) -> string_of_int i ^ string_of_apset t)
 
 let string_of_node =
-  FormulaPTNet.Node.(
+  StringLtl.FormulaPTNet.Node.(
     function
     | P (p, _) -> string_of_formulaset p | T (_, t) -> string_of_apset t)
 

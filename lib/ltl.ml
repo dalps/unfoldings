@@ -1,20 +1,40 @@
+type 'a formula =
+  | True
+  | False
+  | AP of 'a
+  | Or of 'a formula * 'a formula
+  | And of 'a formula * 'a formula
+  | Not of 'a formula
+  | If of 'a formula * 'a formula
+  | Iff of 'a formula * 'a formula
+  | X of 'a formula
+  | U of 'a formula * 'a formula
+  | F of 'a formula
+  | G of 'a formula
+
+let string_of_formula string_of_ap f =
+  let rec helper = function
+    | True -> "true"
+    | False -> "false"
+    | AP a -> string_of_ap a
+    | Not (AP _ as f) -> "¬" ^ helper f
+    | Not f -> "¬(" ^ helper f ^ ")"
+    | X f -> "X " ^ helper f
+    | F f -> "F " ^ helper f
+    | G f -> "G " ^ helper f
+    | If (f1, f2) -> helper f1 ^ " => " ^ helper f2
+    | Iff (f1, f2) -> helper f1 ^ " <=> " ^ helper f2
+    | Or (f1, f2) -> helper f1 ^ " ∨ " ^ helper f2
+    | And (f1, f2) -> helper f1 ^ " ∧ " ^ helper f2
+    | U (f1, f2) -> helper f1 ^ " U " ^ helper f2
+  in
+  helper f
+
 module Make (AP : Set.OrderedType) = struct
   module APSet = Set.Make (AP)
 
   module Formula = struct
-    type t =
-      | True
-      | False
-      | AP of AP.t
-      | Or of t * t
-      | And of t * t
-      | Not of t
-      | If of t * t
-      | Iff of t * t
-      | X of t
-      | U of t * t
-      | F of t
-      | G of t
+    type t = AP.t formula
 
     let compare f1 f2 =
       match (f1, f2) with
@@ -27,7 +47,7 @@ module Make (AP : Set.OrderedType) = struct
   module FormulaSet = Set.Make (Formula)
 
   let rec length = function
-    | Formula.True | False | AP _ -> 0
+    | True | False | AP _ -> 0
     | Not t | X t | F t | G t -> 1 + length t
     | And (t1, t2) | Or (t1, t2) | U (t1, t2) | If (t1, t2) | Iff (t1, t2) ->
         1 + length t1 + length t2
@@ -40,7 +60,7 @@ module Make (AP : Set.OrderedType) = struct
     | [] -> false
     | a0 :: s1 -> (
         match f with
-        | Formula.True -> true
+        | True -> true
         | False -> false
         | AP a -> APSet.mem a a0
         | Or (f1, f2) -> eval s f1 || eval s f2
@@ -54,7 +74,7 @@ module Make (AP : Set.OrderedType) = struct
         | U (f1, f2) -> eval s (Or (f2, And (f1, X f))))
 
   let rec expand = function
-    | (Formula.True | False | AP _) as f -> f
+    | (True | False | AP _) as f -> f
     | Or (True, _) | Or (_, True) | Not False -> True
     | And (False, _) | And (_, False) | Not True -> False
     | Or (False, f) | Or (f, False) | And (True, f) | And (f, True) -> f
@@ -94,7 +114,7 @@ module Make (AP : Set.OrderedType) = struct
       FormulaSet.union
         (FormulaSet.of_list
            (match f with
-           | Formula.True | Not False -> [ True ]
+           | True | Not False -> [ True ]
            | False | Not True -> [ False ]
            | Not f' -> [ f; f' ]
            | _ -> [ f; Not f ]))

@@ -4,6 +4,10 @@ module StringProductUnfolder = Executability.Make (StringPTNetProduct)
 open StringPTNetProduct
 open StringProductUnfolder
 open GlobalTransition
+open Setprintr
+
+module UnfoldTester =
+  Fullsync.MakeEH (StringProductUnfolder.Unfolder.OccurrenceNet)
 
 let string_of_globaltrans t =
   let n = List.length t in
@@ -31,10 +35,16 @@ let label_of_token t = Unfolder.OccurrenceNet.Token.label t
 
 let name_of_event e =
   let open Unfolder.OccurrenceNet.Event in
-  string_of_int (name e) ^ " " ^ string_of_globaltrans (label e)
+  match e with
+  | E _ -> string_of_int (name e) ^ " " ^ string_of_globaltrans (label e)
+  | Rev _ ->
+      "rev " ^ string_of_int (name e) ^ " " ^ string_of_globaltrans (label e)
 
 let label_of_event e =
-  string_of_globaltrans (Unfolder.OccurrenceNet.Event.label e)
+  let open Unfolder.OccurrenceNet.Event in
+  match e with
+  | E _ -> string_of_globaltrans (label e)
+  | Rev _ -> "rev " ^ string_of_globaltrans (label e)
 
 let label_of_unfold_node = function
   | Unfolder.OccurrenceNet.Node.P p -> label_of_token p
@@ -50,27 +60,16 @@ let string_of_event e =
 
 let string_of_token = label_of_token
 
-let string_of_placeset pset =
-  "{" ^ String.concat "," (StringPTNetProduct.PlaceSet.elements pset) ^ "}"
+let string_of_placeset =
+  string_of_set (module StringPTNetProduct.PlaceSet) Fun.id
 
-let string_of_transset tset =
-  "{"
-  ^ String.concat ","
-      (List.map string_of_globaltrans
-         (StringPTNetProduct.TransSet.elements tset))
-  ^ "}"
+let string_of_transset =
+  string_of_set (module StringPTNetProduct.TransSet) string_of_globaltrans
 
-let string_of_eventset eset =
-  "{"
-  ^ String.concat ","
-      (List.map string_of_event (Unfolder.OccurrenceNet.TransSet.elements eset))
-  ^ "}"
+let string_of_eventset =
+  string_of_set (module Unfolder.OccurrenceNet.TransSet) string_of_event
 
-let string_of_tokenset pset =
-  "{"
-  ^ String.concat ","
-      (List.map name_of_token (Unfolder.OccurrenceNet.PlaceSet.elements pset))
-  ^ "}"
+let string_of_tokenset = string_of_set (module Unfolder.OccurrenceNet.PlaceSet) name_of_token
 
 let print_eventset eset = print_endline (string_of_eventset eset)
 
