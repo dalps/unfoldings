@@ -28,6 +28,20 @@ module Make (State : Set.OrderedType) (Alpha : Set.OrderedType) = struct
     fin : StateSet.t;
   }
 
+  type trans = State.t * Alpha.t * State.t
+
+  let enum_transitions nba =
+    AlphaSet.fold
+      (fun a ->
+        let trans_a =
+          StateSet.fold
+            (fun b ->
+              StateSet.fold (fun b' -> List.cons (b, a, b')) (nba.func b a))
+            nba.states []
+        in
+        ( @ ) (List.mapi (fun i e -> (e, i)) trans_a))
+      nba.alpha []
+
   let bottom _ _ = StateSet.empty
 
   let bind_states f q a post q' a' =
@@ -60,6 +74,10 @@ module Make (State : Set.OrderedType) (Alpha : Set.OrderedType) = struct
           gnba.alpha)
       gnba.states;
     g
+
+  let enum_transitions_g nba =
+    let g = get_graph nba in
+    List.mapi (fun i (_, a, _) -> (a, i)) (G.fold_edges_e List.cons g [])
 
   let print_graph n ?(vertex_name = fun v -> string_of_int (G.V.hash v))
       ?(edge_label = fun _ -> "") ?(file_name = "nba") () =

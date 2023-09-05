@@ -1,9 +1,15 @@
+let appls_of_pears (type fruit appls pears)
+    (module Apples : Set.S with type elt = fruit and type t = appls)
+    (module Pears : Set.S with type elt = fruit and type t = pears) fruit =
+  Pears.fold Apples.add fruit Apples.empty
+
 module Make (Net : Petrinet.S) = struct
   (* atomic propositions: places or transitions? *)
   module TesterLtl = Ltl.Make (Net.Trans)
+  open TesterLtl
 
   module Node = struct
-    type t = Net.MV.t * TesterLtl.FormulaGNBA.NumberedNba.Node.t
+    type t = Net.MV.t * FormulaGNBA.NumberedNba.Node.t
 
     let compare = compare
     let hash = Hashtbl.hash
@@ -15,23 +21,18 @@ module Make (Net : Petrinet.S) = struct
   module TG =
     Graph.Imperative.Digraph.ConcreteBidirectionalLabeled (Node) (Edge)
 
-  let apset_of_transet tset =
-    Net.TransSet.fold
-      (fun t -> TesterLtl.APSet.add t)
-      tset TesterLtl.APSet.empty
+  let apset_of_transet = appls_of_pears (module APSet) (module Net.TransSet)
 
   let sync ts nba =
-    let open TesterLtl.FormulaGNBA.NumberedNba in
+    let open FormulaGNBA.NumberedNba in
     let marking_graph = Net.get_marking_graph ts () in
 
     (* L(t) is the set of incoming transitions of marking t *)
     let label t =
       Net.MG.fold_pred_e
         (fun (_, a, _) ->
-          match a with
-          | `E a -> TesterLtl.APSet.add a
-          | `Def -> fun _ -> TesterLtl.APSet.empty)
-        marking_graph t TesterLtl.APSet.empty
+          match a with `E a -> APSet.add a | `Def -> fun _ -> APSet.empty)
+        marking_graph t APSet.empty
     in
 
     let g = TG.create () in
@@ -47,8 +48,8 @@ module Make (Net : Petrinet.S) = struct
     g
 
   let tester_of_formula ts f =
-    let _ = TesterLtl.ap_of_formula f in
-    TesterLtl.nba_of_formula (apset_of_transet (Net.transitions ts)) f
+    let _ = ap_of_formula f in
+    nba_of_formula (apset_of_transet (Net.transitions ts)) f
 
   let sync_f ts f = sync ts (tester_of_formula ts f)
 
@@ -82,9 +83,10 @@ end
 module MakeEH (Net : Petrinet.S) = struct
   (* atomic propositions: places *)
   module TesterLtl = Ltl.Make (Net.Place)
+  open TesterLtl
 
   module Node = struct
-    type t = Net.MV.t * TesterLtl.FormulaGNBA.NumberedNba.Node.t
+    type t = Net.MV.t * FormulaGNBA.NumberedNba.Node.t
 
     let compare = compare
     let hash = Hashtbl.hash
@@ -96,23 +98,14 @@ module MakeEH (Net : Petrinet.S) = struct
   module TG =
     Graph.Imperative.Digraph.ConcreteBidirectionalLabeled (Node) (Edge)
 
-  let apset_of_placeset tset =
-    Net.PlaceSet.fold
-      (fun t -> TesterLtl.APSet.add t)
-      tset TesterLtl.APSet.empty
-
-  let placeset_of_apset apset =
-    TesterLtl.APSet.fold (fun t -> Net.PlaceSet.add t) apset Net.PlaceSet.empty
-
-  let f_state_set s f =
-    TesterLtl.APSet.inter (apset_of_placeset s) (TesterLtl.ap_of_formula f)
+  let apset_of_placeset = appls_of_pears (module APSet) (module Net.PlaceSet)
+  let f_state_set s f = APSet.inter (apset_of_placeset s) (ap_of_formula f)
 
   let f_state_list s f =
-    let ap_of_f = TesterLtl.ap_of_formula f in
+    let ap_of_f = ap_of_formula f in
     List.fold_right
       (fun si ->
-        if TesterLtl.APSet.mem si ap_of_f then ( @ ) [ `P si ]
-        else ( @ ) [ `Bottom ])
+        if APSet.mem si ap_of_f then ( @ ) [ `P si ] else ( @ ) [ `Bottom ])
       s []
 
   let f_step_set_of (m, t, m') f = (f_state_set m f, t, f_state_set m' f)
@@ -123,8 +116,7 @@ module MakeEH (Net : Petrinet.S) = struct
       (fun (m, u, m') b ->
         let n, n' = (f_state_set m f, f_state_set m' f) in
         (match u with `E u -> Net.Trans.compare t u = 0 | `Def -> false)
-        && TesterLtl.APSet.equal n r
-        && TesterLtl.APSet.equal n' r'
+        && APSet.equal n r && APSet.equal n' r'
         || b)
       mg false
 
@@ -154,19 +146,17 @@ module MakeEH (Net : Petrinet.S) = struct
                         (f_step_set_of (m, a', n) f, f_step_set_of (x, b', y) f)
                       in
                       is_f_step fstep mg f && is_f_step fstep' mg f
-                      && TesterLtl.APSet.equal r1 r1'
+                      && APSet.equal r1 r1'
                   | _ -> false))
               mg acc)
           mg false
         && is_f_occurrence_sequence (b :: ts) mg f
 
-  module NetGNBA = Gnba.Make (TesterLtl.FormulaSet) (Net.Trans)
+  module NetGNBA = Gnba.Make (FormulaSet) (Net.Trans)
   open NetGNBA
 
-  let apset_of_transset tset =
-    Net.TransSet.fold
-      (fun t -> NetGNBA.AlphaSet.add t)
-      tset NetGNBA.AlphaSet.empty
+  let apset_of_transset =
+    appls_of_pears (module NetGNBA.AlphaSet) (module Net.TransSet)
 
   let gnba_of_formula net f =
     let open TesterLtl in
@@ -218,4 +208,64 @@ module MakeEH (Net : Petrinet.S) = struct
                     states)
            | _ -> PowerStateSet.union PowerStateSet.empty)
          cl PowerStateSet.empty)
+
+  module SyncPlace = struct
+    type t = NetP of Net.Place.t | NbaP of NumberedState.t
+
+    let compare t1 t2 =
+      match (t1, t2) with
+      | NetP p1, NetP p2 -> Net.Place.compare p1 p2
+      | NbaP p1, NbaP p2 -> NumberedState.compare p1 p2
+      | _ -> compare t1 t2
+  end
+
+  module SyncTrans = struct
+    type t = Net.Trans.t * NumberedNba.trans
+
+    let compare = compare
+  end
+
+  module SyncNet = Petrinet.Make (SyncPlace) (SyncTrans)
+
+  let sync net gnba =
+    let open SyncNet in
+    let open SyncPlace in
+    let open NumberedNba in
+    let nba = to_nba gnba in
+    let nba_trans = NumberedNba.enum_transitions nba in
+    SyncNet.of_sets
+      (PlaceSet.union
+         (Net.PlaceSet.fold
+            (fun p -> PlaceSet.add (NetP p))
+            (Net.places net) PlaceSet.empty)
+         (NumberedNba.StateSet.fold
+            (fun s -> PlaceSet.add (NbaP s))
+            nba.states PlaceSet.empty))
+      (Net.TransSet.fold
+         (fun t ->
+           TransSet.union
+             (List.fold_right
+                (fun (((_, u, _) as e), _) ->
+                  TransSet.union
+                    (if Net.Trans.compare t u = 0 then TransSet.singleton (t, e)
+                     else TransSet.empty))
+                nba_trans TransSet.empty))
+         (Net.transitions net) TransSet.empty)
+      (fun (t, (b, _, _)) ->
+        PlaceSet.union
+          (Net.PlaceSet.fold
+             (fun p -> PlaceSet.add (NetP p))
+             (Net.preset_t net t) PlaceSet.empty)
+          (PlaceSet.singleton (NbaP b)))
+      (fun (t, (_, _, b)) ->
+        PlaceSet.add (NbaP b)
+          (Net.PlaceSet.fold
+             (fun p -> PlaceSet.add (NetP p))
+             (Net.postset_t net t) PlaceSet.empty))
+      (* B must have a single initial state to be assigned a token! *)
+      (PlaceSet.add
+         (NbaP (NumberedNba.StateSet.choose nba.init))
+         (Net.PlaceSet.fold
+            (fun p -> PlaceSet.add (NetP p))
+            (Net.marking net) PlaceSet.empty))
 end
