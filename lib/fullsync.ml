@@ -209,6 +209,8 @@ module MakeEH (Net : Petrinet.S) = struct
            | _ -> PowerStateSet.union PowerStateSet.empty)
          cl PowerStateSet.empty)
 
+  let nba_of_formula net f = NetGNBA.to_nba (gnba_of_formula net f)
+
   module SyncPlace = struct
     type t = NetP of Net.Place.t | NbaP of NumberedState.t
 
@@ -220,18 +222,17 @@ module MakeEH (Net : Petrinet.S) = struct
   end
 
   module SyncTrans = struct
-    type t = Net.Trans.t * NumberedNba.trans
+    type t = Net.Trans.t * [ `U of NumberedNba.trans | `Idle ]
 
     let compare = compare
   end
 
   module SyncNet = Petrinet.Make (SyncPlace) (SyncTrans)
 
-  let sync net gnba =
+  let sync ?(stutter = fun _ -> true) net nba =
     let open SyncNet in
     let open SyncPlace in
     let open NumberedNba in
-    let nba = to_nba gnba in
     let nba_trans = NumberedNba.enum_transitions nba in
     SyncNet.of_sets
       (PlaceSet.union
@@ -241,31 +242,68 @@ module MakeEH (Net : Petrinet.S) = struct
          (NumberedNba.StateSet.fold
             (fun s -> PlaceSet.add (NbaP s))
             nba.states PlaceSet.empty))
-      (Net.TransSet.fold
-         (fun t ->
-           TransSet.union
-             (List.fold_right
-                (fun (((_, u, _) as e), _) ->
-                  TransSet.union
-                    (if Net.Trans.compare t u = 0 then TransSet.singleton (t, e)
-                     else TransSet.empty))
-                nba_trans TransSet.empty))
-         (Net.transitions net) TransSet.empty)
-      (fun (t, (b, _, _)) ->
+      (let s1, s2 = Net.TransSet.partition stutter (Net.transitions net) in
+       TransSet.union
+         (Net.TransSet.fold
+            (fun t -> TransSet.add (t, `Idle))
+            s1 TransSet.empty)
+         (Net.TransSet.fold
+            (fun t ->
+              TransSet.union
+                (List.fold_right
+                   (fun (((_, u, _) as e), _) ->
+                     TransSet.union
+                       (if Net.Trans.compare t u = 0 then
+                          TransSet.singleton (t, `U e)
+                        else TransSet.empty))
+                   nba_trans TransSet.empty))
+            s2 TransSet.empty))
+      (fun (t, u) ->
         PlaceSet.union
           (Net.PlaceSet.fold
              (fun p -> PlaceSet.add (NetP p))
              (Net.preset_t net t) PlaceSet.empty)
-          (PlaceSet.singleton (NbaP b)))
-      (fun (t, (_, _, b)) ->
-        PlaceSet.add (NbaP b)
+          (match u with
+          | `U (b, _, _) -> PlaceSet.singleton (NbaP b)
+          | `Idle -> PlaceSet.empty))
+      (fun (t, u) ->
+        PlaceSet.union
           (Net.PlaceSet.fold
              (fun p -> PlaceSet.add (NetP p))
-             (Net.postset_t net t) PlaceSet.empty))
+             (Net.postset_t net t) PlaceSet.empty)
+          (match u with
+          | `U (_, _, b) -> PlaceSet.singleton (NbaP b)
+          | `Idle -> PlaceSet.empty))
       (* B must have a single initial state to be assigned a token! *)
       (PlaceSet.add
          (NbaP (NumberedNba.StateSet.choose nba.init))
          (Net.PlaceSet.fold
             (fun p -> PlaceSet.add (NetP p))
             (Net.marking net) PlaceSet.empty))
+
+  let is_stuttering net f t =
+    let ap = ap_of_formula f in
+    APSet.equal
+      (APSet.inter ap (apset_of_placeset (Net.preset_t net t)))
+      (APSet.inter ap (apset_of_placeset (Net.postset_t net t)))
+
+  let stutter_sync net f =
+    let nba = nba_of_formula net f in
+    sync ~stutter:(is_stuttering net f) net nba
+
+  module Tester = Repeated_executability.Make (SyncNet)
+
+  let test net f =
+    let open SyncNet in
+    let nba = nba_of_formula net f in
+    let prd = sync net nba in
+    Tester.test prd compare
+      (TransSet.elements
+         (TransSet.filter
+            (fun (_, u) ->
+              match u with
+              | `U (_, _, b) -> NumberedNba.StateSet.mem b nba.fin
+              | _ -> false)
+            prd.transitions))
+      Int.max_int
 end
