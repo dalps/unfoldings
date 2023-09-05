@@ -2,18 +2,16 @@ open String_product
 open String_ltl
 
 let plot_gnba g =
-  StringLtl.FormulaGNBA.print_graph g
-    ~vertex_name:String_ltl.string_of_formulaset
-    ~edge_label:String_ltl.string_of_apset
+  StringLtl.FormulaGNBA.print_graph g ~vertex_name:string_of_formulaset
+    ~edge_label:string_of_apset
 
 let plot_nbanet n =
-  StringLtl.FormulaPTNet.print_graph n ~vertex_name:String_ltl.label_of_node
-    ~vertex_label:String_ltl.string_of_node
+  StringLtl.FormulaPTNet.print_graph n ~vertex_name:label_of_node
+    ~vertex_label:string_of_node
 
 let plot_nba b =
   StringLtl.FormulaGNBA.NumberedNba.print_graph b
-    ~vertex_name:String_ltl.name_of_numberedstate
-    ~edge_label:String_ltl.string_of_apset
+    ~vertex_name:name_of_numberedstate ~edge_label:string_of_apset
 
 let plot_product p =
   StringPTNetProduct.print_graph p ~vertex_name:String_product.string_of_node
@@ -57,8 +55,7 @@ let plot_sync_graph net f =
   let open StringFullsync in
   let nba = tester_of_formula net f in
   let g = sync net nba in
-  print_graph g ~vertex_name:String_ltl.name_of_sync_node
-    ~vertex_label:String_ltl.name_of_sync_node
+  print_graph g ~vertex_name:name_of_sync_node ~vertex_label:name_of_sync_node
     ~vertex_attrs:(fun (_, q) ->
       if TesterLtl.FormulaGNBA.NumberedNba.StateSet.mem q nba.fin then
         [ `ColorWithTransparency 0xff000088l; `Style `Filled ]
@@ -67,5 +64,10 @@ let plot_sync_graph net f =
 
 let plot_netgnba gnba =
   let open StringNetfullsync.NetGNBA in
-  print_graph gnba ~vertex_name:String_ltl.string_of_netformulaset
+  print_graph gnba ~vertex_name:string_of_netformulaset
     ~edge_label:string_of_globaltrans
+
+let plot_unfoldgnba gnba =
+  let open UnfoldTester.NetGNBA in
+  print_graph gnba ~vertex_name:string_of_tokenformulaset
+    ~edge_label:string_of_event

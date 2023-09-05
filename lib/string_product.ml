@@ -6,8 +6,6 @@ open StringProductUnfolder
 open GlobalTransition
 open Setprintr
 
-module UnfoldTester =
-  Fullsync.MakeEH (StringProductUnfolder.Unfolder.OccurrenceNet)
 
 let string_of_globaltrans t =
   let n = List.length t in
@@ -69,7 +67,8 @@ let string_of_transset =
 let string_of_eventset =
   string_of_set (module Unfolder.OccurrenceNet.TransSet) string_of_event
 
-let string_of_tokenset = string_of_set (module Unfolder.OccurrenceNet.PlaceSet) name_of_token
+let string_of_tokenset =
+  string_of_set (module Unfolder.OccurrenceNet.PlaceSet) name_of_token
 
 let print_eventset eset = print_endline (string_of_eventset eset)
 
