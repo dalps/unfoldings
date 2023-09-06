@@ -368,47 +368,66 @@ assert (is_f_step (ru1, c, rt2) mg f = false);;
 print_endline "[OK] phi steps and histories"
 
 open String_ltl.StringNetfullsync;;
+(* using ~stutter:true makes unfolding faster, but it's risky when f is not X-free *)
 
 (* prod7 cannot reach these markings*)
-assert (let r = test Prod7.prod7 (F (And (AP "u1", AP "u2"))) in r.res = false);;
-assert (let r = test Prod7.prod7 (F (And (AP "t1", AP "t2"))) in r.res = false);;
-assert (let r = test Prod7.prod7 (G (And (AP "u1", AP "u2"))) in r.res = false);;
+assert (test Prod7.prod7 (F (And (AP "t1", AP "t2"))) = false);; (* prod7 can never be in both t1 and t2 at the same time *)
+assert (test Prod7.prod7 (F (And (AP "u1", AP "u2"))) = false);; (* prod7 can never be in both u2 and u1 at the same time *)
+assert (test Prod7.prod7 (F (And (AP "u2", AP "u1"))) = false);; (* and commutativity *)
+assert (test Prod7.prod7 (G (And (AP "u1", AP "u2"))) = false);; (* same as before *)
 
-assert (let r = test Prod7.prod7 (G (And (AP "u1", X (AP "u2")))) in r.res = false);;
-assert (let r = test Prod7.prod7 (F (And (AP "u1", X (AP "u2")))) in r.res);;
+assert (test Prod7.prod7 (F (Or (AP "u2", AP "u1"))));; (* prod7 will eventually be in either u2 or u1 *)
+assert (test Prod7.prod7 (G (Or (AP "u2", AP "u1"))));; (* prod7 is always in either u2 or u1 *)
 
-assert (let r = test Prod7.prod7 (F (And (AP "t2", X (AP "t1")))) in r.res = false);; (* prod7 cannot visit t1 from t2 *)
-assert (let r = test Prod7.prod7 (Not (F (And (AP "t2", X (AP "t1"))))) in r.res);; (* negation works *)
+assert (test Prod7.prod7 (F (And (AP "u1", X (AP "u2")))));; (* all infinite runs execute <ϵ,a> at least once *)
+assert (test Prod7.prod7 (G (And (AP "u1", X (AP "u2")))) = false);; (* violated by all infinite runs as it requires prod7 to stay in u1 indefinitely *)
+assert (test Prod7.prod7 (F (If (AP "u1", X (AP "u2")))));; (* more sensible *)
+assert (test Prod7.prod7 (F (G (If (AP "u1", X (AP "u2"))))));; (* all infinite runs alternate between u1 and u2 forever after (if ever) executing <c,ϵ> *)
 
-assert (let r = test Prod7.prod7 (F (And (AP "t2", F (AP "t1")))) in r.res = false);; (* prod7 cannot visit t1 from t2 ever again *)
-assert (let r = test Prod7.prod7 (F (And (AP "u2", F (AP "u1")))) in r.res);;
+assert (test Prod7.prod7 (F (AP "t2")) = false);; (* violated by the infinite run that never executes <c,ϵ> *)
 
-assert (let r = test Prod7.prod7 (G (F (AP "u1"))) in r.res);; (* prod7 can visit u1 infinitely often *)
-assert (let r = test Prod7.prod7 (F (G (AP "u1"))) in r.res = false);; (* prod7 cannot get stuck in u1 forever *)
+assert (test Prod7.prod7 (F (And (AP "t2", X (AP "t1")))) = false);; (* prod7 cannot visit t1 from t2 *)
+assert (test Prod7.prod7 (Not (F (And (AP "t2", X (AP "t1"))))));; (* negation works *)
 
-assert (let r = test Prod7.prod7 (G (F (AP "u2"))) in r.res);; (* prod7 can visit u1 infinitely often *)
-assert (let r = test Prod7.prod7 (F (G (AP "u2"))) in r.res = false);; (* prod7 cannot get stuck in u2 forever *)
+assert (test Prod7.prod7 (F (And (AP "t2", F (AP "t1")))) = false);; (* prod7 cannot visit t1 from t2 ever again *)
+assert (test Prod7.prod7 (F (And (AP "u2", X (AP "u1")))));; (* prod7 can visit u2 from u1 *)
+assert (test Prod7.prod7 (F (And (AP "u2", F (AP "u1")))));; (* prod7 can visit u2 from u1 *)
 
-assert (let r = test Prod7.prod7 (G (F (AP "u1"))) in r.res);; (* prod7 can visit t1 infinitely often *)
-assert (let r = test Prod7.prod7 (F (G (AP "t1"))) in r.res = false);; (* prod7 CAN get stuck in t1 forever *)
+assert (test Prod7.prod7 (G (F (AP "u1"))));; (* prod7 can visit u1 infinitely often *)
+assert (test Prod7.prod7 (F (G (AP "u1"))) = false);; (* prod7 cannot get stuck in u1 forever *)
 
-assert (let r = test Prod7.prod7 (F (G (AP "t2"))) in r.res);; (* prod7 can indeed get stuck in t2 forever *)
-assert (let r = test Prod7.prod7 (G (AP "t2")) in r.res = false);; (* prod7 doesn't start from t2 *)
-assert (let r = test Prod7.prod7 (G (G (AP "t2"))) in r.res = false);; (* this is equal to G (AP t2) *)
-assert (let r = test Prod7.prod7 (F (And (AP "s4", AP "r3"))) in r.res = false);; (* s4 is not a place of Prod7.prod7 *)
-assert (let r = test Prod7.prod7 (F (Or (AP "s4", AP "u1"))) in r.res);;
+assert (test Prod7.prod7 (G (F (AP "u2"))));; (* prod7 can visit u1 infinitely often *)
+assert (test Prod7.prod7 (F (G (AP "u2"))) = false);; (* prod7 cannot get stuck in u2 forever *)
 
-assert (let r = test Prod2.prod2 (And (AP "s4", AP "s3")) in r.res = false);; (* Prod2.prod2 doesn't start from this marking *)
-assert (let r = test Prod2.prod2 (F (And (AP "s4", AP "r3"))) in r.res);; (* Prod2.prod2 will eventually reach this marking *)
-assert (let r = test Prod2.prod2 (F (And (AP "s4", AP "r1"))) in r.res);; (* also this marking *)
-assert (let r = test ~stutter:true Prod2.prod2 (F (And (AP "s2", AP "s3"))) in r.res = false);; (* but not this one - conflict *)
-assert (let r = test ~stutter:true Prod2.prod2 (F (And (AP "s1", AP "s2"))) in r.res = false);; (* neither this one - causality *)
-assert (let r = test ~stutter:true Prod2.prod2 (F (And (AP "s1", F (AP "s2")))) in r.res);; (* should be true *)
+assert (test Prod7.prod7 (G (F (AP "u1"))));; (* prod7 can visit t1 infinitely often *)
+assert (test Prod7.prod7 (F (G (AP "t1"))) = false);; (* prod7 CAN get stuck in t1 forever *)
 
-(* using ~stutter:true makes unfolding faster, but it's risky when f is not X-free *)
-assert (let r = test ~stutter:true Prod2.prod2 (F (And (AP "s2", X (AP "s4")))) in r.res);; (* having a token in s2 is not sufficient to move to s4 *)
-assert (let r = test ~stutter:true Prod2.prod2 (F (And (And (AP "s2", AP "r2"), X (AP "s4")))) in r.res);; (* there are sufficient conditions to move to s4 *)
+assert (test Prod7.prod7 (G (F (AP "t2"))) = false);; (* t2 can be visited only once *)
+assert (test Prod7.prod7 (F (G (AP "t2"))) = false);; (* prod7 doesn't get stuck forever in t2 in all runs *)
+assert (test Prod7.prod7 (G (AP "t2")) = false);; (* prod7 doesn't start from t2 *)
+assert (test Prod7.prod7 (G (G (AP "t2"))) = false);; (* this is equal to 'G (AP "t2")' *)
 
-(* ##### FAILURES ##### *)
-assert (let r = test Prod7.prod7 (G (F (AP "t2"))) in r.res = false);; (* fails *)
-assert (let r = test ~stutter:true Prod2.prod2 (F (G (AP "s4"))) in r.res = false);; (* fails - this doesn't make sense *)
+assert (test Prod7.prod7 (F (And (AP "s4", AP "r3"))) = false);; (* s4 is not a place of Prod7.prod7 *)
+assert (test Prod7.prod7 (F (Or (AP "s4", AP "u1"))));; (* s4 is not a place of Prod7.prod7, but u1 is *)
+
+assert (test Prod7.prod7 (F (AP "t1")));; (* obvious *)
+assert (test Prod7.prod7 (F (AP "t2")) = false);; (* some runs never execute <c,ϵ> *)
+
+assert (test Prod2.prod2 (And (AP "s4", AP "s3")) = false);; (* Prod2.prod2 doesn't start from this marking *)
+assert (test Prod2.prod2 (F (And (AP "s4", AP "r3"))));; (* Prod2.prod2 will eventually reach this marking *)
+assert (test Prod2.prod2 (F (And (AP "s2", AP "s3"))) = false);; (* but not this one - conflict *)
+assert (test Prod2.prod2 (F (And (AP "s1", AP "s2"))) = false);; (* neither this one - causality *)
+assert (test Prod2.prod2 (F (And (AP "s1", F (AP "s2")))) = false);; (* violated by the run that always takes the s3 route *)
+assert (test Prod2.prod2 (F (G (AP "s4"))) = false);; (* no run stays forever in s4 *)
+
+assert (test Prod2.prod2 (F (And (AP "s2", X (AP "s4")))) = false);; (* violated by the infinite run that always passes through s3 to go to s4 and never visit s2 *)
+assert (test Prod2.prod2 (F (And (And (AP "s2", AP "r2"), X (AP "s4")))) = false);; (* same *)
+
+(* ##### FAILURES/UNCERTAIN ##### *)
+(* these two assume <c,ϵ> will be executed eventually *)
+assert (test Prod7.prod7 (G (If (AP "u1", X (AP "u2")))));; (* ??? should be violated by runs that execute <c,ϵ> *)
+assert (test Prod7.prod7 (G (If (AP "u1", X (AP "u1")))));; (* ??? makes no sense *)
+assert (test Prod7.prod7 (F (If (AP "u1", X (AP "u1")))));; (* ??? should be violated by runs that execute <c,ϵ> *)
+
+assert (test Prod2.prod2 (F (And (AP "s2", F (AP "s4")))));; (* ??? should be violated by the infinite run that always passes through s3 to go to s4 and never visit s2 *)
+assert (test Prod2.prod2 (F (And (AP "s4", AP "r1"))) = false);; (* ??? should be violated by the run that always executes <t5,ϵ> from the marking {s4,r3} *)
