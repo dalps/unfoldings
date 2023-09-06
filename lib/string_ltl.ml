@@ -51,3 +51,36 @@ let name_of_syncnumberedstate (fset, k) =
 
 let name_of_sync_node (s, q) =
   "(" ^ string_of_placeset s ^ "," ^ name_of_syncnumberedstate q ^ ")"
+
+let string_of_netsyncplace = function
+  | `NetP p -> p
+  | `NbaP (b, i) -> string_of_netformulaset b ^ "#" ^ string_of_int i
+
+let string_of_netsynctrans =
+  let open StringNetfullsync.NetGNBA.NumberedNba in
+  function
+  | t, u ->
+      "[" ^ string_of_globaltrans t ^ ", "
+      ^ (match u with `Idle -> "ϵ" | `U e -> "&beta;" ^ string_of_int e.id)
+      ^ "]"
+
+let string_of_netsyncnode =
+  StringNetfullsync.SyncNet.Node.(
+    function P p -> string_of_netsyncplace p | T t -> string_of_netsynctrans t)
+
+let string_of_unfoldsyncplace = function
+  | `NetP p -> name_of_token p
+  | `NbaP (b, i) -> string_of_tokenformulaset b ^ "#" ^ string_of_int i
+
+let string_of_unfoldsynctrans =
+  let open UnfoldTester.NetGNBA.NumberedNba in
+  function
+  | t, u ->
+      "[" ^ name_of_event t ^ ", "
+      ^ (match u with `Idle -> "ϵ" | `U e -> "&beta;" ^ string_of_int e.id)
+      ^ "]"
+
+let string_of_unfoldsyncnode =
+  UnfoldTester.SyncNet.Node.(
+    function
+    | P p -> string_of_unfoldsyncplace p | T t -> string_of_unfoldsynctrans t)

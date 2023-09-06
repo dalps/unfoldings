@@ -263,10 +263,10 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
   let print_graph n ?(vertex_name = fun v -> string_of_int (G.V.hash v))
       ?(vertex_label = fun _ -> "") ?(vertex_attrs = fun _ -> [])
       ?(edge_attrs = fun _ -> []) ?(graph_label = "") ?(file_name = "net") () =
-    let module Plotter = Graph.Graphviz.Dot (struct
+    let module Plotter = Graph.Graphviz.Neato (struct
       include G
 
-      let graph_attributes _ = [ `Label graph_label ]
+      let graph_attributes _ = [ `Label graph_label; `Overlap false ]
       let edge_attributes (_, e, _) = [ `Dir `Forward ] @ edge_attrs e
       let default_edge_attributes _ = []
       let get_subgraph _ = None
@@ -274,7 +274,7 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
       let vertex_attributes v =
         (match v with
         | Node.P p ->
-            [ `Shape `Circle; `Fixedsize true ]
+            [ `Shape `Ellipse; ]
             @ [
                 `Label
                   (vertex_label v

@@ -28,7 +28,7 @@ module Make (State : Set.OrderedType) (Alpha : Set.OrderedType) = struct
     fin : StateSet.t;
   }
 
-  type trans = State.t * Alpha.t * State.t
+  type trans = { src : State.t; t : Alpha.t; tgt : State.t; id : int }
 
   let enum_transitions nba =
     AlphaSet.fold
@@ -39,7 +39,7 @@ module Make (State : Set.OrderedType) (Alpha : Set.OrderedType) = struct
               StateSet.fold (fun b' -> List.cons (b, a, b')) (nba.func b a))
             nba.states []
         in
-        ( @ ) (List.mapi (fun i e -> (e, i)) trans_a))
+        ( @ ) (List.mapi (fun id (src, t, tgt) -> { src; t; tgt; id }) trans_a))
       nba.alpha []
 
   let bottom _ _ = StateSet.empty

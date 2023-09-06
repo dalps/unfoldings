@@ -51,23 +51,56 @@ let plot_unfold_marking_graph u =
     ~vertex_label:String_product.string_of_tokenset
     ~edge_label:String_product.label_of_event
 
-let plot_sync_graph net f =
-  let open StringFullsync in
-  let nba = tester_of_formula net f in
-  let g = sync net nba in
-  print_graph g ~vertex_name:name_of_sync_node ~vertex_label:name_of_sync_node
-    ~vertex_attrs:(fun (_, q) ->
-      if TesterLtl.FormulaGNBA.NumberedNba.StateSet.mem q nba.fin then
-        [ `ColorWithTransparency 0xff000088l; `Style `Filled ]
-      else [])
-    ~edge_label:string_of_globaltrans
-
-let plot_netgnba gnba =
+let plot_net_gnba gnba =
   let open StringNetfullsync.NetGNBA in
   print_graph gnba ~vertex_name:string_of_netformulaset
     ~edge_label:string_of_globaltrans
 
-let plot_unfoldgnba gnba =
+let plot_unfold_gnba gnba =
   let open UnfoldTester.NetGNBA in
   print_graph gnba ~vertex_name:string_of_tokenformulaset
-    ~edge_label:string_of_event
+    ~edge_label:label_of_event
+
+let plot_product_tester ?(stutter = false) net f =
+  let open StringNetfullsync in
+  let open SyncNet in
+  let nba = nba_of_formula net f in
+  let prd = sync ~stutter net f in
+  SyncNet.print_graph prd ~vertex_name:string_of_netsyncnode
+    ~vertex_label:string_of_netsyncnode ~vertex_attrs:(function
+    | Node.T (_, u) -> (
+        match u with
+        | `U e ->
+            if NetGNBA.NumberedNba.StateSet.mem e.tgt nba.fin then
+              [ `ColorWithTransparency 0xFF000088l; `Style `Filled ]
+            else []
+        | _ -> [])
+    | Node.P p -> (
+        match p with
+        | `NbaP b ->
+            if NetGNBA.NumberedNba.StateSet.mem b nba.fin then
+              [ `ColorWithTransparency 0xFF000044l; `Style `Filled ]
+            else []
+        | `NetP _ -> []))
+
+let plot_unfold_tester ?(stutter = false) u f =
+  let open UnfoldTester in
+  let open SyncNet in
+  let nba = nba_of_formula u f in
+  let prd = sync ~stutter u f in
+  SyncNet.print_graph prd ~vertex_name:string_of_unfoldsyncnode
+    ~vertex_label:string_of_unfoldsyncnode ~vertex_attrs:(function
+    | Node.T (_, u) -> (
+        match u with
+        | `U e ->
+            if NetGNBA.NumberedNba.StateSet.mem e.tgt nba.fin then
+              [ `ColorWithTransparency 0xFF000088l; `Style `Filled ]
+            else []
+        | _ -> [])
+    | Node.P p -> (
+        match p with
+        | `NbaP b ->
+            if NetGNBA.NumberedNba.StateSet.mem b nba.fin then
+              [ `ColorWithTransparency 0xFF000044l; `Style `Filled ]
+            else []
+        | `NetP _ -> []))
