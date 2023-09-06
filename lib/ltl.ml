@@ -80,6 +80,7 @@ module Make (AP : Set.OrderedType) = struct
     | Or (False, f) | Or (f, False) | And (True, f) | And (f, True) -> f
     | Or (f1, f2) -> Or (expand f1, expand f2)
     | And (f1, f2) -> And (expand f1, expand f2)
+    | Not (Not f') -> expand f'
     | Not f' -> Not (expand f')
     | X f' -> X (expand f')
     | If (f1, f2) -> Or (Not (expand f1), expand f2)

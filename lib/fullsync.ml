@@ -229,7 +229,7 @@ module MakeEH (Net : Petrinet.S) = struct
 
   module SyncNet = Petrinet.Make (SyncPlace) (SyncTrans)
 
-  let sync1 ?(stutter = fun _ -> false) net nba =
+  let sync ?(stutter = fun _ -> false) net nba =
     let open SyncNet in
     let open NumberedNba in
     let nba_trans = NumberedNba.enum_transitions nba in
@@ -274,8 +274,10 @@ module MakeEH (Net : Petrinet.S) = struct
           | `U e -> PlaceSet.singleton (`NbaP e.tgt)
           | `Idle -> PlaceSet.empty))
       (* B must have a single initial state to be assigned a token! *)
-      (PlaceSet.add
-         (`NbaP (NumberedNba.StateSet.choose nba.init))
+      (PlaceSet.union
+         (match NumberedNba.StateSet.choose_opt nba.init with
+         | Some is -> PlaceSet.singleton (`NbaP is)
+         | None -> PlaceSet.empty)
          (Net.PlaceSet.fold
             (fun p -> PlaceSet.add (`NetP p))
             (Net.marking net) PlaceSet.empty))
@@ -286,25 +288,25 @@ module MakeEH (Net : Petrinet.S) = struct
       (APSet.inter ap (apset_of_placeset (Net.preset_t net t)))
       (APSet.inter ap (apset_of_placeset (Net.postset_t net t)))
 
-  let sync ?(stutter = false) net f =
-    let nba = nba_of_formula net f in
-    if stutter then sync1 ~stutter:(is_stuttering net f) net nba
-    else sync1 net nba
-
   module Tester = Repeated_executability.Make (SyncNet)
 
   let test ?(stutter = false) net f =
     let open SyncNet in
-    let nba = nba_of_formula net f in
-    let prd = sync ~stutter net f in
-    let _ = SyncNet.print_graph prd () in
-    Tester.test prd compare
-      (TransSet.elements
-         (TransSet.filter
-            (fun (_, u) ->
-              match u with
-              | `U e -> NumberedNba.StateSet.mem e.tgt nba.fin
-              | _ -> false)
-            prd.transitions))
-      Int.max_int
+    let nba = nba_of_formula net (Not f) in
+    let prd =
+      if stutter then sync ~stutter:(is_stuttering net f) net nba
+      else sync net nba
+    in
+    let r =
+      Tester.test prd compare
+        (TransSet.elements
+           (TransSet.filter
+              (fun (_, u) ->
+                match u with
+                | `U e -> NumberedNba.StateSet.mem e.tgt nba.fin
+                | _ -> false)
+              prd.transitions))
+        Int.max_int
+    in
+    not r.res (* Theorem 8.19, pag. 137 *)
 end
