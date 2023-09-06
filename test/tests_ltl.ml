@@ -366,3 +366,49 @@ assert (is_f_step (ru1, b, rt2) mg f = false);;
 assert (is_f_step (ru1, c, rt2) mg f = false);;
 
 print_endline "[OK] phi steps and histories"
+
+open String_ltl.StringNetfullsync;;
+
+(* prod7 cannot reach these markings*)
+assert (let r = test Prod7.prod7 (F (And (AP "u1", AP "u2"))) in r.res = false);;
+assert (let r = test Prod7.prod7 (F (And (AP "t1", AP "t2"))) in r.res = false);;
+assert (let r = test Prod7.prod7 (G (And (AP "u1", AP "u2"))) in r.res = false);;
+
+assert (let r = test Prod7.prod7 (G (And (AP "u1", X (AP "u2")))) in r.res = false);;
+assert (let r = test Prod7.prod7 (F (And (AP "u1", X (AP "u2")))) in r.res);;
+
+assert (let r = test Prod7.prod7 (F (And (AP "t2", X (AP "t1")))) in r.res = false);; (* prod7 cannot visit t1 from t2 *)
+assert (let r = test Prod7.prod7 (Not (F (And (AP "t2", X (AP "t1"))))) in r.res);; (* negation works *)
+
+assert (let r = test Prod7.prod7 (F (And (AP "t2", F (AP "t1")))) in r.res = false);; (* prod7 cannot visit t1 from t2 ever again *)
+assert (let r = test Prod7.prod7 (F (And (AP "u2", F (AP "u1")))) in r.res);;
+
+assert (let r = test Prod7.prod7 (G (F (AP "u1"))) in r.res);; (* prod7 can visit u1 infinitely often *)
+assert (let r = test Prod7.prod7 (F (G (AP "u1"))) in r.res = false);; (* prod7 cannot get stuck in u1 forever *)
+
+assert (let r = test Prod7.prod7 (G (F (AP "u2"))) in r.res);; (* prod7 can visit u1 infinitely often *)
+assert (let r = test Prod7.prod7 (F (G (AP "u2"))) in r.res = false);; (* prod7 cannot get stuck in u2 forever *)
+
+assert (let r = test Prod7.prod7 (G (F (AP "u1"))) in r.res);; (* prod7 can visit t1 infinitely often *)
+assert (let r = test Prod7.prod7 (F (G (AP "t1"))) in r.res = false);; (* prod7 CAN get stuck in t1 forever *)
+
+assert (let r = test Prod7.prod7 (F (G (AP "t2"))) in r.res);; (* prod7 can indeed get stuck in t2 forever *)
+assert (let r = test Prod7.prod7 (G (AP "t2")) in r.res = false);; (* prod7 doesn't start from t2 *)
+assert (let r = test Prod7.prod7 (G (G (AP "t2"))) in r.res = false);; (* this is equal to G (AP t2) *)
+assert (let r = test Prod7.prod7 (F (And (AP "s4", AP "r3"))) in r.res = false);; (* s4 is not a place of Prod7.prod7 *)
+assert (let r = test Prod7.prod7 (F (Or (AP "s4", AP "u1"))) in r.res);;
+
+assert (let r = test Prod2.prod2 (And (AP "s4", AP "s3")) in r.res = false);; (* Prod2.prod2 doesn't start from this marking *)
+assert (let r = test Prod2.prod2 (F (And (AP "s4", AP "r3"))) in r.res);; (* Prod2.prod2 will eventually reach this marking *)
+assert (let r = test Prod2.prod2 (F (And (AP "s4", AP "r1"))) in r.res);; (* also this marking *)
+assert (let r = test ~stutter:true Prod2.prod2 (F (And (AP "s2", AP "s3"))) in r.res = false);; (* but not this one - conflict *)
+assert (let r = test ~stutter:true Prod2.prod2 (F (And (AP "s1", AP "s2"))) in r.res = false);; (* neither this one - causality *)
+assert (let r = test ~stutter:true Prod2.prod2 (F (And (AP "s1", F (AP "s2")))) in r.res);; (* should be true *)
+
+(* using ~stutter:true makes unfolding faster, but it's risky when f is not X-free *)
+assert (let r = test ~stutter:true Prod2.prod2 (F (And (AP "s2", X (AP "s4")))) in r.res);; (* having a token in s2 is not sufficient to move to s4 *)
+assert (let r = test ~stutter:true Prod2.prod2 (F (And (And (AP "s2", AP "r2"), X (AP "s4")))) in r.res);; (* there are sufficient conditions to move to s4 *)
+
+(* ##### FAILURES ##### *)
+assert (let r = test Prod7.prod7 (G (F (AP "t2"))) in r.res = false);; (* fails *)
+assert (let r = test ~stutter:true Prod2.prod2 (F (G (AP "s4"))) in r.res = false);; (* fails - this doesn't make sense *)
