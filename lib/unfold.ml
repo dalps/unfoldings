@@ -239,7 +239,12 @@ module Make (Net : Petrinet.S) = struct
   end
 
   module TestResult = struct
-    type t = { res : bool; prefix : OccurrenceNet.t; terms : TransSet.t }
+    type t = {
+      res : bool;
+      prefix : OccurrenceNet.t;
+      history : Net.Trans.t list;
+      terms : TransSet.t;
+    }
   end
 
   module Tester (SS : SearchScheme) = struct
@@ -250,7 +255,8 @@ module Make (Net : Petrinet.S) = struct
       let n0 = unfold_init net in
       let terms0 = TransSet.empty in
       let rec unfold ext step n terms =
-        if step > max_steps then { TestResult.res = false; prefix = n; terms }
+        if step > max_steps then
+          { TestResult.res = false; prefix = n; history = []; terms }
         else
           match
             Extensions.update
@@ -259,11 +265,16 @@ module Make (Net : Petrinet.S) = struct
           with
           | None ->
               let _ = set_marking n0.marking n in
-              { res = false; prefix = n; terms }
+              { res = false; prefix = n; history = []; terms }
           | Some r ->
               if SS.is_successful r.event r.prefix stgy goals then
                 let _ = set_marking n0.marking n in
-                { TestResult.res = true; prefix = r.prefix; terms }
+                {
+                  TestResult.res = true;
+                  prefix = r.prefix;
+                  history = Event.history r.event;
+                  terms;
+                }
               else
                 let terms' =
                   if SS.is_terminal r.event r.prefix stgy goals then

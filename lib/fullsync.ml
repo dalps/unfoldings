@@ -308,5 +308,6 @@ module MakeEH (Net : Petrinet.S) = struct
               prd.transitions))
         Int.max_int
     in
-    not r.res (* Theorem 8.19, pag. 137 *)
+    if not r.res then Ok true else Error (List.map fst r.history)
+  (* Theorem 8.19, pag. 137 *)
 end

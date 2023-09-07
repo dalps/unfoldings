@@ -77,18 +77,18 @@ module Make (AP : Set.OrderedType) = struct
     | (True | False | AP _) as f -> f
     | Or (True, _) | Or (_, True) | Not False -> True
     | And (False, _) | And (_, False) | Not True -> False
-    | Or (False, f) | Or (f, False) | And (True, f) | And (f, True) -> f
+    | Or (False, f) | Or (f, False) | And (True, f) | And (f, True) -> expand f
     | Or (f1, f2) -> Or (expand f1, expand f2)
     | And (f1, f2) -> And (expand f1, expand f2)
     | Not (Not f') -> expand f'
     | Not f' -> Not (expand f')
     | X f' -> X (expand f')
-    | If (f1, f2) -> If (expand f1, expand f2)
+    | If (f1, f2) -> expand (Or (Not f1, f2))
     | Iff (f1, f2) -> Iff (expand f1, expand f2)
     | F (F f') -> expand (F f')
-    | F f' -> U (True, expand f')
+    | F f' -> expand (U (True, f'))
     | G (G f') -> expand (G f')
-    | G f' -> Not (expand (F (Not f')))
+    | G f' -> expand (Not (F (Not f')))
     | U (f1, U (f1', f2)) when Formula.compare f1 f1' = 0 -> expand (U (f1, f2))
     | U (U (f1, f2), f2') when Formula.compare f2 f2' = 0 -> expand (U (f1, f2))
     | U (f1, f2) -> U (expand f1, expand f2)
@@ -156,7 +156,8 @@ module Make (AP : Set.OrderedType) = struct
           | If (g1, g2) as g ->
               FormulaSet.mem g b <=> (FormulaSet.mem g1 b => FormulaSet.mem g2 b)
           | Iff (g1, g2) as g ->
-              FormulaSet.mem g b <=> (FormulaSet.mem g1 b <=> FormulaSet.mem g2 b)
+              FormulaSet.mem g b
+              <=> (FormulaSet.mem g1 b <=> FormulaSet.mem g2 b)
           | U (g1, g2) as g ->
               FormulaSet.mem g2 b => FormulaSet.mem g b
               && (FormulaSet.mem g b && not (FormulaSet.mem g2 b))

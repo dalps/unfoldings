@@ -382,8 +382,10 @@ assert (test Prod7.prod7 (G (Or (AP "u2", AP "u1"))));; (* prod7 is always in ei
 assert (test Prod7.prod7 (F (And (AP "u1", X (AP "u2")))));; (* all infinite runs execute <ϵ,a> at least once *)
 assert (test Prod7.prod7 (G (And (AP "u1", X (AP "u2")))) = false);; (* violated by all infinite runs as it requires prod7 to stay in u1 indefinitely *)
 assert (test Prod7.prod7 (F (If (AP "u1", X (AP "u2")))));; (* more sensible *)
+assert (test Prod7.prod7 (F (Or (Not (AP "u1"), X (AP "u2")))));; (* if equivalence *)
 assert (test Prod7.prod7 (F (G (If (AP "u1", X (AP "u2"))))));; (* all infinite runs alternate between u1 and u2 forever after (if ever) executing <c,ϵ> *)
-
+  
+assert (test Prod7.prod7 (F (AP "t1")));; (* obvious *)
 assert (test Prod7.prod7 (F (AP "t2")) = false);; (* violated by the infinite run that never executes <c,ϵ> *)
 
 assert (test Prod7.prod7 (F (And (AP "t2", X (AP "t1")))) = false);; (* prod7 cannot visit t1 from t2 *)
@@ -410,11 +412,9 @@ assert (test Prod7.prod7 (G (G (AP "t2"))) = false);; (* this is equal to 'G (AP
 assert (test Prod7.prod7 (F (And (AP "s4", AP "r3"))) = false);; (* s4 is not a place of Prod7.prod7 *)
 assert (test Prod7.prod7 (F (Or (AP "s4", AP "u1"))));; (* s4 is not a place of Prod7.prod7, but u1 is *)
 
-assert (test Prod7.prod7 (F (AP "t1")));; (* obvious *)
-assert (test Prod7.prod7 (F (AP "t2")) = false);; (* some runs never execute <c,ϵ> *)
-
 assert (test Prod2.prod2 (And (AP "s4", AP "s3")) = false);; (* Prod2.prod2 doesn't start from this marking *)
 assert (test Prod2.prod2 (F (And (AP "s4", AP "r3"))));; (* Prod2.prod2 will eventually reach this marking *)
+assert (test Prod2.prod2 (F (And (AP "s4", AP "r1"))) = false);; (* violated by the run that always executes <t5,ϵ> from the marking {s4,r3} *)
 assert (test Prod2.prod2 (F (And (AP "s2", AP "s3"))) = false);; (* but not this one - conflict *)
 assert (test Prod2.prod2 (F (And (AP "s1", AP "s2"))) = false);; (* neither this one - causality *)
 assert (test Prod2.prod2 (F (And (AP "s1", F (AP "s2")))) = false);; (* violated by the run that always takes the s3 route *)
@@ -423,11 +423,20 @@ assert (test Prod2.prod2 (F (G (AP "s4"))) = false);; (* no run stays forever in
 assert (test Prod2.prod2 (F (And (AP "s2", X (AP "s4")))) = false);; (* violated by the infinite run that always passes through s3 to go to s4 and never visit s2 *)
 assert (test Prod2.prod2 (F (And (And (AP "s2", AP "r2"), X (AP "s4")))) = false);; (* same *)
 
+assert (test Prod2.prod2 (F (AP "s3")) = false);; (* violated by the infinite run that always passes through s2 to go to s4 and never visit s3 *)
+assert (test Prod2.prod2 (F (AP "s2")) = false);; (* violated by the infinite run that always passes through s3 to go to s4 and never visit s2 *)
+
+assert (test Prod2.prod2 (G (F (AP "r1"))));;
+assert (test Prod2.prod2 (G (F (AP "r2"))));;
+assert (test Prod2.prod2 (G (F (AP "r3"))));;
+assert (test Prod2.prod2 (G (F (AP "s2"))) = false);;
+assert (test Prod2.prod2 (G (F (AP "s3"))) = false);;
+
 (* ##### FAILURES/UNCERTAIN ##### *)
 (* these two assume <c,ϵ> will be executed eventually *)
-assert (test Prod7.prod7 (G (If (AP "u1", X (AP "u2")))));; (* ??? should be violated by runs that execute <c,ϵ> *)
-assert (test Prod7.prod7 (G (If (AP "u1", X (AP "u1")))));; (* ??? makes no sense *)
-assert (test Prod7.prod7 (F (If (AP "u1", X (AP "u1")))));; (* ??? should be violated by runs that execute <c,ϵ> *)
+assert (test Prod7.prod7 (G (If (AP "u1", X (AP "u1")))) = false);; (* ??? should be violated by all runs *)
+assert (test Prod7.prod7 (F (Or (Not (AP "u1"), X (AP "u1")))) = false);; (* ??? should be violated by runs that execute <c,ϵ> *)
 
 assert (test Prod2.prod2 (F (And (AP "s2", F (AP "s4")))));; (* ??? should be violated by the infinite run that always passes through s3 to go to s4 and never visit s2 *)
-assert (test Prod2.prod2 (F (And (AP "s4", AP "r1"))) = false);; (* ??? should be violated by the run that always executes <t5,ϵ> from the marking {s4,r3} *)
+assert (test Prod7.prod7 (G (If (AP "u1", X (AP "u2")))));; (* ??? should be violated by runs that execute <c,ϵ> *)
+assert (test Prod7.prod7 (G (If (AP "t1", X (AP "t2")))) = false);; (* ??? should be violated by runs that never execute <c,ϵ> *)
