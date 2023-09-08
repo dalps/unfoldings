@@ -64,8 +64,11 @@ let plot_unfold_gnba gnba =
 let plot_product_tester ?(stutter = false) net f =
   let open StringNetfullsync in
   let open SyncNet in
-  let nba = nba_of_formula net f in
-  let prd = sync ~stutter net f in
+  let nba = nba_of_formula net (Not f) in
+  let prd =
+    if stutter then sync ~stutter:(is_stuttering net f) net nba
+    else sync net nba
+  in
   SyncNet.print_graph prd ~vertex_name:string_of_netsyncnode
     ~vertex_label:string_of_netsyncnode ~vertex_attrs:(function
     | Node.T (_, u) -> (
@@ -86,8 +89,10 @@ let plot_product_tester ?(stutter = false) net f =
 let plot_unfold_tester ?(stutter = false) u f =
   let open UnfoldTester in
   let open SyncNet in
-  let nba = nba_of_formula u f in
-  let prd = sync ~stutter u f in
+  let nba = nba_of_formula u (Not f) in
+  let prd =
+    if stutter then sync ~stutter:(is_stuttering u f) u nba else sync u nba
+  in
   SyncNet.print_graph prd ~vertex_name:string_of_unfoldsyncnode
     ~vertex_label:string_of_unfoldsyncnode ~vertex_attrs:(function
     | Node.T (_, u) -> (

@@ -34,19 +34,16 @@ open StringProductUnfolder;;
 let r = test Prod7.prod7 (d_compare sl_compare) [] 50;;
 Plot.plot_test_result r ();;
 
-let u' = StringProductUnfolder.Unfolder.OccurrenceNet.reversible r.prefix;;
+let u' = Unfolder.OccurrenceNet.reversible r.prefix;;
 
 Plot.plot_unfold u' ();;
 
 open UnfoldTester.TesterLtl;;
 open UnfoldTester.TesterLtl.Formula;;
 
-let pippo = {StringProductUnfolder.Unfolder.OccurrenceNet.Token.name= 0; history = []; label = "t1"};;
-let t2 = {StringProductUnfolder.Unfolder.OccurrenceNet.Token.name
-   = 4;
-  history =
-   [[Unfoldings.String_product.StringPTNetProduct.T "c";
-     Unfoldings.String_product.StringPTNetProduct.Idle]];
-  label = "t2"};;
-let f = F (And (AP t2, F (X (AP pippo))));;
+let t1 = {Unfolder.OccurrenceNet.Token.name = 0; history = []; label = "t1"};;
+let t2 = {Unfolder.OccurrenceNet.Token.name = 4;  history =  [[`T "c"; `Idle]]; label = "t2"};;
+let f = F (And (AP t2, F (X (AP t1))));;
 let gnba = UnfoldTester.gnba_of_formula u' f;;
+
+open StringNetfullsync;;

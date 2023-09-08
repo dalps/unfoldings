@@ -174,8 +174,20 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
   let add_trans t n = n.transitions <- TransSet.add t n.transitions
   let add_places ps n = n.places <- PlaceSet.union ps n.places
   let add_transs ts n = n.transitions <- TransSet.union ts n.transitions
-  let add_to_trans_arc p t n = n.preset <- bind_p n.preset t p
-  let add_to_place_arc t p n = n.postset <- bind_p n.postset t p
+
+  let add_to_trans_arc p t n =
+    add_place p n;
+    add_trans t n;
+    n.preset <- bind_p n.preset t p
+
+  let add_to_place_arc t p n =
+    add_place p n;
+    add_trans t n;
+    n.postset <- bind_p n.postset t p
+
+  let add_edge (p, t, p') n =
+    add_to_trans_arc p t n;
+    add_to_place_arc t p' n
 
   let set_marking m n =
     n.marking <- (if PlaceSet.subset m n.places then m else n.marking)
