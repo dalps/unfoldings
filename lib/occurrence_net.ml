@@ -14,7 +14,7 @@ module type S = sig
 
   module Event : sig
     type event = { name : int; history : trans1 list; label : trans1 }
-    type t = E of event | Rev of t
+    type t = [ `E of event | `Rev of t ]
 
     val event_of_t : t -> event
     val build : int -> trans1 list -> trans1 -> t
@@ -52,7 +52,7 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
   module Token = struct
     type t = { name : int; history : T.t list; label : P.t }
 
-    let build ?(name=0) history label = { name; history; label }
+    let build ?(name = 0) history label = { name; history; label }
     let name p = p.name
     let history p = p.history
     let label p = p.label
@@ -64,10 +64,10 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
 
   module Event = struct
     type event = { name : int; history : T.t list; label : T.t }
-    type t = E of event | Rev of t
+    type t = [ `E of event | `Rev of t ]
 
-    let rec event_of_t = function E e -> e | Rev t -> event_of_t t
-    let build name history label = E { name; history; label }
+    let rec event_of_t = function `E e -> e | `Rev t -> event_of_t t
+    let build name history label = `E { name; history; label }
 
     let name e' =
       let e = event_of_t e' in
@@ -87,10 +87,10 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
 
     let rec compare e1' e2' =
       match (e1', e2') with
-      | E e1, E e2 -> compare_event e1 e2
-      | c, Rev (Rev d) | Rev (Rev c), d | Rev c, Rev d -> compare c d
-      | E _, Rev _ -> -1
-      | Rev _, E _ -> 1
+      | `E e1, `E e2 -> compare_event e1 e2
+      | c, `Rev (`Rev d) | `Rev (`Rev c), d | `Rev c, `Rev d -> compare c d
+      | `E _, `Rev _ -> -1
+      | `Rev _, `E _ -> 1
   end
 
   include Petrinet.Make (Token) (Event)
@@ -212,16 +212,30 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
 
   let reversible n =
     let rec preset = function
-      | Event.E _ as e -> preset_t n e
-      | Rev (Rev e') -> preset e'
-      | Rev e' -> postset e'
+      | `E _ as e -> preset_t n e
+      | `Rev (`Rev e') -> preset e'
+      | `Rev e' -> postset e'
     and postset = function
-      | Event.E _ as e -> postset_t n e
-      | Rev (Rev e') -> postset e'
-      | Rev e' -> preset e'
+      | `E _ as e -> postset_t n e
+      | `Rev (`Rev e') -> postset e'
+      | `Rev e' -> preset e'
     in
     of_sets (places n)
       (TransSet.union (transitions n)
-         (TransSet.map (fun e -> Rev e) (transitions n)))
+         (TransSet.map (fun e -> `Rev e) (transitions n)))
       preset postset (marking n)
+
+  let reverse e n = add_edges (postset_t n e, `Rev e, preset_t n e) n
+
+  let find_event_by_id id n =
+    TransSet.find_first (fun e -> Event.name e >= id) n.transitions
+
+  let find_event_by_label t n =
+    TransSet.find_first (fun e -> Event.label e >= t) n.transitions
+
+  let find_token_by_id id n =
+    PlaceSet.find_first (fun p -> Token.name p >= id) n.places
+
+  let find_token_by_label s n =
+    PlaceSet.find_last (fun p -> Token.label p >= s) n.places
 end

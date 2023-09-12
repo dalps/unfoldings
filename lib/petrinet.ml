@@ -4,7 +4,7 @@ module type S = sig
   type t
 
   module Node : sig
-    type t = P of place | T of trans
+    type t = [`P of place | `T of trans]
 
     val of_place : place -> t
     val of_trans : trans -> t
@@ -96,17 +96,17 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
   type trans = T.t
 
   module Node = struct
-    type t = P of P.t | T of T.t
+    type t = [`P of place | `T of trans]
 
     exception NotAPlace
     exception NotATransition
 
-    let of_place p = P p
-    let of_trans e = T e
-    let is_place = function P _ -> true | T _ -> false
-    let is_trans = function P _ -> false | T _ -> true
-    let place_of = function P p -> p | _ -> raise NotAPlace
-    let trans_of = function T e -> e | _ -> raise NotATransition
+    let of_place p = `P p
+    let of_trans e = `T e
+    let is_place = function `P _ -> true | `T _ -> false
+    let is_trans = function `P _ -> false | `T _ -> true
+    let place_of = function `P p -> p | _ -> raise NotAPlace
+    let trans_of = function `T e -> e | _ -> raise NotATransition
     let compare = compare
     let equal = ( = )
     let hash = Hashtbl.hash
@@ -185,9 +185,9 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
     add_trans t n;
     n.postset <- bind_p n.postset t p
 
-  let add_edge (p, t, p') n =
-    add_to_trans_arc p t n;
-    add_to_place_arc t p' n
+  let add_edges (m, t, m') n =
+    PlaceSet.iter (fun p -> add_to_trans_arc p t n) m;
+    PlaceSet.iter (fun p' -> add_to_place_arc t p' n) m'
 
   let set_marking m n =
     n.marking <- (if PlaceSet.subset m n.places then m else n.marking)
@@ -267,8 +267,8 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
     let g = G.create () in
     TransSet.iter
       (fun t ->
-        PlaceSet.iter (fun p -> G.add_edge g (P p) (T t)) (n.preset t);
-        PlaceSet.iter (fun p -> G.add_edge g (T t) (P p)) (n.postset t))
+        PlaceSet.iter (fun p -> G.add_edge g (`P p) (`T t)) (n.preset t);
+        PlaceSet.iter (fun p -> G.add_edge g (`T t) (`P p)) (n.postset t))
       n.transitions;
     g
 
@@ -285,14 +285,14 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
 
       let vertex_attributes v =
         (match v with
-        | Node.P p ->
+        | `P p ->
             [ `Shape `Ellipse; ]
             @ [
                 `Label
                   (vertex_label v
                   ^ if PlaceSet.mem p n.marking then "\n&#9679;" else "");
               ]
-        | T _ -> [ `Shape `Box ])
+        | `T _ -> [ `Shape `Box ])
         @ vertex_attrs v
 
       let vertex_name v = "\"" ^ vertex_name v ^ "\""

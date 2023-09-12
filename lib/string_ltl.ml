@@ -32,16 +32,13 @@ let string_of_tokenformulaset =
 
 let string_of_apset = string_of_set (module StringLtl.APSet) Fun.id
 
-let label_of_node =
-  StringLtl.FormulaPTNet.Node.(
-    function
-    | P (p, i) -> string_of_formulaset p ^ string_of_int i
-    | T (i, t) -> string_of_int i ^ string_of_apset t)
+let label_of_node = function
+  | `P (p, i) -> string_of_formulaset p ^ string_of_int i
+  | `T (i, t) -> string_of_int i ^ string_of_apset t
 
-let string_of_node =
-  StringLtl.FormulaPTNet.Node.(
-    function
-    | P (p, _) -> string_of_formulaset p | T (_, t) -> string_of_apset t)
+let string_of_node = function
+  | `P (p, _) -> string_of_formulaset p
+  | `T (_, t) -> string_of_apset t
 
 let name_of_numberedstate (fset, k) =
   string_of_formulaset fset ^ "\nCopy " ^ string_of_int k
@@ -64,9 +61,9 @@ let string_of_netsynctrans =
       ^ (match u with `Idle -> "ϵ" | `U e -> "&beta;" ^ string_of_int e.id)
       ^ "]"
 
-let string_of_netsyncnode =
-  StringNetfullsync.SyncNet.Node.(
-    function P p -> string_of_netsyncplace p | T t -> string_of_netsynctrans t)
+let string_of_netsyncnode = function
+  | `P p -> string_of_netsyncplace p
+  | `T t -> string_of_netsynctrans t
 
 let string_of_unfoldsyncplace = function
   | `NetP p -> name_of_token p
@@ -80,7 +77,6 @@ let string_of_unfoldsynctrans =
       ^ (match u with `Idle -> "ϵ" | `U e -> "&beta;" ^ string_of_int e.id)
       ^ "]"
 
-let string_of_unfoldsyncnode =
-  UnfoldTester.SyncNet.Node.(
-    function
-    | P p -> string_of_unfoldsyncplace p | T t -> string_of_unfoldsynctrans t)
+let string_of_unfoldsyncnode = function
+  | `P p -> string_of_unfoldsyncplace p
+  | `T t -> string_of_unfoldsynctrans t
