@@ -298,7 +298,7 @@ module MakeEH (Net : Petrinet.S) = struct
       else sync net nba
     in
     let r =
-      Tester.test prd (String_product.d_compare compare)
+      Tester.test prd compare
         (TransSet.elements
            (TransSet.filter
               (fun (_, u) ->
