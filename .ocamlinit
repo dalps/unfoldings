@@ -48,3 +48,39 @@ let f = F (And (AP t2, F (X (AP t1))));;
 let gnba = UnfoldTester.gnba_of_formula u' f;;
 
 open StringNetfullsync;;
+open Unfolder.OccurrenceNet;;
+open UnfoldTester;;
+open Result;;
+
+let r = StringProductUnfolder.test prod8 (d_compare sl_compare) [] 9999999999;;
+let u = r.prefix;;
+let g = Unfolder.OccurrenceNet.find_event_by_id 8 u;;
+Unfolder.OccurrenceNet.reverse g u;;
+Plot.plot_unfold u ();;
+
+let k = List.nth (find_tokens_by_id 0 u) 0;;
+let n = List.nth (find_tokens_by_id 0 u) 1;;
+let l = List.nth (find_tokens_by_id 8 u) 0;;
+let o = find_token_by_id 3 u;;
+let p = List.nth (find_tokens_by_id 8 u) 1;;
+let m = find_token_by_id 9 u;;
+
+let f = G(F(AP p));;
+assert(is_ok (test ~stutter:true u f));;
+
+let f = G(If(AP p, F(AP o)));;
+assert(is_ok (test ~stutter:true u f));;
+
+let f = G(If(AP p, F(AP n)));;
+assert(is_error (test ~stutter:true u f));;
+
+let d = Unfolder.OccurrenceNet.find_event_by_id 3 u;;
+Unfolder.OccurrenceNet.reverse d u;;
+
+(* the second component cannot roll back to the initial state, even if revD is added *)
+let f = G(If(AP p, F(AP n)));;
+assert(is_error (test ~stutter:true u f));; (* violated by (G;revG)omega *)
+
+(* the product cannot be in an inconsistent state *)
+let f = G(Or(Not (AP p), Not (AP k)));;
+assert(is_ok (test ~stutter:true u f));;

@@ -236,6 +236,12 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
   let find_token_by_id id n =
     PlaceSet.find_first (fun p -> Token.name p >= id) n.places
 
+  let find_tokens_by_id id n =
+    List.filter (fun p -> Token.name p = id) (PlaceSet.elements n.places)
+
   let find_token_by_label s n =
     PlaceSet.find_last (fun p -> Token.label p >= s) n.places
+
+  let find_tokens_by_label s n =
+    List.filter (fun p -> Token.label p = s) (PlaceSet.elements n.places)
 end
