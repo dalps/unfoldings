@@ -277,7 +277,7 @@ module MakeEH (Net : Petrinet.S) = struct
       (PlaceSet.union
          (match NumberedNba.StateSet.choose_opt nba.init with
          | Some is -> PlaceSet.singleton (`NbaP is)
-         | None -> PlaceSet.empty)
+         | None -> print_endline "couldn't find initial state"; PlaceSet.empty)
          (Net.PlaceSet.fold
             (fun p -> PlaceSet.add (`NetP p))
             (Net.marking net) PlaceSet.empty))
@@ -291,10 +291,11 @@ module MakeEH (Net : Petrinet.S) = struct
   module Tester = Repeated_executability.Make (SyncNet)
 
   let test ?(stutter = false) net f =
+    let notf = Ltl.Not f in
     let open SyncNet in
-    let nba = nba_of_formula net (Not f) in
+    let nba = nba_of_formula net notf in
     let prd =
-      if stutter then sync ~stutter:(is_stuttering net f) net nba
+      if stutter then sync ~stutter:(is_stuttering net notf) net nba
       else sync net nba
     in
     let r =

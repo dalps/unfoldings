@@ -62,10 +62,11 @@ let plot_unfold_gnba gnba =
     ~edge_label:label_of_event
 
 let plot_product_tester ?(stutter = false) net f =
+  let notf = Ltl.Not f in
   let open StringNetfullsync in
-  let nba = nba_of_formula net (Not f) in
+  let nba = nba_of_formula net notf in
   let prd =
-    if stutter then sync ~stutter:(is_stuttering net f) net nba
+    if stutter then sync ~stutter:(is_stuttering net notf) net nba
     else sync net nba
   in
   SyncNet.print_graph prd ~vertex_name:string_of_netsyncnode
@@ -86,10 +87,11 @@ let plot_product_tester ?(stutter = false) net f =
         | `NetP _ -> []))
 
 let plot_unfold_tester ?(stutter = false) u f =
+  let notf = Ltl.Not f in
   let open UnfoldTester in
-  let nba = nba_of_formula u (Not f) in
+  let nba = nba_of_formula u notf in
   let prd =
-    if stutter then sync ~stutter:(is_stuttering u f) u nba else sync u nba
+    if stutter then sync ~stutter:(is_stuttering u notf) u nba else sync u nba
   in
   SyncNet.print_graph prd ~vertex_name:string_of_unfoldsyncnode
     ~vertex_label:string_of_unfoldsyncnode ~vertex_attrs:(function
