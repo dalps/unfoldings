@@ -28,7 +28,11 @@ open Result;;
 let r = StringProductUnfolder.test prod9 (d_compare sl_compare) [] 99;;
 let u = r.prefix;;
 let t1u1 = find_event_by_id 3 u;;
+let t2 = find_event_by_id 2 u;;
+let t2' = find_event_by_id 4 u;;
 reverse t1u1 u;;
+(* reverse t2 u;;
+reverse t2' u;; *)
 let b = List.nth (find_tokens_by_label "b" u) 1;;
 let a = List.nth (find_tokens_by_label "a" u) 0;;
 let f = G(If(AP b, F(AP a)));;
@@ -44,11 +48,28 @@ let l2 = List.nth l 1;;
 let a1 = List.filter (fun b -> OccurrenceNet.TransSet.exists (fun t -> not (NetGNBA.StateSet.is_empty (gnba.func b t))) u.transitions) l1;;
 let a2 = List.filter (fun b -> OccurrenceNet.TransSet.exists (fun t -> not (NetGNBA.StateSet.is_empty (gnba.func b t))) u.transitions) l2;;
 
+open NetGNBA;;
+let l = StateSet.elements gnba.states;;
+let i1 = List.nth l 0;;
+let i2 = List.nth l 1;;
+let q0 = List.nth (StateSet.elements gnba.init) 0;;
+let q5 = List.nth l 2;;
+let q7 = List.nth l 4;;
+let q2 = List.nth l 5;;
+let q4 = List.nth l 6;;
+let q8 = List.nth l 7;;
+let q3 = List.nth l 8;;
+let q6 = List.nth l 9;;
+let q1 = List.nth l 10;;
+
 List.map string_of_tokenformulaset l1;;
 List.map string_of_tokenformulaset l2;;
 
-open NetGNBA;;
 let is = StateSet.choose gnba.init;;
 
-let gnba' = StateSet.fold (fun b acc -> remove_state acc b) (StateSet.diff s1 gnba.init) gnba;;
-let gnba' = StateSet.fold (fun b acc -> remove_state acc b) (StateSet.diff s2 gnba.init) gnba';;
+let gnba'= List.fold_right (fun b acc -> remove_state acc b) 
+[
+  i1; i2; q5; q6; q7;
+] gnba;;
+let nba' = NetGNBA.to_nba gnba';;
+

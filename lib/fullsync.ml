@@ -290,6 +290,26 @@ module MakeEH (Net : Petrinet.S) = struct
 
   module Tester = Repeated_executability.Make (SyncNet)
 
+  let test_custom_nba ?(stutter = false) net f nba =
+    let notf = Ltl.Not f in
+    let open SyncNet in
+    let prd =
+      if stutter then sync ~stutter:(is_stuttering net notf) net nba
+      else sync net nba
+    in
+    let r =
+      Tester.test prd compare
+        (TransSet.elements
+           (TransSet.filter
+              (fun (_, u) ->
+                match u with
+                | `U e -> NumberedNba.StateSet.mem e.tgt nba.fin
+                | _ -> false)
+              prd.transitions))
+        Int.max_int
+    in
+    if not r.res then Ok true else Error (List.map fst r.history)
+
   let test ?(stutter = false) net f =
     let notf = Ltl.Not f in
     let open SyncNet in

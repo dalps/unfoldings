@@ -66,8 +66,11 @@ module Make (State : Set.OrderedType) (Alpha : Set.OrderedType) = struct
   let remove_state u s =
     of_sets
       (StateSet.remove s u.states)
-      u.alpha (unbind_state_tot u.func s) (StateSet.remove s u.init)
-      (PowerStateSet.map (fun b -> StateSet.remove s b) u.fin)
+      u.alpha
+      (unbind_state_tot u.func s)
+      (StateSet.remove s u.init)
+      (let fin1 = PowerStateSet.map (fun b -> StateSet.remove s b) u.fin in
+       PowerStateSet.filter (fun f -> not (StateSet.is_empty f)) fin1)
 
   let get_graph gnba =
     let g = G.create () in
@@ -76,7 +79,10 @@ module Make (State : Set.OrderedType) (Alpha : Set.OrderedType) = struct
         G.add_vertex g s;
         AlphaSet.iter
           (fun a ->
-            StateSet.iter (fun r -> if StateSet.mem r gnba.states then G.add_edge_e g (s, AP a, r)) (gnba.func s a))
+            StateSet.iter
+              (fun r ->
+                G.add_edge_e g (s, AP a, r))
+              (gnba.func s a))
           gnba.alpha)
       gnba.states;
     g

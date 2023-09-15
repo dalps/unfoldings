@@ -109,3 +109,26 @@ let plot_unfold_tester ?(stutter = false) u f =
               [ `ColorWithTransparency 0xFF000044l; `Style `Filled ]
             else []
         | `NetP _ -> []))
+
+let plot_custom_unfold_tester ?(stutter = false) u f nba =
+  let notf = Ltl.Not f in
+  let open UnfoldTester in
+  let prd =
+    if stutter then sync ~stutter:(is_stuttering u notf) u nba else sync u nba
+  in
+  SyncNet.print_graph prd ~vertex_name:string_of_unfoldsyncnode
+    ~vertex_label:string_of_unfoldsyncnode ~vertex_attrs:(function
+    | `T (_, u) -> (
+        match u with
+        | `U e ->
+            if NetGNBA.NumberedNba.StateSet.mem e.tgt nba.fin then
+              [ `ColorWithTransparency 0xFF000088l; `Style `Filled ]
+            else []
+        | _ -> [])
+    | `P p -> (
+        match p with
+        | `NbaP b ->
+            if NetGNBA.NumberedNba.StateSet.mem b nba.fin then
+              [ `ColorWithTransparency 0xFF000044l; `Style `Filled ]
+            else []
+        | `NetP _ -> []))
