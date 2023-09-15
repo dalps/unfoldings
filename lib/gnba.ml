@@ -37,7 +37,20 @@ module Make (State : Set.OrderedType) (Alpha : Set.OrderedType) = struct
   let bind_state f q a r q' a' =
     if q' = q && a' = a then StateSet.add r (f q a) else f q' a'
 
+  let unbind_state f q a r q' a' =
+    if q' = q && a' = a then StateSet.remove r (f q a) else f q' a'
+
+  let unbind_state_tot f q q' a' = if q' = q then StateSet.empty else f q' a'
   let bind_f f f' q a = StateSet.union (f q a) (f' q a)
+
+  let remove_state_func u r =
+    StateSet.fold
+      (fun q acc1 ->
+        bind_f
+          (AlphaSet.fold (fun a acc2 -> unbind_state acc2 q a r) u.alpha acc1)
+          acc1)
+      u.states u.func
+
   let delta q a post = bind_states bottom q a (StateSet.of_list post)
   let of_sets states alpha func init fin = { states; alpha; func; init; fin }
 
@@ -50,13 +63,20 @@ module Make (State : Set.OrderedType) (Alpha : Set.OrderedType) = struct
       fin = PowerStateSet.of_list (List.map StateSet.of_list fin);
     }
 
+  let remove_state u s =
+    of_sets
+      (StateSet.remove s u.states)
+      u.alpha (unbind_state_tot u.func s) (StateSet.remove s u.init)
+      (PowerStateSet.map (fun b -> StateSet.remove s b) u.fin)
+
   let get_graph gnba =
     let g = G.create () in
     StateSet.iter
       (fun s ->
+        G.add_vertex g s;
         AlphaSet.iter
           (fun a ->
-            StateSet.iter (fun r -> G.add_edge_e g (s, AP a, r)) (gnba.func s a))
+            StateSet.iter (fun r -> if StateSet.mem r gnba.states then G.add_edge_e g (s, AP a, r)) (gnba.func s a))
           gnba.alpha)
       gnba.states;
     g

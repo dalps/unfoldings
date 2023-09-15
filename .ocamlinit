@@ -11,76 +11,44 @@ open Prod6
 open Prod7
 open Prod8;;
 open Prod8sys;;
+open Prod9;;
 
 open Ltl
 open String_product
 open String_ltl
-open StringLtl
-
-let f = F (And (AP "u1", X (AP "u1")))
-let ap = APSet.of_list [ "u1"; "t1" ]
-let gnba = gnba_of_formula ap f;;
-
-open String_product
-open String_ltl
-open StringPTNetProduct
-open StringNetfullsync
-open TesterLtl
-
-let f = F (And (AP "u1", X (AP "u1")))
-let gnba = StringNetfullsync.gnba_of_formula prod7 f;;
-
-open StringProductUnfolder;;
-
-let r = test Prod7.prod7 (d_compare sl_compare) [] 50;;
-Plot.plot_test_result r ();;
-
-let u' = Unfolder.OccurrenceNet.reversible r.prefix;;
-
-Plot.plot_unfold u' ();;
-
-open UnfoldTester.TesterLtl;;
-open UnfoldTester.TesterLtl.Formula;;
-
-let t1 = {Unfolder.OccurrenceNet.Token.name = 0; history = []; label = "t1"};;
-let t2 = {Unfolder.OccurrenceNet.Token.name = 4;  history =  [[`T "c"; `Idle]]; label = "t2"};;
-let f = F (And (AP t2, F (X (AP t1))));;
-let gnba = UnfoldTester.gnba_of_formula u' f;;
-
 open StringNetfullsync;;
-open Unfolder.OccurrenceNet;;
+open StringNetfullsync.TesterLtl;;
+open StringProductUnfolder;;
+open Unfolder;;
+open OccurrenceNet;;
 open UnfoldTester;;
 open Result;;
 
-let r = StringProductUnfolder.test prod8 (d_compare sl_compare) [] 9999999999;;
+
+let r = StringProductUnfolder.test prod9 (d_compare sl_compare) [] 99;;
 let u = r.prefix;;
-let g = Unfolder.OccurrenceNet.find_event_by_id 8 u;;
-Unfolder.OccurrenceNet.reverse g u;;
-Plot.plot_unfold u ();;
+let t1u1 = find_event_by_id 3 u;;
+reverse t1u1 u;;
+let b = List.nth (find_tokens_by_label "b" u) 1;;
+let a = List.nth (find_tokens_by_label "a" u) 0;;
+let f = G(If(AP b, F(AP a)));;
+let gnba = gnba_of_formula u (Not f);;
 
-let k = List.nth (find_tokens_by_id 0 u) 0;;
-let n = List.nth (find_tokens_by_id 0 u) 1;;
-let l = List.nth (find_tokens_by_id 8 u) 0;;
-let o = find_token_by_id 3 u;;
-let p = List.nth (find_tokens_by_id 8 u) 1;;
-let m = find_token_by_id 9 u;;
+let l = List.map (NetGNBA.StateSet.elements)(NetGNBA.PowerStateSet.elements gnba.fin);;
+let ls = NetGNBA.PowerStateSet.elements gnba.fin;;
+let s1 = List.nth ls 0;;
+let s2 = List.nth ls 1;;
+let l1 = List.nth l 0;;
+let l2 = List.nth l 1;;
 
-let f = G(F(AP p));;
-assert(is_ok (test ~stutter:true u f));;
+let a1 = List.filter (fun b -> OccurrenceNet.TransSet.exists (fun t -> not (NetGNBA.StateSet.is_empty (gnba.func b t))) u.transitions) l1;;
+let a2 = List.filter (fun b -> OccurrenceNet.TransSet.exists (fun t -> not (NetGNBA.StateSet.is_empty (gnba.func b t))) u.transitions) l2;;
 
-let f = G(If(AP p, F(AP o)));;
-assert(is_ok (test ~stutter:true u f));;
+List.map string_of_tokenformulaset l1;;
+List.map string_of_tokenformulaset l2;;
 
-let f = G(If(AP p, F(AP n)));;
-assert(is_error (test ~stutter:true u f));;
+open NetGNBA;;
+let is = StateSet.choose gnba.init;;
 
-let d = Unfolder.OccurrenceNet.find_event_by_id 3 u;;
-Unfolder.OccurrenceNet.reverse d u;;
-
-(* the second component cannot roll back to the initial state, even if revD is added *)
-let f = G(If(AP p, F(AP n)));;
-assert(is_error (test ~stutter:true u f));; (* violated by (G;revG)omega *)
-
-(* the product cannot be in an inconsistent state *)
-let f = G(Or(Not (AP p), Not (AP k)));;
-assert(is_ok (test ~stutter:true u f));;
+let gnba' = StateSet.fold (fun b acc -> remove_state acc b) (StateSet.diff s1 gnba.init) gnba;;
+let gnba' = StateSet.fold (fun b acc -> remove_state acc b) (StateSet.diff s2 gnba.init) gnba';;
