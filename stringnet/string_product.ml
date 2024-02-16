@@ -1,5 +1,6 @@
 open Petrilib
 open Unfoldlib
+open Modelchecklib
 module StringPTNet = Petrinet.Make (String) (String)
 module StringPTNetProduct = Product.Make (StringPTNet)
 module StringProductUnfolder = Executability.Make (StringPTNetProduct)

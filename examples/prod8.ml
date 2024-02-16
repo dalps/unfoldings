@@ -1,6 +1,6 @@
 (* Source: https://www.youtube.com/watch?v=AfgZFQ-EXkU&t=4s *)
 
-open Modelchecklib.String_product.StringPTNetProduct
+open Stringnetlib.String_product.StringPTNetProduct
 
 let prod8 =
   of_lists

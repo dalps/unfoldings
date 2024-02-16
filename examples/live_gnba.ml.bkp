@@ -5,11 +5,11 @@ module CritAP = struct
   let compare = compare
 end
 
-module CritLTL = Modelchecklib.Ltl.Make (CritAP)
-module CritGNBA = Modelchecklib.Gnba.Make (String) (CritLTL.Formula)
+module CritLTL = Stringnetlib.Ltl.Make (CritAP)
+module CritGNBA = Stringnetlib.Gnba.Make (String) (CritLTL.Formula)
 open CritGNBA
 open CritAP
-open Modelchecklib.Ltl
+open Stringnetlib.Ltl
 
 let g =
   of_lists [ "q0"; "q1"; "q2" ] [ AP Crit1; AP Crit2 ]

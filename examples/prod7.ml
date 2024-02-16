@@ -1,6 +1,6 @@
 (* Product of Fig. 2.2 p. 7 *)
 
-open Modelchecklib.String_product.StringPTNet
+open Stringnetlib.String_product.StringPTNet
 
 let s =
   of_lists [ "t1"; "t2"; ]
@@ -18,7 +18,7 @@ let r =
     ]
     [ "u1" ]
 
-open Modelchecklib.String_product.StringPTNetProduct
+open Stringnetlib.String_product.StringPTNetProduct
 
 let prod7 =
   product [ s; r ]

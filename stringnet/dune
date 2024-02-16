@@ -1,0 +1,3 @@
+(library
+  (name stringnetlib)
+  (libraries modelchecklib petrilib ltllib unfoldlib))

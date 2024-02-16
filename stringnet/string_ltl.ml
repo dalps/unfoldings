@@ -1,5 +1,6 @@
 open Ltllib
 open Ltl
+open Modelchecklib
 open Utils
 open String_product
 module StringLtl = Ltl.Make (String)

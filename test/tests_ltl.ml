@@ -2,6 +2,7 @@ print_endline "#### Running ltl tests..."
 
 open Ltllib
 open Modelchecklib
+open Stringnetlib
 open Examples
 module StringLtl = Ltl.Make (String)
 open Ltl
