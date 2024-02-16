@@ -1,4 +1,4 @@
 (executable
- (public_name unfoldings)
+ (public_name unfold)
  (name main)
- (libraries unfoldings examples))
+ (libraries unfoldlib examples))

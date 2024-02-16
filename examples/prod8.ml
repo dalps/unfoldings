@@ -1,6 +1,6 @@
 (* Source: https://www.youtube.com/watch?v=AfgZFQ-EXkU&t=4s *)
 
-open Unfoldings.String_product.StringPTNetProduct
+open Modelchecklib.String_product.StringPTNetProduct
 
 let prod8 =
   of_lists

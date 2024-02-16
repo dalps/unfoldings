@@ -1,6 +1,6 @@
 (* Product of Fig. 6.1 p. 99 *)
 
-open Unfoldings.String_product.StringPTNetProduct
+open Modelchecklib.String_product.StringPTNetProduct
 
 let prod6 =
   of_lists

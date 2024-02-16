@@ -1,47 +1,57 @@
+open Petrilib
+open Unfoldlib
 module StringPTNet = Petrinet.Make (String) (String)
 module StringPTNetProduct = Product.Make (StringPTNet)
 module StringProductUnfolder = Executability.Make (StringPTNetProduct)
 open StringProductUnfolder
 open Product
-open Setprintr
-
+open Utils
 
 let string_of_globaltrans t =
   let n = List.length t in
-  (if n > 1 then "(" else "")
-  ^ String.concat ","
-      (List.fold_right
-         (fun lt ->
-           List.cons (match lt with `T s -> s | `Idle -> "ϵ"))
-         t [])
-  ^ if n > 1 then ")" else ""
+  spr "%s%s%s"
+    (if n > 1 then "(" else "")
+    (String.concat ","
+       (List.fold_right
+          (fun lt ->
+            List.cons
+              (match lt with
+              | `T s -> s
+              | `Idle -> "ϵ"))
+          t []))
+    (if n > 1 then ")" else "")
 
 let string_of_history w =
-  "[" ^ String.concat "," (List.map string_of_globaltrans w) ^ "]"
+  spr "[%s]" (String.concat "," (List.map string_of_globaltrans w))
 
-let string_of_node = function `P p -> p | `T t -> string_of_globaltrans t
+let string_of_node = function
+  | `P p -> p
+  | `T t -> string_of_globaltrans t
 
 let name_of_token t =
-  string_of_int (Unfolder.OccurrenceNet.Token.name t)
-  ^ " "
-  ^ Unfolder.OccurrenceNet.Token.label t
-  ^ " "
-  ^ string_of_history (Unfolder.OccurrenceNet.Token.history t)
+  spr "%s %s %s"
+    (string_of_int (Unfolder.OccurrenceNet.Token.name t))
+    (Unfolder.OccurrenceNet.Token.label t)
+    (string_of_history (Unfolder.OccurrenceNet.Token.history t))
 
 let label_of_token t = Unfolder.OccurrenceNet.Token.label t
 
 let name_of_event e =
   let open Unfolder.OccurrenceNet.Event in
-  match e with
-  | `E _ -> string_of_int (name e) ^ " " ^ string_of_globaltrans (label e)
-  | `Rev _ ->
-      "rev " ^ string_of_int (name e) ^ " " ^ string_of_globaltrans (label e)
+  spr "%s %s %s"
+    (match e with
+    | `E _ -> ""
+    | `Rev _ -> "rev")
+    (string_of_int (name e))
+    (string_of_globaltrans (label e))
 
 let label_of_event e =
   let open Unfolder.OccurrenceNet.Event in
-  match e with
-  | `E _ -> string_of_globaltrans (label e)
-  | `Rev _ -> "rev " ^ string_of_globaltrans (label e)
+  spr "%s %s"
+    (match e with
+    | `E _ -> ""
+    | `Rev _ -> "rev")
+    (string_of_globaltrans (label e))
 
 let label_of_unfold_node = function
   | `P p -> label_of_token p
@@ -53,7 +63,7 @@ let name_of_unfold_node = function
 
 let string_of_event e =
   let open Unfolder.OccurrenceNet.Event in
-  string_of_int (name e) ^ " " ^ string_of_globaltrans (label e)
+  spr "%s %s" (string_of_int (name e)) (string_of_globaltrans (label e))
 
 let string_of_token = label_of_token
 
@@ -111,7 +121,12 @@ let concat_traces w w' = trace (w @ w')
 
 let sl_compare w w' =
   let string_of_t t =
-    String.concat "" (List.map (function `Idle -> "" | `T s -> s) t)
+    String.concat ""
+      (List.map
+         (function
+           | `Idle -> ""
+           | `T s -> s)
+         t)
   in
   let string_of_tword w = String.concat "" (List.map string_of_t w) in
   let len_diff = List.length w - List.length w' in

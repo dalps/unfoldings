@@ -1,3 +1,5 @@
+open Petrilib
+
 module type S = sig
   module PTNet : Petrinet.S
   module OccurrenceNet : Occurrence_net.S

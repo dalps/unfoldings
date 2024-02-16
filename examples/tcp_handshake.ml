@@ -42,7 +42,7 @@ let send_syn : HostEvent.t = ([ SEND ], [ SYN ])
 let refuse : HostEvent.t = ([ RST ], [ NO_ACTION ])
 (* There's no TCP entity listening on the requested port *)
 
-module TCPEntity = Unfoldings.Petrinet.Make (TCPState) (HostEvent)
+module TCPEntity = Petrilib.Petrinet.Make (TCPState) (HostEvent)
 open TCPEntity
 
 (**

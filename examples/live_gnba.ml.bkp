@@ -1,5 +1,3 @@
-open Ltllib
-
 (* GNBA of Fig. 4.19 p. 194 (Baier-Katoen) *)
 module CritAP = struct
   type t = Crit1 | Crit2
@@ -7,11 +5,11 @@ module CritAP = struct
   let compare = compare
 end
 
-module CritLTL = Ltl.Make (CritAP)
-module CritGNBA = Gnba.Make (String) (CritLTL.Formula)
+module CritLTL = Modelchecklib.Ltl.Make (CritAP)
+module CritGNBA = Modelchecklib.Gnba.Make (String) (CritLTL.Formula)
 open CritGNBA
 open CritAP
-open Ltl
+open Modelchecklib.Ltl
 
 let g =
   of_lists [ "q0"; "q1"; "q2" ] [ AP Crit1; AP Crit2 ]

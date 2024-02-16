@@ -1,3 +1,5 @@
+open Petrilib
+
 module Make (Net : Petrinet.S) = struct
   module Unfolder = Unfold.Make (Net)
   open Unfolder

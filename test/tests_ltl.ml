@@ -1,8 +1,9 @@
 print_endline "#### Running ltl tests..."
 
-open Unfoldings
+open Ltllib
+open Modelchecklib
 open Examples
-module StringLtl = Unfoldings.Ltl.Make (String)
+module StringLtl = Ltl.Make (String)
 open Ltl
 open StringLtl;;
 
@@ -302,7 +303,7 @@ assert (FormulaPTNet.is_statemachine n)
 
 open String_product
 open StringPTNetProduct
-module StringFullsync = Fullsync.MakeEH (StringPTNetProduct)
+module StringFullsync = Stuttering.Make (StringPTNetProduct)
 open StringFullsync
 open TesterLtl
 

@@ -1,6 +1,6 @@
 (* P/T nets of Fig. 2 p. 5 (HernanClaudioIrek) *)
 
-module StringPTNet = Unfoldings.Petrinet.Make (String) (String)
+module StringPTNet = Petrilib.Petrinet.Make (String) (String)
 open StringPTNet
 
 let o1 =

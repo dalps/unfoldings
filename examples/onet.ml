@@ -1,7 +1,7 @@
 (* Made up occurrence net *)
 
 module StringOccurrenceNet =
-  Unfoldings.Occurrence_net.Make (String) (String)
+  Petrilib.Occurrence_net.Make (String) (String)
 (* do NOT open Make directly, always wrap in another module *)
 
 open StringOccurrenceNet

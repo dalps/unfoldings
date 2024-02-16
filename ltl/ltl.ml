@@ -1,3 +1,5 @@
+open Petrilib
+
 type 'a formula =
   | True
   | False
@@ -134,13 +136,20 @@ module Make (AP : Set.OrderedType) = struct
 
   let ap_of_formulaset b =
     FormulaSet.fold
-      (fun f b' -> match f with AP ap -> APSet.add ap b' | _ -> b')
+      (fun f b' ->
+        match f with
+        | AP ap -> APSet.add ap b'
+        | _ -> b')
       b APSet.empty
 
   let ap_of_formula f = ap_of_formulaset (closure f)
 
   let ap_of_formulaset_f b =
-    FormulaSet.filter_map (function AP _ as f -> Some f | _ -> None) b
+    FormulaSet.filter_map
+      (function
+        | AP _ as f -> Some f
+        | _ -> None)
+      b
 
   let elementary_sets f =
     let cl = closure f in

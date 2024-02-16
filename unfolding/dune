@@ -1,0 +1,3 @@
+(library
+ (name unfoldlib)
+ (libraries petrilib))

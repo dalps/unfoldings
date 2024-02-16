@@ -5,7 +5,7 @@ module type S = sig
   module Token : sig
     type t = { name : int; history : trans1 list; label : place1 }
 
-    val build : trans1 list -> place1 -> t
+    val build : ?name:int -> trans1 list -> place1 -> t
     val name : t -> int
     val history : t -> trans1 list
     val label : t -> place1

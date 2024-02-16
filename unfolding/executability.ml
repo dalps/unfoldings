@@ -1,4 +1,4 @@
-module Make (Net : Petrinet.S) = struct
+module Make (Net : Petrilib.Petrinet.S) = struct
   module Unfolder = Unfold.Make (Net)
   open Unfolder
   open OccurrenceNet

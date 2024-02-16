@@ -1,0 +1,3 @@
+(library
+ (name modelchecklib)
+ (libraries ocamlgraph ltllib unfoldlib))

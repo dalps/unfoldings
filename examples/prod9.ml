@@ -1,6 +1,6 @@
 (* Product of Fig. 2.2 p. 7 *)
 
-open Unfoldings.String_product.StringPTNet
+open Modelchecklib.String_product.StringPTNet
 
 let s =
   of_lists [ "a"; "b"; "c" ] [ "t1"; "t2" ]
@@ -9,7 +9,7 @@ let s =
 
 let r = of_lists [ "m"; "n" ] [ "u1" ] [ ([ "m" ] --> [ "n" ]) "u1" ] [ "m" ]
 
-open Unfoldings.String_product.StringPTNetProduct
+open Modelchecklib.String_product.StringPTNetProduct
 
 let prod9 =
   product [ s; r ]
