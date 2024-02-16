@@ -1,3 +1,9 @@
 (library
   (name stringnetlib)
   (libraries modelchecklib petrilib ltllib unfoldlib))
+
+(ocamllex lexer)
+
+(menhir
+ (modules parser)
+ (infer true))
