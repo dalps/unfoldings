@@ -1,5 +1,4 @@
 _build
-*.dot
-*.png
 .ocamlinit
 .ocamlformat
+**.opam

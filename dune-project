@@ -5,11 +5,11 @@
 (generate_opam_files true)
 
 (source
- (github username/reponame))
+ (github dalps/unfoldings))
 
-(authors "Author Name")
+(authors "Federico")
 
-(maintainers "Maintainer Name")
+(maintainers "Federico")
 
 (license LICENSE)
 
@@ -17,10 +17,10 @@
 
 (package
  (name unfoldings)
- (synopsis "A short synopsis")
- (description "A longer description")
+ (synopsis "A framework to reason about Petri nets and their unfolding")
+ (description "A framework to reason about Petri nets and their unfolding")
  (depends ocaml dune)
  (tags
-  (topics "to describe" your project)))
+  (petrinet unfolding modelchecking verification)))
 
-; See the complete stanza docs at https://dune.readthedocs.io/en/stable/dune-files.html#dune-project
+(using menhir 2.1)
