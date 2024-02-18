@@ -1,3 +1,5 @@
-(test
- (name tests_ltl)
- (libraries examples unfoldlib modelchecklib))
+(library
+ (name tests)
+ (inline_tests)
+ (libraries examples unfoldlib modelchecklib)
+ (preprocess (pps ppx_inline_test)))
