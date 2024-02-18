@@ -8,6 +8,8 @@ open StringProductUnfolder
 open Product
 open Utils
 
+type semantics = N of StringPTNet.t | P of StringPTNetProduct.t
+
 let string_of_globaltrans t =
   let n = List.length t in
   spr "%s%s%s"
