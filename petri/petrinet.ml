@@ -38,8 +38,8 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
   type t = {
     mutable places : PlaceSet.t;
     mutable transitions : TransSet.t;
-    mutable preset : T.t -> PlaceSet.t;
-    mutable postset : T.t -> PlaceSet.t;
+    preset : (trans, PlaceSet.t) Hashtbl.t;
+    postset : (trans, PlaceSet.t) Hashtbl.t;
     mutable marking : PlaceSet.t;
   }
 
@@ -48,51 +48,63 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
   let bind_p f t p t' = if t' = t then PlaceSet.add p (f t) else f t'
   let bind_f f f' t = PlaceSet.union (f t) (f' t)
 
-  let ( --> ) pre post t =
-    ( bind_pset bottom t (PlaceSet.of_list pre),
-      bind_pset bottom t (PlaceSet.of_list post) )
+  let ( --> ) pre post t = (PlaceSet.of_list pre, t, PlaceSet.of_list post)
 
-  let empty () =
-    {
-      places = PlaceSet.empty;
-      transitions = TransSet.empty;
-      preset = bottom;
-      postset = bottom;
-      marking = PlaceSet.empty;
-    }
-
-  let of_lists ps ts fs im =
-    {
-      places = PlaceSet.of_list ps;
-      transitions = TransSet.of_list ts;
-      preset = List.fold_right (fun f -> bind_f (fst f)) fs bottom;
-      postset = List.fold_right (fun f -> bind_f (snd f)) fs bottom;
-      marking = PlaceSet.of_list im;
-    }
-
-  let of_sets places transitions preset postset marking =
+  let init ?(places = PlaceSet.empty) ?(transitions = TransSet.empty)
+      ?(preset = Hashtbl.create 99) ?(postset = Hashtbl.create 99)
+      ?(marking = PlaceSet.empty) () =
     { places; transitions; preset; postset; marking }
 
-  let copy n = of_sets n.places n.transitions n.preset n.postset n.marking
+  let of_lists ps ts flow im =
+    let n =
+      init ~places:(PlaceSet.of_list ps) ~transitions:(TransSet.of_list ts)
+        ~marking:(PlaceSet.of_list im) ()
+    in
+    List.iter
+      (fun (pre, t, post) ->
+        Hashtbl.add n.preset t pre;
+        Hashtbl.add n.postset t post)
+      flow;
+    n
+
+  let of_sets places transitions preset postset marking =
+    let n = init ~places ~transitions ~marking () in
+    TransSet.iter (fun t -> Hashtbl.add n.preset t (preset t)) transitions;
+    TransSet.iter (fun t -> Hashtbl.add n.postset t (postset t)) transitions;
+    n
+
+  let copy n =
+    init ~places:n.places ~transitions:n.transitions
+      ~preset:(Hashtbl.copy n.preset) ~postset:(Hashtbl.copy n.postset)
+      ~marking:n.marking ()
+
   let places n = n.places
   let transitions n = n.transitions
-  let preset_t n = n.preset
-  let postset_t n = n.postset
   let marking n = n.marking
+
+  let find_pset h t =
+    Hashtbl.find_opt h t |> Option.value ~default:PlaceSet.empty
+  let preset_t n = find_pset n.preset
+  let postset_t n = find_pset n.postset
+
   let add_place p n = n.places <- PlaceSet.add p n.places
   let add_trans t n = n.transitions <- TransSet.add t n.transitions
   let add_places ps n = n.places <- PlaceSet.union ps n.places
   let add_transs ts n = n.transitions <- TransSet.union ts n.transitions
 
-  let add_to_trans_arc p t n =
+  let add_arc dir p t n =
+    let f, h =
+      match dir with
+      | `ToTrans -> (preset_t, n.preset)
+      | `ToPlace -> (postset_t, n.postset)
+    in
     add_place p n;
     add_trans t n;
-    n.preset <- bind_p n.preset t p
+    f n t |> PlaceSet.add p |> Hashtbl.replace h t
 
-  let add_to_place_arc t p n =
-    add_place p n;
-    add_trans t n;
-    n.postset <- bind_p n.postset t p
+  let add_to_trans_arc = add_arc `ToTrans
+
+  let add_to_place_arc t p = add_arc `ToPlace p t
 
   let add_edges (m, t, m') n =
     PlaceSet.iter (fun p -> add_to_trans_arc p t n) m;
@@ -102,10 +114,10 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
     n.marking <- (if PlaceSet.subset m n.places then m else n.marking)
 
   let preset_p n p =
-    TransSet.filter (fun t -> PlaceSet.mem p (n.postset t)) n.transitions
+    TransSet.filter (fun t -> PlaceSet.mem p ((postset_t n) t)) n.transitions
 
   let postset_p n p =
-    TransSet.filter (fun t -> PlaceSet.mem p (n.preset t)) n.transitions
+    TransSet.filter (fun t -> PlaceSet.mem p ((preset_t n) t)) n.transitions
 
   let nodeset_of_placeset pset =
     PlaceSet.fold (fun p -> NodeSet.add (Node.of_place p)) pset NodeSet.empty
@@ -115,18 +127,20 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
 
   let preset_x n x =
     if Node.is_place x then nodeset_of_transset (preset_p n (Node.place_of x))
-    else nodeset_of_placeset (n.preset (Node.trans_of x))
+    else nodeset_of_placeset ((preset_t n) (Node.trans_of x))
 
   let postset_x n x =
     if Node.is_place x then nodeset_of_transset (postset_p n (Node.place_of x))
-    else nodeset_of_placeset (n.postset (Node.trans_of x))
+    else nodeset_of_placeset ((postset_t n) (Node.trans_of x))
 
-  let enables m t n = PlaceSet.subset (n.preset t) m
+  let enables m t n = PlaceSet.subset ((preset_t n) t) m
 
   let fire t n =
     if enables n.marking t n then
       set_marking
-        (PlaceSet.union (PlaceSet.diff n.marking (n.preset t)) (n.postset t))
+        (PlaceSet.union
+           (PlaceSet.diff n.marking ((preset_t n) t))
+           ((postset_t n) t))
         n
 
   let is_occurrence_sequence ts n =
@@ -135,7 +149,7 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
       | t :: ts' ->
           assert (TransSet.mem t n.transitions);
           let m' =
-            PlaceSet.union (PlaceSet.diff m (n.preset t)) (n.postset t)
+            PlaceSet.union (PlaceSet.diff m ((preset_t n) t)) ((postset_t n) t)
           in
           enables m t n && helper m' ts'
     in
@@ -147,7 +161,7 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
     List.iter (fun t -> fire t n) ts
 
   let preset_tset n tset =
-    TransSet.fold (fun t -> PlaceSet.union (n.preset t)) tset PlaceSet.empty
+    TransSet.fold (fun t -> PlaceSet.union ((preset_t n) t)) tset PlaceSet.empty
 
   let is_freechoice n =
     PlaceSet.for_all
@@ -159,8 +173,8 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
   let is_statemachine n =
     TransSet.for_all
       (fun t ->
-        let postcard = PlaceSet.cardinal (n.postset t) in
-        PlaceSet.cardinal (n.preset t) = postcard && postcard = 1)
+        let postcard = PlaceSet.cardinal ((postset_t n) t) in
+        PlaceSet.cardinal ((preset_t n) t) = postcard && postcard = 1)
       n.transitions
 
   let is_marked_graph n =
@@ -176,8 +190,8 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
     let g = G.create () in
     TransSet.iter
       (fun t ->
-        PlaceSet.iter (fun p -> G.add_edge g (`P p) (`T t)) (n.preset t);
-        PlaceSet.iter (fun p -> G.add_edge g (`T t) (`P p)) (n.postset t))
+        PlaceSet.iter (fun p -> G.add_edge g (`P p) (`T t)) ((preset_t n) t);
+        PlaceSet.iter (fun p -> G.add_edge g (`T t) (`P p)) ((postset_t n) t))
       n.transitions;
     g
 
@@ -248,7 +262,9 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
               TransSet.fold
                 (fun t ->
                   let m2 =
-                    PlaceSet.union (PlaceSet.diff m1 (n.preset t)) (n.postset t)
+                    PlaceSet.union
+                      (PlaceSet.diff m1 ((preset_t n) t))
+                      ((postset_t n) t)
                   in
                   (* if not (MG.mem_edge g m1 m2) then *)
                   MG.add_edge_e g (m1, `E t, m2);

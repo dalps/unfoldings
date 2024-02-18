@@ -32,17 +32,21 @@ module type S = sig
     (trans -> PlaceSet.t) -> (trans -> PlaceSet.t) -> trans -> PlaceSet.t
 
   val ( --> ) :
-    place list ->
-    place list ->
-    trans ->
-    (trans -> PlaceSet.t) * (trans -> PlaceSet.t)
+    place list -> place list -> trans -> PlaceSet.t * trans * PlaceSet.t
 
-  val empty : unit -> t
+  val init :
+    ?places:PlaceSet.t ->
+    ?transitions:TransSet.t ->
+    ?preset:(trans, PlaceSet.t) Hashtbl.t ->
+    ?postset:(trans, PlaceSet.t) Hashtbl.t ->
+    ?marking:PlaceSet.t ->
+    unit ->
+    t
 
   val of_lists :
     place list ->
     trans list ->
-    ((trans -> PlaceSet.t) * (trans -> PlaceSet.t)) list ->
+    (PlaceSet.t * trans * PlaceSet.t) list ->
     place list ->
     t
 

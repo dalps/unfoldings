@@ -66,7 +66,9 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
     type event = { name : int; history : T.t list; label : T.t }
     type t = [ `E of event | `Rev of t ]
 
-    let rec event_of_t = function `E e -> e | `Rev t -> event_of_t t
+    let rec event_of_t = function
+      | `E e -> e
+      | `Rev t -> event_of_t t
     let build name history label = `E { name; history; label }
 
     let name e' =
@@ -94,6 +96,18 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
   end
 
   include Petrinet.Make (Token) (Event)
+
+  let parent_preset_t = preset_t
+  let parent_postset_t = postset_t
+
+  let rec preset_t n = function
+    | `E _ as e -> parent_preset_t n e
+    | `Rev (`Rev e') -> preset_t n e'
+    | `Rev e' -> postset_t n e'
+  and postset_t n = function
+    | `E _ as e -> parent_postset_t n e
+    | `Rev (`Rev e') -> postset_t n e'
+    | `Rev e' -> preset_t n e'
 
   let predecessors x n =
     let rec helper p parents =
@@ -211,19 +225,10 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
       (PlaceSet.union (marking n1) (marking n2))
 
   let reversible n =
-    let rec preset = function
-      | `E _ as e -> preset_t n e
-      | `Rev (`Rev e') -> preset e'
-      | `Rev e' -> postset e'
-    and postset = function
-      | `E _ as e -> postset_t n e
-      | `Rev (`Rev e') -> postset e'
-      | `Rev e' -> preset e'
-    in
     of_sets (places n)
       (TransSet.union (transitions n)
          (TransSet.map (fun e -> `Rev e) (transitions n)))
-      preset postset (marking n)
+      (preset_t n) (postset_t n) (marking n)
 
   let reverse e n = add_edges (postset_t n e, `Rev e, preset_t n e) n
 

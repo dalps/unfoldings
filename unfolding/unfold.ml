@@ -71,7 +71,7 @@ module Make (Net : Petrinet.S) = struct
     n'
 
   let unfold_init (net : Net.t) =
-    let n0 = empty () in
+    let n0 = init () in
     let initial_marking =
       Net.PlaceSet.fold
         (fun s acc -> PlaceSet.add (Token.build [] s) acc)
