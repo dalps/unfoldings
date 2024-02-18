@@ -35,7 +35,7 @@ let plot_test_result (r : StringProductUnfolder.Unfolder.TestResult.t) =
         | `P p ->
             if
               TransSet.exists
-                (fun t -> PlaceSet.mem p (r.prefix.postset t))
+                (fun t -> PlaceSet.mem p ((postset_t r.prefix) t))
                 r.terms
             then [ `ColorWithTransparency 0x44l; `Style `Filled ]
             else []))

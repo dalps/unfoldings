@@ -228,20 +228,20 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
   let reverse e n = add_edges (postset_t n e, `Rev e, preset_t n e) n
 
   let find_event_by_id id n =
-    TransSet.find_first (fun e -> Event.name e >= id) n.transitions
+    TransSet.find_first (fun e -> Event.name e >= id) (transitions n)
 
   let find_event_by_label t n =
-    TransSet.find_first (fun e -> Event.label e >= t) n.transitions
+    TransSet.find_first (fun e -> Event.label e >= t) (transitions n)
 
   let find_token_by_id id n =
-    PlaceSet.find_first (fun p -> Token.name p >= id) n.places
+    PlaceSet.find_first (fun p -> Token.name p >= id) (places n)
 
   let find_tokens_by_id id n =
-    List.filter (fun p -> Token.name p = id) (PlaceSet.elements n.places)
+    List.filter (fun p -> Token.name p = id) (PlaceSet.elements (places n))
 
   let find_token_by_label s n =
-    PlaceSet.find_last (fun p -> Token.label p >= s) n.places
+    PlaceSet.find_last (fun p -> Token.label p >= s) (places n)
 
   let find_tokens_by_label s n =
-    List.filter (fun p -> Token.label p = s) (PlaceSet.elements n.places)
+    List.filter (fun p -> Token.label p = s) (PlaceSet.elements (places n))
 end

@@ -232,7 +232,7 @@ module Make (Net : Petrinet.S) = struct
                 match u with
                 | `U e -> NumberedNba.StateSet.mem e.tgt nba.fin
                 | _ -> false)
-              prd.transitions))
+              (transitions prd)))
         Int.max_int
     in
     if not r.res then Ok true else Error (List.map fst r.history)
@@ -253,7 +253,7 @@ module Make (Net : Petrinet.S) = struct
                 match u with
                 | `U e -> NumberedNba.StateSet.mem e.tgt nba.fin
                 | _ -> false)
-              prd.transitions))
+              (transitions prd)))
         Int.max_int
     in
     if not r.res then Ok true else Error (List.map fst r.history)

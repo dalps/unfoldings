@@ -124,9 +124,9 @@ module Make (Net : Petrinet.S) = struct
                 Net.TransSet.exists
                   (fun t ->
                     Net.PlaceSet.subset (Net.preset_t net t)
-                      (places_of_tokens n.marking))
+                      (places_of_tokens (marking n)))
                   (Net.transitions net)
-              then set_marking (PlaceSet.union n.marking n'.marking) n';
+              then set_marking (PlaceSet.union (marking n) (marking n')) n';
               Some { UnfoldResult.event = e; UnfoldResult.prefix = n' })
             else None)
           (List.filter (fun c -> is_reachable c n) (candidates t n))
@@ -227,7 +227,7 @@ module Make (Net : Petrinet.S) = struct
         | Some r -> helper ext r.prefix (i + 1) net
     in
     let res = helper (Extensions.empty ()) u0 1 net in
-    set_marking u0.marking res;
+    set_marking (marking u0) res;
     res
 
   type strategy = Net.TransSet.elt list -> Net.TransSet.elt list -> int
@@ -266,11 +266,11 @@ module Make (Net : Petrinet.S) = struct
               n step ext net
           with
           | None ->
-              let _ = set_marking n0.marking n in
+              let _ = set_marking (marking n0) n in
               { res = false; prefix = n; history = []; terms }
           | Some r ->
               if SS.is_successful r.event r.prefix stgy goals then
-                let _ = set_marking n0.marking n in
+                let _ = set_marking (marking n0) n in
                 {
                   TestResult.res = true;
                   prefix = r.prefix;

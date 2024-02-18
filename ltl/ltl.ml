@@ -249,7 +249,11 @@ module Make (AP : Set.OrderedType) = struct
             b.states)
         powerapset []
     in
-    FormulaPTNet.of_sets b.states
+    FormulaPTNet.of_sets
+      (Utils.apples_of_pears
+         (module FormulaPTNet.PlaceSet)
+         (module FormulaGNBA.NumberedNba.StateSet)
+         b.states)
       (FormulaPTNet.TransSet.of_list (List.mapi (fun i r -> (i, r.label)) flow))
       (fun (i, apset) ->
         let r = List.nth flow i in
@@ -259,5 +263,8 @@ module Make (AP : Set.OrderedType) = struct
       (fun t ->
         let r = List.nth flow (fst t) in
         FormulaPTNet.PlaceSet.singleton r.target)
-      b.init
+      (Utils.apples_of_pears
+         (module FormulaPTNet.PlaceSet)
+         (module FormulaGNBA.NumberedNba.StateSet)
+         b.init)
 end
