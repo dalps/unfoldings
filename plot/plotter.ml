@@ -20,13 +20,15 @@ module Make (G : Graph.Sig.G) = struct
 
   module DefaultStyle : Style = struct
     let graph_label = ""
-    let graph_attributes _ = [ `Label graph_label ]
-    let vertex_label _ = ""
-    let vertex_name v = string_of_int (G.V.hash v)
+    let graph_attributes _ = []
+
     let default_vertex_attributes _ = []
+    let vertex_name v = string_of_int (G.V.hash v)
+    let vertex_label _ = ""
     let vertex_attributes _ = []
-    let edge_label _ = ""
+
     let default_edge_attributes _ = []
+    let edge_label _ = ""
     let edge_attributes _ = []
     let get_subgraph _ = None
   end
@@ -36,28 +38,32 @@ module Make (G : Graph.Sig.G) = struct
       include S'
       let graph_attributes g = S.graph_attributes g @ S'.graph_attributes g
 
-      let vertex_label v = wrap_name @@ S'.vertex_label v
-      let vertex_name v = wrap_name @@ S'.vertex_name v
-
       let default_vertex_attributes v =
         S.default_vertex_attributes v @ S'.default_vertex_attributes v
+      let vertex_name v = S'.vertex_name v
+      let vertex_label v = S'.vertex_label v
       let vertex_attributes v = S.vertex_attributes v @ S'.vertex_attributes v
-
-      let edge_label e = wrap_name @@ S'.edge_label e
 
       let default_edge_attributes e =
         S.default_edge_attributes e @ S'.default_edge_attributes e
+      let edge_label e = S'.edge_label e
       let edge_attributes e = S.edge_attributes e @ S'.edge_attributes e
     end : Style)
 
-  let print_graph ?(filename = "mygraph") (module S : Style) g =
+  let print_graph (module S : Style) g ~filename =
     let module Plotter = Graph.Graphviz.Neato (struct
       include G
       include S
-      (* APPLY THE LABEL HERE TO THE ATTRIBUTES *)
+      let graph_attributes g = S.graph_attributes g @ [ `Label graph_label ]
+
+      let vertex_name v = wrap_name (vertex_name v)
+      let vertex_attributes v =
+        S.vertex_attributes v @ [ `Label (S.vertex_label v) ]
+
+      let edge_attributes v = S.edge_attributes v @ [ `Label (S.edge_label v) ]
     end) in
-    let file = open_out_bin (Printf.sprintf "%s.dot" filename) in
-    Plotter.output_graph file g;
+    let f = open_out_bin (Printf.sprintf "%s.dot" filename) in
+    Plotter.output_graph f g;
     Sys.command
       (Printf.sprintf "neato -Tpng %s.dot -o %s.png" filename filename)
 end

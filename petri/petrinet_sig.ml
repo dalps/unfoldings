@@ -88,11 +88,7 @@ module type S = sig
   val is_statemachine : t -> bool
   val is_marked_graph : t -> bool
 
-  module E : Graph.Sig.ORDERED_TYPE_DFT with type t = string
-
-  module G :
-      module type of
-        Graph.Imperative.Digraph.ConcreteBidirectionalLabeled (Node) (E)
+  module G : module type of Graph.Imperative.Digraph.ConcreteBidirectional (Node)
 
   val get_graph : t -> G.t
 

@@ -40,7 +40,7 @@ let label_of_token t = Unfolder.OccurrenceNet.Token.label t
 
 let name_of_event e =
   let open Unfolder.OccurrenceNet.Event in
-  spr "%s %s %s <%s>"
+  spr "%s %s %s %s"
     (match e with
     | `E _ -> ""
     | `Rev _ -> "rev")
@@ -50,7 +50,7 @@ let name_of_event e =
 
 let label_of_event e =
   let open Unfolder.OccurrenceNet.Event in
-  spr "%s %s <%s>"
+  spr "%s %s %s"
     (match e with
     | `E _ -> ""
     | `Rev _ -> "rev")

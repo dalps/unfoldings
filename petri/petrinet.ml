@@ -29,13 +29,6 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
     let hash = Hashtbl.hash
   end
 
-  module E = struct
-    type t = string
-
-    let compare = compare
-    let default = ""
-  end
-
   module Place = P
   module Trans = T
   module PlaceSet = Set.Make (P)
@@ -191,7 +184,7 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
         TransSet.cardinal (preset_p n p) = postcard && postcard = 1)
       n.places
 
-  module G = Graph.Imperative.Digraph.ConcreteBidirectionalLabeled (Node) (E)
+  module G = Graph.Imperative.Digraph.ConcreteBidirectional (Node)
 
   let get_graph n =
     let g = G.create () in
@@ -205,19 +198,18 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
   open Plotlib
   module PetriPlotter = Plotter.Make (G)
 
-  let get_style _n =
+  let get_style n =
     (module struct
       include PetriPlotter.DefaultStyle
-      let vertex_attributes v =
-        match v with
-        | `P _p ->
-            [
-              `Shape `Ellipse;
-              (* `Label (if PlaceSet.mem p (marking n) then "\n&#9679;" else ""); *)
-            ]
+      let vertex_label = function
+        | `P p when PlaceSet.mem p (marking n) -> "\n&#9679;"
+        | _ -> ""
+
+      let vertex_attributes = function
+        | `P _ -> [ `Shape `Ellipse ]
         | `T _ -> [ `Shape `Box ]
 
-      let graph_attributes _ = [ `Label graph_label; `Overlap false ]
+      let graph_attributes _ = [ `Overlap false ]
       let edge_attributes _ = [ `Dir `Forward ]
     end : PetriPlotter.Style)
 
@@ -282,14 +274,11 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
              include MGPlotter.DefaultStyle
              let graph_attributes _ = [ `Label graph_label; `Overlap false ]
 
-             let edge_attributes ((_, t, _) as e) =
-               [
-                 `Label
-                   (match t with
-                   | `E _ -> edge_label e
-                   | `Def -> "");
-                 `Dir `Forward;
-               ]
+             let edge_label ((_, t, _) as e) =
+               match t with
+               | `E _ -> edge_label e
+               | `Def -> ""
+             let edge_attributes _ = [ `Dir `Forward ]
 
              let vertex_attributes v =
                [ `Shape `Plaintext; `Label (vertex_label v) ]
