@@ -1,6 +1,6 @@
 (library
   (name stringnetlib)
-  (libraries modelchecklib petrilib ltllib unfoldlib))
+  (libraries modelchecklib petrilib ltllib unfoldlib plotlib))
 
 (ocamllex lexer)
 

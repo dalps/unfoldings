@@ -10,6 +10,7 @@ let parse input =
       | _ -> "weird error"
     in
     failwith
-      (Printf.sprintf "line %d, column %d: %s%!" (pos.pos_lnum - 1)
+      (Printf.sprintf "In %s, line %d, column %d: %s%!" pos.pos_fname
+         (pos.pos_lnum - 1)
          (pos.pos_cnum - pos.pos_bol)
          errstr)

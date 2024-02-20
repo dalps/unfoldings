@@ -5,27 +5,34 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
   type trans = T.t
 
   module Node = struct
-    type t = [`P of place | `T of trans]
+    type t = [ `P of place | `T of trans ]
 
     exception NotAPlace
     exception NotATransition
 
     let of_place p = `P p
     let of_trans e = `T e
-    let is_place = function `P _ -> true | `T _ -> false
-    let is_trans = function `P _ -> false | `T _ -> true
-    let place_of = function `P p -> p | _ -> raise NotAPlace
-    let trans_of = function `T e -> e | _ -> raise NotATransition
+    let is_place = function
+      | `P _ -> true
+      | `T _ -> false
+    let is_trans = function
+      | `P _ -> false
+      | `T _ -> true
+    let place_of = function
+      | `P p -> p
+      | _ -> raise NotAPlace
+    let trans_of = function
+      | `T e -> e
+      | _ -> raise NotATransition
     let compare = compare
     let equal = ( = )
     let hash = Hashtbl.hash
   end
 
-  module Edge = struct
+  module E = struct
     type t = string
 
     let compare = compare
-    let _equal = ( = )
     let default = ""
   end
 
@@ -184,7 +191,7 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
         TransSet.cardinal (preset_p n p) = postcard && postcard = 1)
       n.places
 
-  module G = Graph.Imperative.Digraph.ConcreteBidirectionalLabeled (Node) (Edge)
+  module G = Graph.Imperative.Digraph.ConcreteBidirectionalLabeled (Node) (E)
 
   let get_graph n =
     let g = G.create () in
@@ -195,36 +202,24 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
       n.transitions;
     g
 
-  let print_graph n ?(vertex_name = fun v -> string_of_int (G.V.hash v))
-      ?(vertex_label = fun _ -> "") ?(vertex_attrs = fun _ -> [])
-      ?(edge_attrs = fun _ -> []) ?(graph_label = "") ?(file_name = "net") () =
-    let module Plotter = Graph.Graphviz.Neato (struct
-      include G
+  open Plotlib
+  module PetriPlotter = Plotter.Make (G)
+
+  let get_style _n =
+    (module struct
+      include PetriPlotter.DefaultStyle
+      let vertex_attributes v =
+        match v with
+        | `P _p ->
+            [
+              `Shape `Ellipse;
+              (* `Label (if PlaceSet.mem p (marking n) then "\n&#9679;" else ""); *)
+            ]
+        | `T _ -> [ `Shape `Box ]
 
       let graph_attributes _ = [ `Label graph_label; `Overlap false ]
-      let edge_attributes (_, e, _) = [ `Dir `Forward ] @ edge_attrs e
-      let default_edge_attributes _ = []
-      let get_subgraph _ = None
-
-      let vertex_attributes v =
-        (match v with
-        | `P p ->
-            [ `Shape `Ellipse; ]
-            @ [
-                `Label
-                  (vertex_label v
-                  ^ if PlaceSet.mem p n.marking then "\n&#9679;" else "");
-              ]
-        | `T _ -> [ `Shape `Box ])
-        @ vertex_attrs v
-
-      let vertex_name v = "\"" ^ vertex_name v ^ "\""
-      let default_vertex_attributes _ = []
-    end) in
-    let g = get_graph n in
-    let file = open_out_bin (file_name ^ ".dot") in
-    Plotter.output_graph file g;
-    Sys.command ("neato -Tpng " ^ file_name ^ ".dot -o " ^ file_name ^ ".png")
+      let edge_attributes _ = [ `Dir `Forward ]
+    end : PetriPlotter.Style)
 
   module MV = struct
     type t = PlaceSet.t
@@ -238,7 +233,6 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
     type t = [ `E of Trans.t | `Def ]
 
     let compare = compare
-    let _equal = ( = )
     let default = `Def
   end
 
@@ -254,7 +248,6 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
       if i > max_steps then print_endline "Exceeded step limit!"
       else
         let feasibles = LabelMap.filter (fun _ label -> label = `New) l in
-        print_string (string_of_int (LabelMap.cardinal feasibles));
         let opt = LabelMap.choose_opt feasibles in
         match opt with
         | Some (m1, `New) ->
@@ -280,34 +273,25 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
     helper 0 l0;
     g
 
-  let print_marking_graph n
-      ?(vertex_name = fun v -> string_of_int (MG.V.hash v))
-      ?(vertex_label = fun _ -> "") ?(vertex_attrs = fun _ -> [])
-      ?(edge_label = fun _ -> "") ?(edge_attrs = fun _ -> [])
-      ?(graph_label = "") ?(file_name = "marking") () =
-    let module Plotter = Graph.Graphviz.Neato (struct
-      include MG
+  module MGPlotter = Plotter.Make (MG)
 
-      let graph_attributes _ = [ `Label graph_label; `Overlap false ]
+  module MGStyle =
+    (val MGPlotter.extend_style
+           (module MGPlotter.DefaultStyle)
+           (module struct
+             include MGPlotter.DefaultStyle
+             let graph_attributes _ = [ `Label graph_label; `Overlap false ]
 
-      let edge_attributes (_, e, _) =
-        [
-          `Label (match e with `E t -> edge_label t | `Def -> "");
-          `Dir `Forward;
-        ]
-        @ edge_attrs e
+             let edge_attributes ((_, t, _) as e) =
+               [
+                 `Label
+                   (match t with
+                   | `E _ -> edge_label e
+                   | `Def -> "");
+                 `Dir `Forward;
+               ]
 
-      let default_edge_attributes _ = []
-      let get_subgraph _ = None
-
-      let vertex_attributes v =
-        [ `Shape `Plaintext; `Label (vertex_label v) ] @ vertex_attrs v
-
-      let vertex_name v = "\"" ^ vertex_name v ^ "\""
-      let default_vertex_attributes _ = []
-    end) in
-    let g = get_marking_graph n () in
-    let file = open_out_bin (file_name ^ ".dot") in
-    Plotter.output_graph file g;
-    Sys.command ("neato -Tpng " ^ file_name ^ ".dot -o " ^ file_name ^ ".png")
+             let vertex_attributes v =
+               [ `Shape `Plaintext; `Label (vertex_label v) ]
+           end))
 end

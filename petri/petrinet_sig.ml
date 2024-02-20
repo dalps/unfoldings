@@ -13,6 +13,8 @@ module type S = sig
     val place_of : t -> place
     val trans_of : t -> trans
     val compare : t -> t -> int
+    val equal : t -> t -> bool
+    val hash : t -> int
   end
 
   module Place : Set.OrderedType with type t = place
@@ -86,6 +88,14 @@ module type S = sig
   val is_statemachine : t -> bool
   val is_marked_graph : t -> bool
 
+  module E : Graph.Sig.ORDERED_TYPE_DFT with type t = string
+
+  module G :
+      module type of
+        Graph.Imperative.Digraph.ConcreteBidirectionalLabeled (Node) (E)
+
+  val get_graph : t -> G.t
+
   module MV : Graph.Sig.COMPARABLE with type t = PlaceSet.t
   module ME : Graph.Sig.ORDERED_TYPE_DFT with type t = [ `E of Trans.t | `Def ]
 
@@ -94,28 +104,16 @@ module type S = sig
         Graph.Imperative.Digraph.ConcreteBidirectionalLabeled (MV) (ME)
 
   val get_marking_graph : t -> ?max_steps:int -> unit -> MG.t
-  val print_marking_graph :
-    t ->
-    ?vertex_name:(MG.vertex -> string) ->
-    ?vertex_label:(MG.vertex -> string) ->
-    ?vertex_attrs:(MG.vertex -> Graph.Graphviz.NeatoAttributes.vertex list) ->
-    ?edge_label:(trans -> string) ->
-    ?edge_attrs:(ME.t -> Graph.Graphviz.NeatoAttributes.edge list) ->
-    ?graph_label:string ->
-    ?file_name:string ->
-    unit ->
-    int
 
-  val print_graph :
-    t ->
-    ?vertex_name:(Node.t -> string) ->
-    ?vertex_label:(Node.t -> string) ->
-    ?vertex_attrs:(Node.t -> Graph.Graphviz.NeatoAttributes.vertex list) ->
-    ?edge_attrs:(string -> Graph.Graphviz.NeatoAttributes.edge list) ->
-    ?graph_label:string ->
-    ?file_name:string ->
-    unit ->
-    int
+  module PetriPlotter : module type of struct
+    include Plotlib.Plotter.Make (G)
+  end
+  val get_style : t -> (module PetriPlotter.Style)
+
+  module MGPlotter : module type of struct
+    include Plotlib.Plotter.Make (MG)
+  end
+  module MGStyle : MGPlotter.Style
 end
 
 module type Make = functor (P : Set.OrderedType) (T : Set.OrderedType) ->

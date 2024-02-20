@@ -40,20 +40,22 @@ let label_of_token t = Unfolder.OccurrenceNet.Token.label t
 
 let name_of_event e =
   let open Unfolder.OccurrenceNet.Event in
-  spr "%s %s %s"
+  spr "%s %s %s <%s>"
     (match e with
     | `E _ -> ""
     | `Rev _ -> "rev")
     (string_of_int (name e))
     (string_of_globaltrans (label e))
+    (string_of_history (history e))
 
 let label_of_event e =
   let open Unfolder.OccurrenceNet.Event in
-  spr "%s %s"
+  spr "%s %s <%s>"
     (match e with
     | `E _ -> ""
     | `Rev _ -> "rev")
     (string_of_globaltrans (label e))
+    (string_of_history (history e))
 
 let label_of_unfold_node = function
   | `P p -> label_of_token p
