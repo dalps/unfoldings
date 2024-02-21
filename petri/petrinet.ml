@@ -195,23 +195,26 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
       n.transitions;
     g
 
-  open Plotlib
-  module PetriPlotter = Plotter.Make (G)
+  module Plotter = Plotlib.Plotter.Make (G)
 
-  let get_style n =
-    (module struct
-      include PetriPlotter.DefaultStyle
-      let vertex_label = function
-        | `P p when PlaceSet.mem p (marking n) -> "\n&#9679;"
-        | _ -> ""
+  let get_style n (module CustomStyle : Plotter.Style) =
+    Plotter.extend_style
+      (module CustomStyle)
+      (module struct
+        include Plotter.DefaultStyle
+        let vertex_label v =
+          Printf.sprintf "%s%s"
+            (CustomStyle.vertex_label v)
+            (match v with
+            | `P p when PlaceSet.mem p (marking n) -> "\n&#9679;"
+            | _ -> "")
+        let vertex_attributes = function
+          | `P _ -> [ `Shape `Ellipse ]
+          | `T _ -> [ `Shape `Box ]
 
-      let vertex_attributes = function
-        | `P _ -> [ `Shape `Ellipse ]
-        | `T _ -> [ `Shape `Box ]
-
-      let graph_attributes _ = [ `Overlap false ]
-      let edge_attributes _ = [ `Dir `Forward ]
-    end : PetriPlotter.Style)
+        let graph_attributes _ = [ `Overlap false ]
+        let edge_attributes _ = [ `Dir `Forward ]
+      end)
 
   module MV = struct
     type t = PlaceSet.t
@@ -265,22 +268,17 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
     helper 0 l0;
     g
 
-  module MGPlotter = Plotter.Make (MG)
+  module MGPlotter = Plotlib.Plotter.Make (MG)
 
-  module MGStyle =
-    (val MGPlotter.extend_style
-           (module MGPlotter.DefaultStyle)
-           (module struct
-             include MGPlotter.DefaultStyle
-             let graph_attributes _ = [ `Label graph_label; `Overlap false ]
+  let get_mgstyle (module CustomStyle : MGPlotter.Style) =
+    MGPlotter.extend_style
+      (module struct
+        include MGPlotter.DefaultStyle
+        let graph_attributes _ = [ `Label graph_label; `Overlap false ]
 
-             let edge_label ((_, t, _) as e) =
-               match t with
-               | `E _ -> edge_label e
-               | `Def -> ""
-             let edge_attributes _ = [ `Dir `Forward ]
+        let edge_attributes _ = [ `Dir `Forward ]
 
-             let vertex_attributes v =
-               [ `Shape `Plaintext; `Label (vertex_label v) ]
-           end))
+        let vertex_attributes _ = [ `Shape `Ellipse ]
+      end)
+      (module CustomStyle)
 end

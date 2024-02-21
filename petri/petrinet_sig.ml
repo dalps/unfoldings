@@ -101,15 +101,15 @@ module type S = sig
 
   val get_marking_graph : t -> ?max_steps:int -> unit -> MG.t
 
-  module PetriPlotter : module type of struct
+  module Plotter : module type of struct
     include Plotlib.Plotter.Make (G)
   end
-  val get_style : t -> (module PetriPlotter.Style)
+  val get_style : t -> (module Plotter.Style) -> (module Plotter.Style)
 
   module MGPlotter : module type of struct
     include Plotlib.Plotter.Make (MG)
   end
-  module MGStyle : MGPlotter.Style
+  val get_mgstyle : (module MGPlotter.Style) -> (module MGPlotter.Style)
 end
 
 module type Make = functor (P : Set.OrderedType) (T : Set.OrderedType) ->
