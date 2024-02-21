@@ -40,13 +40,10 @@ module Make (G : Graph.Sig.G) = struct
 
       let default_vertex_attributes v =
         S.default_vertex_attributes v @ S'.default_vertex_attributes v
-      let vertex_name v = S'.vertex_name v
-      let vertex_label v = S'.vertex_label v
       let vertex_attributes v = S.vertex_attributes v @ S'.vertex_attributes v
 
       let default_edge_attributes e =
         S.default_edge_attributes e @ S'.default_edge_attributes e
-      let edge_label e = S'.edge_label e
       let edge_attributes e = S.edge_attributes e @ S'.edge_attributes e
     end : Style)
 

@@ -11,11 +11,11 @@ module Make (State : Set.OrderedType) (Alpha : Set.OrderedType) = struct
   end
 
   module Edge = struct
-    type t = AP of Alpha.t | Def
+    type t = [ `AP of Alpha.t | `Def ]
 
     let compare = compare
     let equal = ( = )
-    let default = Def
+    let default = `Def
   end
 
   module G = Graph.Imperative.Digraph.ConcreteBidirectionalLabeled (Node) (Edge)
@@ -70,7 +70,9 @@ module Make (State : Set.OrderedType) (Alpha : Set.OrderedType) = struct
       (fun s ->
         AlphaSet.iter
           (fun a ->
-            StateSet.iter (fun r -> G.add_edge_e g (s, AP a, r)) (gnba.func s a))
+            StateSet.iter
+              (fun r -> G.add_edge_e g (s, `AP a, r))
+              (gnba.func s a))
           gnba.alpha)
       gnba.states;
     g
@@ -79,31 +81,25 @@ module Make (State : Set.OrderedType) (Alpha : Set.OrderedType) = struct
     let g = get_graph nba in
     List.mapi (fun i (_, a, _) -> (a, i)) (G.fold_edges_e List.cons g [])
 
-  let print_graph n ?(vertex_name = fun v -> string_of_int (G.V.hash v))
-      ?(edge_label = fun _ -> "") ?(file_name = "nba") () =
-    let module Plotter = Graph.Graphviz.Neato (struct
-      include G
+  open Plotlib
+  module Plotter = Plotter.Make (G)
 
-      let graph_attributes _ = [ `Overlap false ]
+  let get_style n (module CustomStyle : Plotter.Style) =
+    Plotter.extend_style
+      (module CustomStyle)
+      (module struct
+        include Plotter.DefaultStyle
+        
+        let graph_attributes _ = [ `Overlap false ]
 
-      let edge_attributes (_, e, _) =
-        [
-          `Label (match e with Edge.AP ap -> edge_label ap | Def -> "");
-          `Dir `Forward;
-        ]
+        let edge_label ((_, x, _) as e) =
+          match x with
+          | `AP _ -> edge_label e
+          | `Def -> ""
+        let edge_attributes _ = [ `Dir `Forward ]
 
-      let default_edge_attributes _ = []
-      let get_subgraph _ = None
-
-      let vertex_attributes v =
-        if StateSet.mem v n.fin then [ `Shape `Doublecircle ]
-        else [ `Shape `Circle ]
-
-      let vertex_name v = "\"" ^ vertex_name v ^ "\""
-      let default_vertex_attributes _ = []
-    end) in
-    let g = get_graph n in
-    let file = open_out_bin (file_name ^ ".dot") in
-    Plotter.output_graph file g;
-    Sys.command ("neato -Tpng " ^ file_name ^ ".dot -o " ^ file_name ^ ".png")
+        let vertex_attributes v =
+          if StateSet.mem v n.fin then [ `Shape `Doublecircle ]
+          else [ `Shape `Circle ]
+      end)
 end
