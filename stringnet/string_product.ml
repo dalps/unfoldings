@@ -24,7 +24,7 @@ let string_of_globaltrans t =
     (if n > 1 then ")" else "")
 
 let string_of_history w =
-  spr "[%s]" (String.concat "," (List.map string_of_globaltrans w))
+  spr "[%s]" (String.concat ";" (List.map string_of_globaltrans w))
 
 let string_of_node = function
   | `P p -> p
@@ -50,10 +50,11 @@ let name_of_event e =
 
 let label_of_event e =
   let open Unfolder.OccurrenceNet.Event in
-  spr "%s %s %s"
+  spr "%sn°%d transition: %s\n history: %s"
     (match e with
     | `E _ -> ""
-    | `Rev _ -> "rev")
+    | `Rev _ -> "rev ")
+    (name e)
     (string_of_globaltrans (label e))
     (string_of_history (history e))
 

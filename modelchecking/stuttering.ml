@@ -91,9 +91,6 @@ module Make (Net : Petrinet.S) = struct
     let apset = ap_of_formula f in
     let states = elementary_sets f in
     let is_f = f_state_set (Net.marking net) f in
-    print_endline "";
-    print_int (APSet.cardinal is_f);
-    print_endline "";
     NetGNBA.of_sets states
       (apset_of_transset (Net.transitions net))
       (fun b a ->

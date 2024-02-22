@@ -62,10 +62,12 @@ let plot_unfold u =
     (get_style u
        (module struct
          include Plotter.DefaultStyle
-         let vertex_label = name_of_unfold_node
+         let vertex_label = label_of_unfold_node
          let vertex_name = name_of_unfold_node
          let vertex_attributes = function
            | `T (`Rev _) ->
+               [ `ColorWithTransparency rev_color; `Style `Filled ]
+           | `T _ ->
                [ `ColorWithTransparency final_state_color; `Style `Filled ]
            | _ -> []
        end))
