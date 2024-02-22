@@ -7,7 +7,12 @@ open StringProductUnfolder
 open Product
 open Utils
 
-type semantics = N of StringPTNet.t | P of StringPTNetProduct.t
+module Parser = Parse.Make (struct
+  module N = StringPTNet
+  module P = StringPTNetProduct
+  let inject_place x = x
+  let inject_trans x = x
+end)
 
 let string_of_globaltrans t =
   let n = List.length t in
