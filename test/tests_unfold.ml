@@ -1,5 +1,3 @@
-let _ = print_endline "#### Running unfold tests..."
-
 open Unfoldlib
 open Petrilib
 open Stringnetlib
@@ -32,7 +30,7 @@ let%test "" = (
 
 
 let%test "" = (is_occurrence_sequence [ [ `T "t2" ]; [ `T "t2" ] ] prod1 = false)
-let _ = print_endline "[OK] prod1"
+(* --- end prod1 --- *)
 
 (* --- *)
 
@@ -88,7 +86,7 @@ let%test "" = (is_concurrent (of_trans t2) (of_trans u1) onet')
 let%test "" = (is_concurrent (of_trans t3) (of_trans e2) onet' = false)
 let%test "" = (is_concurrent (of_trans t2) (of_trans e2) onet' = false)
 let%test "" = (is_concurrent (of_trans t3) (of_trans t1) onet' = false)
-let _ = print_endline "[OK] onet"
+(* --- end onet --- *)
 
 (* --- *)
 
@@ -138,7 +136,7 @@ let%test "" = (tword_equiv [ a; b; c ] [ a; c; b ])
 let%test "" = (tword_equiv [ b; a; c ] [ a; c; b ])
 let%test "" = (tword_equiv [ a; b; c ] [ a; c1; b ] = false)
 let%test "" = (tword_equiv [ a; b; c ] [ c; b; a ] = false)
-let _ = print_endline "[OK] prod2"
+(* --- end prod2 --- *)
 
 (* --- *)
 
@@ -210,7 +208,7 @@ let%test "" = (d_compare sl_compare e2 e6 < 0)
 let%test "" = (d_compare sl_compare e1 e7 < 0)
 let%test "" = (d_compare sl_compare e2 e7 < 0)
 let%test "" = (d_compare sl_compare h1 h2 = 0)
-let _ = print_endline "[OK] misc"
+(* --- end misc --- *)
 
 (* --- *)
 
@@ -236,16 +234,16 @@ open Exe
 let fc1 = Unfolder.(unfold 10 prod1)
 
 let%test "" = (Unfolder.OccurrenceNet.is_freechoice fc1 = false)
-let _ = print_endline "[OK] is_freechoice"
+(* --- end is_freechoice --- *)
 let%test "" = (let r = Exe.test prod1 (d_compare sl_compare) [ [ `T "t1" ] ] 99 in r.res)
 let%test "" = (let r = Exe.test prod1 (d_compare sl_compare) [ [ `T "t2" ] ] 99 in r.res)
 let%test "" = (let r = Exe.test prod1 (d_compare sl_compare) [ [ `T "t3" ] ] 99 in r.res)
-let _ = print_endline "[OK] is_executable prod1"
+(* --- end is_executable prod1 --- *)
 let%test "" = (let r = Exe.test prod2 (d_compare sl_compare) [ u3 ] 99 in r.res)
 let%test "" = (let r = Exe.test prod2 (d_compare sl_compare) [ t4u2 ] 99 in r.res)
 let%test "" = (let r = Exe.test prod2 (d_compare sl_compare) [ t5 ] 99 in r.res)
 let%test "" = (let r = Exe.test prod2 (d_compare sl_compare) [ t3u2 ] 99 in r.res)
-let _ = print_endline "[OK] is_executable prod2"
+(* --- end is_executable prod2 --- *)
 
 let a0a1 = [ `T "a0"; `T "a1"; `Idle; `Idle; `Idle ]
 let b1 = [ `Idle; `T "b1"; `Idle; `Idle; `Idle ]
@@ -261,12 +259,12 @@ let%test "" = (let r = Exe.test prod3 (d_compare sl_compare) [ b4 ] 99 in r.res)
 let%test "" = (let r = Exe.test prod3 (d_compare sl_compare) [ a0a1 ] 99 in r.res)
 let%test "" = (let r = Exe.test prod3 (d_compare sl_compare) [ c ] 99 in r.res = false)
 let%test "" = (let r = Exe.test prod3 (d_compare sl_compare) [ c; a0a1 ] 99 in r.res)
-let _ = print_endline "[OK] is_executable prod3"
+(* --- end is_executable prod3 --- *)
 let%test "" = (let r = Exe.test prod4 (d_compare sl_compare) [ [ `Idle; `T "u1"; `T "v1" ] ] 99 in r.res)
 let%test "" = (let r = Exe.test prod4 (d_compare sl_compare) [ [ `Idle; `T "u1"; `Idle ] ] 99 in r.res = false)
 
 let%test "" = (let r = Exe.test prod4 (d_compare sl_compare) [ [ `T "t1"; `T "u1"; `Idle ] ] 99 in r.res)
-let _ = print_endline "[OK] is_executable prod4"
+(* --- end is_executable prod4 --- *)
 let%test "" = (let r = Exe.test prod5 (d_compare sl_compare) [ [ `Idle; `Idle; `T "f3"; `T "f4" ] ] 99 in r.res)
 
 
@@ -280,7 +278,7 @@ let%test "" = (
 
 
 let%test "" = (let r = Exe.test prod5 sl_compare [ [ `T "i1"; `T "i2"; `T "i3"; `T "i4" ] ] 99 in r.res)
-let _ = print_endline "[OK] is_executable prod5"
+(* --- end is_executable prod5 --- *)
 
 let%test "" = (let r = Exe.test Prod8.prod8 (d_compare sl_compare) [ [`T "A"] ] 99 in r.res) 
 let%test "" = (let r = Exe.test Prod8.prod8 (d_compare sl_compare) [ [`T "B"] ] 99 in r.res) 
@@ -288,7 +286,7 @@ let%test "" = (let r = Exe.test Prod8.prod8 (d_compare sl_compare) [ [`T "C"] ] 
 let%test "" = (let r = Exe.test Prod8.prod8 (d_compare sl_compare) [ [`T "D"] ] 99 in r.res) 
 let%test "" = (let r = Exe.test Prod8.prod8 (d_compare sl_compare) [ [`T "E"] ] 99 in r.res) 
 let%test "" = (let r = Exe.test Prod8.prod8 (d_compare sl_compare) [ [`T "G"] ] 99 in r.res) 
-let _ = print_endline "[OK] is_executable prod8"
+(* --- end is_executable prod8 --- *)
 
 (* --- *)
 
@@ -318,29 +316,29 @@ let _ = StringPTNetProduct.add_to_place_arc [ `T "F" ] "n" Prod8.prod8
 let%test "" = (let r = Exe.test Prod8.prod8 (d_compare sl_compare) [ [ `T "F" ] ] 99 in r.res) 
 let%test "" = (let r = Rep.test Prod8.prod8 (d_compare sl_compare) [ [ `T "F" ] ] 99 in r.res) 
 
-let _ = print_endline "[OK] is_infinitely_executable prod8"
+(* --- end is_infinitely_executable prod8 --- *)
 
 let%test "" = (let r = Exe.test Prod7.prod7 (d_compare sl_compare) [ [ `T "c"; `Idle ] ] 99 in r.res) 
 let%test "" = (let r = Rep.test Prod7.prod7 (d_compare sl_compare) [ [ `T "c"; `Idle ] ] 99 in r.res = false) 
 let%test "" = (let r = Rep.test Prod7.prod7 (d_compare sl_compare) [ [ `Idle; `T "a"  ] ] 99 in r.res) 
 let%test "" = (let r = Rep.test Prod7.prod7 (d_compare sl_compare) [ [ `Idle; `T "b"  ] ] 99 in r.res) 
 
-let _ = print_endline "[OK] is_infinitely_executable prod7"
+(* --- end is_infinitely_executable prod7 --- *)
 
 let%test "" = (let r = Rep.test prod6 (d_compare sl_compare) [ [ `T "r" ] ] 99 in r.res)
 let%test "" = (let r = Rep.test prod6 (d_compare sl_compare) [ [ `T "c" ] ] 99 in r.res)
 let%test "" = (let r = Rep.test prod6 (d_compare sl_compare) [ [ `T "a" ] ] 99 in r.res = false)
 let%test "" = (let r = Rep.test prod6 (d_compare sl_compare) [ [ `T "b" ] ] 99 in r.res = false)
-let _ = print_endline "[OK] is_infinitely_executable prod6"
+(* --- end is_infinitely_executable prod6 --- *)
 let%test "" = (let r = Rep.test prod1 (d_compare sl_compare) [ [ `T "t1" ] ] 99 in r.res)
 let%test "" = (let r = Rep.test prod1 (d_compare sl_compare) [ [ `T "t2" ] ] 99 in r.res)
 let%test "" = (let r = Rep.test prod1 (d_compare sl_compare) [ [ `T "t3" ] ] 99 in r.res)
-let _ = print_endline "[OK] is_infinitely_executable prod1"
+(* --- end is_infinitely_executable prod1 --- *)
 let%test "" = (let r = Rep.test prod2 (d_compare sl_compare) [ u3 ] 99 in r.res)
 let%test "" = (let r = Rep.test prod2 (d_compare sl_compare) [ t4u2 ] 99 in r.res)
 let%test "" = (let r = Rep.test prod2 (d_compare sl_compare) [ t5 ] 99 in r.res)
 let%test "" = (let r = Rep.test prod2 (d_compare sl_compare) [ t3u2 ] 99 in r.res)
-let _ = print_endline "[OK] is_infinitely_executable prod2"
+(* --- end is_infinitely_executable prod2 --- *)
 
 let a0a1 = [ `T "a0"; `T "a1"; `Idle; `Idle; `Idle ]
 let b1 = [ `Idle; `T "b1"; `Idle; `Idle; `Idle ]
@@ -356,7 +354,7 @@ let%test "" = (let r = Rep.test prod3 (d_compare sl_compare) [ b4 ] 99 in r.res 
 let%test "" = (let r = Rep.test prod3 (d_compare sl_compare) [ a0a1 ] 99 in r.res = false)
 let%test "" = (let r = Rep.test prod3 (d_compare sl_compare) [ c ] 99 in r.res = false)
 let%test "" = (let r = Rep.test prod3 (d_compare sl_compare) [ c; a0a1 ] 99 in r.res = false)
-let _ = print_endline "[OK] is_infinitely_executable prod3"
+(* --- end is_infinitely_executable prod3 --- *)
 
 let%test "" = (
   let r = Rep.test prod4 (d_compare sl_compare) [ [ `Idle; `T "u1"; `T "v1" ] ] 99 in r.res = false)
@@ -369,7 +367,7 @@ let%test "" = (
   let r = Rep.test prod4 (d_compare sl_compare) [ [ `T "t1"; `T "u1"; `Idle ] ] 99 in r.res = false)
 
 
-let _ = print_endline "[OK] is_infinitely_executable prod4"
+(* --- end is_infinitely_executable prod4 --- *)
 
 let%test "" = (
   let r = Rep.test prod5 (d_compare sl_compare) [ [ `Idle; `Idle; `T "f3"; `T "f4" ] ] 99 in r.res
@@ -388,7 +386,7 @@ let%test "" = (
 
 let%test "" = (let r = Rep.test prod5 sl_compare [ [ `T "i1"; `T "i2"; `T "i3"; `T "i4" ] ] 99 in r.res = false)
 
-let _ = print_endline "[OK] is_infinitely_executable prod5"
+(* --- end is_infinitely_executable prod5 --- *)
 
 let%test "" = (
   let r = Rep.test prod5' (d_compare sl_compare) [ [ `Idle; `Idle; `T "f3"; `T "f4" ] ] 99 in r.res
@@ -405,7 +403,7 @@ let%test "" = (
 
 
 let%test "" = (let r = Rep.test prod5' sl_compare [ [ `T "i1"; `T "i2"; `T "i3"; `T "i4" ] ] 99 in r.res)
-let _ = print_endline "[OK] is_infinitely_executable prod5_loops"
+(* --- end is_infinitely_executable prod5_loops --- *)
 
 open Examples.Onet
 open StringOccurrenceNet
@@ -457,4 +455,4 @@ let _ = fire (`Rev e1) rev_onet
 let%test "" = (PlaceSet.equal (marking rev_onet) m0)
 let _ = fire_sequence [ e1; t1; u1; e2; `Rev e2; `Rev t1; `Rev u1; `Rev e1 ] rev_onet
 let%test "" = (PlaceSet.equal (marking rev_onet) m0)
-let _ = print_endline "[OK] reversible"
+(* --- end reversible --- *)

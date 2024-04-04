@@ -1,5 +1,3 @@
-let _ = print_endline "#### Running ltl tests..."
-
 open Ltllib
 open Modelchecklib
 open Stringnetlib
@@ -13,7 +11,7 @@ let%test "" = (length (And (X (AP "a"), AP "b")) = 2)
 let%test "" = (length (U (X (AP "a"), AP "b")) = 2)
 let%test "" = (length (U (X (AP "a"), And (AP "a", AP "b"))) = 3)
 let%test "" = (length (U (X (AP "a"), And (AP "a", Not (AP "b")))) = 4)
-let _ = print_endline "[OK] length"
+(* --- end length --- *)
 
 let ab = APSet.of_list [ "a"; "b" ]
 let a = APSet.of_list [ "a" ]
@@ -38,7 +36,7 @@ let%test "" = (eval [ a; a; a; ab; a ] (U (True, And (AP "b", AP "a"))))
 let%test "" = (eval [ a; a; a; ab ] (U (True, And (AP "b", X (AP "a")))) = false)
 let%test "" = (eval [ a; a; a; ab; a ] (U (True, And (AP "b", X (AP "a")))))
 let%test "" = (eval [ ab; a; b ] (U (AP "a", X (AP "a"))))
-let _ = print_endline "[OK] eval"
+(* --- eval --- *)
 
 let f = Or (AP "a", Not (AP "b"))
 
@@ -57,7 +55,7 @@ let%test "" = (
 
 let f = U (AP "a", And (Not (AP "a"), AP "b"))
 
-let _ = print_endline "[OK] labels_of_formula"
+(* --- end labels_of_formula --- *)
 let%test "" = (FormulaSet.cardinal (closure f) = 8)
 
 let%test "" = (
@@ -97,7 +95,7 @@ let%test "" = (
        ]))
 
 
-let _ = print_endline "[OK] closure"
+(* --- closure --- *)
 
 let f = U (AP "a", And (Not (AP "a"), AP "b"))
 let cl = closure f
@@ -136,9 +134,7 @@ let%test "" = (
   PowerFormulaSet.equal bs (PowerFormulaSet.of_list [ b1; b2; b3; b4; b5; b6 ]))
 
 
-let _ = print_endline "[OK] elementary_sets"
-
-(* --- *)
+(* --- end elementary_sets --- *)
 
 open Examples.Live_gnba
 open Examples.Live_gnba.CritGNBA
@@ -195,7 +191,7 @@ let%test "" = (
     (NumberedNba.StateSet.of_list [ ("q0", 2) ]))
 
 
-let _ = print_endline "[OK] to_nba"
+(* --- end to_nba --- *)
 
 let f = X (AP "a")
 let ap = APSet.of_list [ "a"; "b" ]
@@ -269,7 +265,7 @@ let%test "" = (PowerFormulaSet.equal (g.func b4 empty) g.states)
 let%test "" = (PowerFormulaSet.equal (g.func b4 ab) PowerFormulaSet.empty)
 let%test "" = (PowerFormulaSet.equal (g.func b5 a) (PowerFormulaSet.of_list [ b4; b5 ]))
 
-let _ = print_endline "[OK] gnba_of_formula"
+(* --- end gnba_of_formula --- *)
 
 let f = U (AP "a", Not (X (AP "b")))
 let ap = APSet.of_list [ "a"; "b" ]
@@ -294,7 +290,7 @@ let%test "" = (
       (List.nth (FormulaGNBA.PowerStateSet.elements g.fin) 0))
 
 
-let _ = print_endline "[OK] nba_of_formula"
+(* --- end nba_of_formula --- *)
 
 let f = U (AP "a", Not (X (AP "b")))
 let ap = APSet.of_list [ "a"; "b" ]
@@ -367,53 +363,64 @@ let%test "" = (is_f_step (ru1, a, rt2) mg f = false)
 let%test "" = (is_f_step (ru1, b, rt2) mg f = false)
 let%test "" = (is_f_step (ru1, c, rt2) mg f = false)
 
-let _ = print_endline "[OK] phi steps and histories"
+(* --- end phi steps and histories --- *)
 
 open String_ltl.StringNetfullsync
 open Result
 (* using ~stutter:true makes unfolding faster, but it's risky when f is not X-free *)
 
-(* prod7 cannot reach these markings*)
-let%test "" = (is_error (test Prod7.prod7 (F (And (AP "t1", AP "t2"))))) (* prod7 can never be in both t1 and t2 at the same time *)
-let%test "" = (is_error (test Prod7.prod7 (F (And (AP "u1", AP "u2"))))) (* prod7 can never be in both u2 and u1 at the same time *)
-let%test "" = (is_error (test Prod7.prod7 (F (And (AP "u2", AP "u1"))))) (* and commutativity *)
-let%test "" = (is_error (test Prod7.prod7 (G (And (AP "u1", AP "u2"))))) (* same as before *)
+let test_product prod = List.for_all 
+  (fun (outcome, ltl) -> 
+    let select o = if o then Result.is_ok else Result.is_error in
+      select outcome @@ test prod ltl
+      (* && select (not outcome) @@ test prod (Not ltl) *)
+  )
 
-let%test "" = (is_ok (test Prod7.prod7 (F (Or (AP "u2", AP "u1"))))) (* prod7 will eventually be in either u2 or u1 *)
-let%test "" = (is_ok (test Prod7.prod7 (G (Or (AP "u2", AP "u1"))))) (* prod7 is always in either u2 or u1 *)
+(* outcome, test *)
+let prod7_tests = [
+  false, F (And (AP "t1", AP "t2")); (* prod7 can never be in both t1 and t2 at the same time *)
+  false, F (And (AP "u1", AP "u2")); (* prod7 can never be in both u2 and u1 at the same time *)
+  false, F (And (AP "u2", AP "u1")); (* and commutativity *)
+  false, G (And (AP "u1", AP "u2")); (* same as before *)
 
-let%test "" = (is_ok (test Prod7.prod7 (F (And (AP "u1", X (AP "u2")))))) (* all infinite runs execute <ϵ,a> at least once *)
-let%test "" = (is_error (test Prod7.prod7 (G (And (AP "u1", X (AP "u2")))))) (* violated by all infinite runs as it requires prod7 to stay in u1 indefinitely *)
-let%test "" = (is_ok (test Prod7.prod7 (F (If (AP "u1", X (AP "u2")))))) (* more sensible *)
-let%test "" = (is_ok (test Prod7.prod7 (F (Or (Not (AP "u1"), X (AP "u2")))))) (* if equivalence *)
-let%test "" = (is_ok (test Prod7.prod7 (F (G (If (AP "u1", X (AP "u2"))))))) (* all infinite runs alternate between u1 and u2 forever after (if ever) executing <c,ϵ> *)
-  
-let%test "" = (is_ok (test Prod7.prod7 (F (AP "t1")))) (* obvious *)
-let%test "" = (is_error (test Prod7.prod7 (F (AP "t2")))) (* violated by the infinite run that never executes <c,ϵ> *)
+  true, F (Or (AP "u2", AP "u1")); (* prod7 will eventually be in either u2 or u1 *)
+  true, G (Or (AP "u2", AP "u1")); (* prod7 is always in either u2 or u1 *)
 
-let%test "" = (is_error (test Prod7.prod7 (F (And (AP "t2", X (AP "t1")))))) (* prod7 cannot visit t1 from t2 *)
-let%test "" = (is_ok (test Prod7.prod7 (Not (F (And (AP "t2", X (AP "t1"))))))) (* negation works *)
+  true, F (And (AP "u1", X (AP "u2"))); (* all infinite runs execute <ϵ,a> at least once *)
+  false, G (And (AP "u1", X (AP "u2"))); (* violated by all infinite runs as it requires prod7 to stay in u1 indefinitely *)
+  true, F (If (AP "u1", X (AP "u2"))); (* more sensible *)
+  true, F (Or (Not (AP "u1"), X (AP "u2"))); (* if equivalence *)
+  true, F (G (If (AP "u1", X (AP "u2")))); (* all infinite runs alternate between u1 and u2 forever after (if ever) executing <c,ϵ> *)
+    
+  true, F (AP "t1"); (* obvious *)
+  false, F (AP "t2"); (* violated by the infinite run that never executes <c,ϵ> *)
 
-let%test "" = (is_error (test Prod7.prod7 (F (And (AP "t2", F (AP "t1")))))) (* prod7 cannot visit t1 from t2 ever again *)
-let%test "" = (is_ok (test Prod7.prod7 (F (And (AP "u2", X (AP "u1")))))) (* prod7 can visit u2 from u1 *)
-let%test "" = (is_ok (test Prod7.prod7 (F (And (AP "u2", F (AP "u1")))))) (* prod7 can visit u2 from u1 *)
+  false, F (And (AP "t2", X (AP "t1"))); (* prod7 cannot visit t1 from t2 *)
+  true, Not (F (And (AP "t2", X (AP "t1")))); (* negation works *)
 
-let%test "" = (is_ok (test Prod7.prod7 (G (F (AP "u1"))))) (* prod7 can visit u1 infinitely often *)
-let%test "" = (is_error (test Prod7.prod7 (F (G (AP "u1"))))) (* prod7 cannot get stuck in u1 forever *)
+  false, F (And (AP "t2", F (AP "t1"))); (* prod7 cannot visit t1 from t2 ever again *)
+  true, F (And (AP "u2", X (AP "u1"))); (* prod7 can visit u2 from u1 *)
+  true, F (And (AP "u2", F (AP "u1"))); (* prod7 can visit u2 from u1 *)
 
-let%test "" = (is_ok (test Prod7.prod7 (G (F (AP "u2"))))) (* prod7 can visit u1 infinitely often *)
-let%test "" = (is_error (test Prod7.prod7 (F (G (AP "u2"))))) (* prod7 cannot get stuck in u2 forever *)
+  true, G (F (AP "u1")); (* prod7 can visit u1 infinitely often *)
+  false, F (G (AP "u1")); (* prod7 cannot get stuck in u1 forever *)
 
-let%test "" = (is_ok (test Prod7.prod7 (G (F (AP "u1"))))) (* prod7 can visit t1 infinitely often *)
-let%test "" = (is_error (test Prod7.prod7 (F (G (AP "t1"))))) (* prod7 CAN get stuck in t1 forever *)
+  true, G (F (AP "u2")); (* prod7 can visit u1 infinitely often *)
+  false, F (G (AP "u2")); (* prod7 cannot get stuck in u2 forever *)
 
-let%test "" = (is_error (test Prod7.prod7 (G (F (AP "t2"))))) (* t2 can be visited only once *)
-let%test "" = (is_error (test Prod7.prod7 (F (G (AP "t2"))))) (* prod7 doesn't get stuck forever in t2 in all runs *)
-let%test "" = (is_error (test Prod7.prod7 (G (AP "t2")))) (* prod7 doesn't start from t2 *)
-let%test "" = (is_error (test Prod7.prod7 (G (G (AP "t2"))))) (* this is equal to 'G (AP "t2")' *)
+  true, G (F (AP "u1")); (* prod7 can visit t1 infinitely often *)
+  false, F (G (AP "t1")); (* prod7 CAN get stuck in t1 forever *)
 
-let%test "" = (is_error (test Prod7.prod7 (F (And (AP "s4", AP "r3"))))) (* s4 is not a place of Prod7.prod7 *)
-let%test "" = (is_ok (test Prod7.prod7 (F (Or (AP "s4", AP "u1"))))) (* s4 is not a place of Prod7.prod7, but u1 is *)
+  false, G (F (AP "t2")); (* t2 can be visited only once *)
+  false, F (G (AP "t2")); (* prod7 doesn't get stuck forever in t2 in all runs *)
+  false, G (AP "t2"); (* prod7 doesn't start from t2 *)
+  false, G (G (AP "t2")); (* this is equal to 'G (AP "t2")' *)
+
+  false, F (And (AP "s4", AP "r3")); (* s4 is not a place of Prod7.prod7 *)
+  true, F (Or (AP "s4", AP "u1")); (* s4 is not a place of Prod7.prod7, but u1 is *)
+]
+
+let%test "prod7-unreachable-markings" = test_product Prod7.prod7 prod7_tests
 
 let%test "" = (is_error (test Prod2.prod2 (And (AP "s4", AP "s3")))) (* Prod2.prod2 doesn't start from this marking *)
 let%test "" = (is_ok (test Prod2.prod2 (F (And (AP "s4", AP "r3"))))) (* Prod2.prod2 will eventually reach this marking *)
