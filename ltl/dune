@@ -1,3 +1,14 @@
 (library
- (name ltllib)
- (libraries petrilib))
+  (name ltllib)
+  (libraries petrilib))
+
+(ocamllex lexer)
+
+(menhir
+ (modules tokens)
+ (flags --only-tokens))
+
+(menhir
+ (modules tokens parser)
+ (merge_into parser)
+ (flags --external-tokens Tokens))
