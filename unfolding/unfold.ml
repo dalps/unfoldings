@@ -1,46 +1,6 @@
 open Petrilib
 
-module type S = sig
-  module PTNet : Petrinet.S
-  module OccurrenceNet : Occurrence_net.S
-
-  val tokens_of_places :
-    OccurrenceNet.place1 list -> PTNet.trans list -> OccurrenceNet.PlaceSet.t
-
-  val places_of_tokens : OccurrenceNet.PlaceSet.t -> PTNet.PlaceSet.t
-  val unfold_init : PTNet.t -> OccurrenceNet.t
-
-  module UnfoldResult : sig
-    type t = { event : OccurrenceNet.trans; prefix : OccurrenceNet.t }
-
-    val compare : 'a -> 'a -> int
-  end
-
-  val unfold_1 : OccurrenceNet.t -> int -> PTNet.t -> UnfoldResult.t list
-  val unfold : OccurrenceNet.t -> int -> PTNet.t -> OccurrenceNet.t
-
-  type strategy = PTNet.trans list -> PTNet.trans list -> int
-
-  module type SearchScheme = sig
-    val is_terminal :
-      OccurrenceNet.trans ->
-      OccurrenceNet.t ->
-      strategy ->
-      PTNet.trans list ->
-      bool
-
-    val is_successful :
-      OccurrenceNet.trans ->
-      OccurrenceNet.t ->
-      strategy ->
-      PTNet.trans list ->
-      bool
-  end
-
-  module Tester : functor (_ : SearchScheme) -> sig
-    val test : PTNet.t -> strategy -> PTNet.trans list -> int -> bool
-  end
-end
+let debug = false
 
 module Make (Net : Petrinet.S) = struct
   module PTNet = Net
@@ -87,49 +47,47 @@ module Make (Net : Petrinet.S) = struct
     let compare = compare
   end
 
-  let unfold_1 n step net =
+  let unfold1 n step net =
     let candidates t n =
       let inputs_of_t = Net.preset_t net t in
-
+      (* for each input place, get all conditions that are labeled by it. The
+         lenght of the output list equals the number of inputs *)
       let options =
         Net.PlaceSet.fold
-          (fun st acc -> places_labeled_as st (marking n) :: acc)
+          (fun input acc -> places_labeled_as input (places n) :: acc)
           inputs_of_t []
       in
-
-      let add_places ps res =
+      (* compute all possible combinations of the conditions found in the
+         previous step, drawing one from each set of options. The output of
+         this step is again a list of PlaceSets; each set of this list has
+         cardinality equal to the number of input places *)
+      let combine1 ps result =
         PlaceSet.fold
           (fun p acc1 ->
-            List.fold_right
-              (fun set acc2 -> PlaceSet.add p set :: acc2)
-              res acc1)
+            List.fold_left
+              (fun acc2 set -> PlaceSet.add p set :: acc2)
+              acc1 result)
           ps []
       in
-      let rec helper = function
+      let rec combine = function
         | [] -> []
-        | [ o ] -> PlaceSet.fold (fun p acc -> PlaceSet.singleton p :: acc) o []
-        | o :: options -> add_places o (helper options)
+        | [ o ] ->
+            PlaceSet.fold (fun p -> List.cons (PlaceSet.singleton p)) o []
+        | o :: os -> combine1 o (combine os)
       in
-      helper options
+      (* keep only the reachable markings *)
+      combine options |> List.filter (fun c -> is_reachable c n)
     in
     Net.TransSet.fold
       (fun t acc ->
         List.filter_map
           (fun c ->
             let e = Event.build step (past_word_of_preset c n t) t in
-            if not (TransSet.mem e (transitions n)) then (
+            if not (TransSet.mem e (transitions n)) then
               let n' = extend ~step e (Net.postset_t net t) n c in
-              fire e n';
-              if
-                Net.TransSet.exists
-                  (fun t ->
-                    Net.PlaceSet.subset (Net.preset_t net t)
-                      (places_of_tokens (marking n)))
-                  (Net.transitions net)
-              then set_marking (PlaceSet.union (marking n) (marking n')) n';
-              Some { UnfoldResult.event = e; UnfoldResult.prefix = n' })
+              Some { UnfoldResult.event = e; UnfoldResult.prefix = n' }
             else None)
-          (List.filter (fun c -> is_reachable c n) (candidates t n))
+          (candidates t n)
         @ acc)
       (Net.transitions net) []
 
@@ -137,8 +95,11 @@ module Make (Net : Petrinet.S) = struct
     module Elt = struct
       type t = Extension of UnfoldResult.t | Leftover of UnfoldResult.t
 
-      let is_extension = function Extension _ -> true | _ -> false
-      let untag = function Extension r | Leftover r -> r
+      let is_extension = function
+        | Extension _ -> true
+        | _ -> false
+      let untag = function
+        | Extension r | Leftover r -> r
 
       let compare e1 e2 =
         let r1, r2 = (untag e1, untag e2) in
@@ -155,7 +116,7 @@ module Make (Net : Petrinet.S) = struct
     let update cond n step ext net =
       assert (not (EltSet.exists Elt.is_extension ext.pool));
 
-      let new_xts = unfold_1 n step net in
+      let new_xts = unfold1 n step net in
 
       (* Add all results of the unfolding as Extension tagged elements *)
       let pool =
@@ -175,13 +136,12 @@ module Make (Net : Petrinet.S) = struct
         let result =
           match e with
           | Extension r ->
-              print_endline (string_of_int step ^ " [Fresh]");
+              if debug then Printf.printf "%d [Fresh]\n" step;
               r
           | Leftover r ->
-              print_endline
-                (string_of_int step ^ " [Leftover from step "
-                ^ string_of_int (Event.name r.event)
-                ^ "]");
+              if debug then
+                Printf.printf " %d [Leftover from step %d]\n" step
+                  (Event.name r.event);
               {
                 event =
                   Event.build step (Event.history r.event) (Event.label r.event);
@@ -230,14 +190,14 @@ module Make (Net : Petrinet.S) = struct
     set_marking (marking u0) res;
     res
 
-  type strategy = Net.TransSet.elt list -> Net.TransSet.elt list -> int
+  type strategy = PTNet.trans list -> PTNet.trans list -> int
 
   module type SearchScheme = sig
     (* assumption: e is feasible *)
-    val is_terminal : Event.t -> t -> strategy -> Net.Trans.t list -> bool
+    val is_terminal : Event.t -> t -> strategy -> PTNet.trans list -> bool
 
     (* assumption: e is feasible *)
-    val is_successful : Event.t -> t -> strategy -> Net.Trans.t list -> bool
+    val is_successful : Event.t -> t -> strategy -> PTNet.trans list -> bool
   end
 
   module TestResult = struct
