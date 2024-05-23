@@ -1,10 +1,10 @@
 (* Made up occurrence net *)
 
-module StringOccurrenceNet =
-  Petrilib.Occurrence_net.Make (String) (String)
+module StringOccurrenceNet = Petrilib.Occurrence_net.Make (String) (String)
 (* do NOT open Make directly, always wrap in another module *)
 
 open StringOccurrenceNet
+module R = Petrilib.Reversibility.Make (StringOccurrenceNet)
 
 let t1 = Event.build 1 [] "t1"
 let u1 = Event.build 2 [] "u1"
@@ -31,4 +31,4 @@ let onet =
     ]
     [ s1; r1 ]
 
-let rev_onet = reversible onet
+let rev_onet = R.reversible onet
