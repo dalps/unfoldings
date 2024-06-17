@@ -13,15 +13,12 @@ module type S = sig
   end
 
   module Event : sig
-    type event = { name : int; history : trans1 list; label : trans1 }
-    type t = [ `E of event | `Rev of t ]
+    type t = { name : int; history : trans1 list; label : trans1 }
 
-    val event_of_t : t -> event
     val build : int -> trans1 list -> trans1 -> t
     val name : t -> int
     val history : t -> trans1 list
     val label : t -> trans1
-    val compare_event : event -> event -> int
     val compare : t -> t -> int
   end
 
@@ -41,10 +38,9 @@ module type S = sig
   val is_concurrent : NodeSet.elt -> NodeSet.elt -> t -> bool
   val is_reachable : PlaceSet.t -> t -> bool
   val union : t -> t -> t
-  val reversible : t -> t
 end
 
-module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
+module Make (P : Set.OrderedType) (T : Set.OrderedType)  = struct
   type place1 = P.t
   type trans1 = T.t
 
@@ -63,51 +59,19 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
   end
 
   module Event = struct
-    type event = { name : int; history : T.t list; label : T.t }
-    type t = [ `E of event | `Rev of t ]
+    type t = { name : int; history : T.t list; label : T.t }
 
-    let rec event_of_t = function
-      | `E e -> e
-      | `Rev t -> event_of_t t
-    let build name history label = `E { name; history; label }
+    let build name history label = { name; history; label }
+    let name e = e.name
+    let history e = e.history
+    let label e = e.label
 
-    let name e' =
-      let e = event_of_t e' in
-      e.name
-
-    let history e' =
-      let e = event_of_t e' in
-      e.history
-
-    let label e' =
-      let e = event_of_t e' in
-      e.label
-
-    let compare_event e1 e2 =
+    let compare e1 e2 =
       let n = compare e1.history e2.history in
       if n = 0 then compare e1.label e2.label else n
-
-    let rec compare e1' e2' =
-      match (e1', e2') with
-      | `E e1, `E e2 -> compare_event e1 e2
-      | c, `Rev (`Rev d) | `Rev (`Rev c), d | `Rev c, `Rev d -> compare c d
-      | `E _, `Rev _ -> -1
-      | `Rev _, `E _ -> 1
   end
 
   include Petrinet.Make (Token) (Event)
-
-  let parent_preset_t = preset_t
-  let parent_postset_t = postset_t
-
-  let rec preset_t n = function
-    | `E _ as e -> parent_preset_t n e
-    | `Rev (`Rev e') -> preset_t n e'
-    | `Rev e' -> postset_t n e'
-  and postset_t n = function
-    | `E _ as e -> parent_postset_t n e
-    | `Rev (`Rev e') -> postset_t n e'
-    | `Rev e' -> preset_t n e'
 
   let predecessors x n =
     let rec helper p parents =
@@ -224,16 +188,11 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
       (bind_f (postset_t n1) (postset_t n2))
       (PlaceSet.union (marking n1) (marking n2))
 
-  let reversible n =
-    of_sets (places n)
-      (TransSet.union (transitions n)
-         (TransSet.map (fun e -> `Rev e) (transitions n)))
-      (preset_t n) (postset_t n) (marking n)
-
-  let reverse e n = add_edges (postset_t n e, `Rev e, preset_t n e) n
-
   let find_event_by_id id n =
     TransSet.find_first (fun e -> Event.name e >= id) (transitions n)
+
+  let find_events_by_id id n =
+    List.filter (fun p -> Event.name p = id) (TransSet.elements (transitions n))
 
   let find_event_by_label t n =
     TransSet.find_first (fun e -> Event.label e >= t) (transitions n)
@@ -244,9 +203,8 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
   let find_tokens_by_id id n =
     List.filter (fun p -> Token.name p = id) (PlaceSet.elements (places n))
 
-  let find_token_by_label s n =
-    PlaceSet.find_last (fun p -> Token.label p >= s) (places n)
-
   let find_tokens_by_label s n =
     List.filter (fun p -> Token.label p = s) (PlaceSet.elements (places n))
+
+  let find_token_by_label s n = find_tokens_by_label s n |> List.hd
 end
