@@ -408,51 +408,54 @@ let%test "" = (let r = Rep.test prod5' sl_compare [ [ `T "i1"; `T "i2"; `T "i3";
 open Examples.Onet
 open StringOccurrenceNet
 
-let m0 = marking rev_onet
+let m0 = R.marking rev_onet
 
-let%test "" = (PlaceSet.equal (places rev_onet) (places onet))
+let conv_pl = Utils.apples_of_pears (module PlaceSet)(module R.PlaceSet)
+let conv_tr ts = R.TransSet.fold (fun t ->  TransSet.add  (R.ReversibleEvent.event_of_t t)) ts TransSet.empty
+let%test "" = (PlaceSet.equal (conv_pl @@ R.places rev_onet) (places onet))
 
 let%test "" = (
-  TransSet.cardinal (transitions rev_onet)
+  R.TransSet.cardinal (R.transitions rev_onet)
   = 2 * TransSet.cardinal (transitions onet))
 
 
-let%test "" = (TransSet.subset (transitions onet) (transitions rev_onet))
-let%test "" = (PlaceSet.equal (marking rev_onet) (marking onet))
+let%test "" = (TransSet.subset (transitions onet) (conv_tr @@ R.transitions rev_onet))
+let%test "" = (PlaceSet.equal (conv_pl @@ R.marking rev_onet) (marking onet))
 
 let _ = TransSet.iter
-  (fun t ->
-    assert (TransSet.mem (`Rev t) (transitions rev_onet));
-    assert (PlaceSet.equal (preset_t rev_onet (`Rev t)) (postset_t rev_onet t));
-    assert (PlaceSet.equal (postset_t rev_onet (`Rev t)) (preset_t rev_onet t)))
+  R.(fun t ->
+    assert (TransSet.mem (`Rev (`E t)) (R.transitions rev_onet));
+    assert (PlaceSet.equal (preset_t rev_onet (`Rev (`E t))) (postset_t rev_onet (`E t)));
+    assert (PlaceSet.equal (postset_t rev_onet (`Rev (`E t))) (preset_t rev_onet (`E t))))
   (transitions onet)
 
+open R
 
-let%test "" = (Event.compare (`Rev (`Rev e1)) e1 = 0)
-let%test "" = (Event.compare (`Rev (`Rev e1)) e1 = Event.compare e1 e1)
-let%test "" = (Event.compare (`Rev (`Rev e1)) e2 = Event.compare e1 e2)
-let%test "" = (Event.compare (`Rev e1) e1 = 1)
-let%test "" = (Event.compare (`Rev e1) (`Rev e2) = Event.compare e1 e2)
-let%test "" = (Event.compare (`Rev e1) (`Rev e2) = Event.compare e1 e2)
-let%test "" = (PlaceSet.equal (preset_t rev_onet (`Rev (`Rev e1))) (preset_t rev_onet e1))
-
-
-let%test "" = (
-  PlaceSet.equal
-    (preset_t rev_onet (`Rev (`Rev (`Rev e2))))
-    (preset_t rev_onet (`Rev e2)))
+let%test "" = (ReversibleEvent.compare (`Rev (`Rev (`E e1))) (`E e1) = 0)
+let%test "" = (ReversibleEvent.compare (`Rev (`Rev (`E e1))) (`E e1) = Event.compare e1 e1)
+let%test "" = (ReversibleEvent.compare (`Rev (`Rev (`E e1))) (`E e2) = Event.compare e1 e2)
+let%test "" = (ReversibleEvent.compare (`Rev (`E e1)) (`E e1) = 1)
+let%test "" = (ReversibleEvent.compare (`Rev (`E e1)) (`Rev (`E e2)) = Event.compare e1 e2)
+let%test "" = (ReversibleEvent.compare (`Rev (`E e1)) (`Rev (`E e2)) = Event.compare e1 e2)
+let%test "" = (PlaceSet.equal (preset_t rev_onet (`Rev (`Rev (`E e1)))) (preset_t rev_onet (`E e1))) 
 
 
 let%test "" = (
   PlaceSet.equal
-    (postset_t rev_onet (`Rev e2))
-    (postset_t rev_onet (`Rev (`Rev (`Rev e2)))))
+    (preset_t rev_onet (`Rev (`Rev (`Rev (`E e2)))))
+    (preset_t rev_onet (`Rev (`E e2))))
 
 
-let _ = fire_sequence [ e1; `Rev e1 ] rev_onet
+let%test "" = (
+  PlaceSet.equal
+    (postset_t rev_onet (`Rev (`E e2)))
+    (postset_t rev_onet (`Rev (`Rev (`Rev (`E e2))))))
+
+
+let _ = fire_sequence [ (`E e1); `Rev (`E e1) ] rev_onet
 let%test "" = (PlaceSet.equal (marking rev_onet) m0)
-let _ = fire (`Rev e1) rev_onet
+let _ = fire (`Rev (`E e1)) rev_onet
 let%test "" = (PlaceSet.equal (marking rev_onet) m0)
-let _ = fire_sequence [ e1; t1; u1; e2; `Rev e2; `Rev t1; `Rev u1; `Rev e1 ] rev_onet
+let _ = fire_sequence [ (`E e1); (`E t1); (`E u1); (`E e2); `Rev (`E e2); `Rev (`E t1); `Rev (`E u1); `Rev (`E e1) ] rev_onet
 let%test "" = (PlaceSet.equal (marking rev_onet) m0)
 (* --- end reversible --- *)

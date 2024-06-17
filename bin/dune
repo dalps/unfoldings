@@ -1,4 +1,0 @@
-(executable
- (public_name unfold)
- (name main)
- (libraries unfoldlib examples))
