@@ -135,7 +135,7 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
 
   let enables m t n = PlaceSet.subset ((preset_t n) t) m
 
-  let fire t n =
+  let fire t n = 
     if enables n.marking t n then
       set_marking
         (PlaceSet.union

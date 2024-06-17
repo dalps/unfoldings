@@ -8,7 +8,7 @@ let white = [' ' '\t']+
 
 let letter = ['a'-'z''A'-'Z']
 let digit = ['0'-'9']
-let id = letter (['_''''] | letter | digit)*
+let id = (['_''''] | letter | digit)*
 let line_comment = "//" [^'\n']*
 
 rule read = parse
