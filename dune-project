@@ -7,9 +7,9 @@
 (source
  (github dalps/unfoldings))
 
-(authors "Federico")
+(authors "Federico Dal Pio Luogo")
 
-(maintainers "Federico")
+(maintainers "Federico Dal Pio Luogo")
 
 (license LICENSE)
 
@@ -17,8 +17,8 @@
 
 (package
  (name unfoldings)
- (synopsis "A framework to reason about Petri nets and their unfolding")
- (description "A framework to reason about Petri nets and their unfolding")
+ (synopsis "An OCaml framework to reason about Petri nets and their unfolding")
+ (description "An OCaml framework to reason about Petri nets and their unfolding")
  (depends ocaml dune)
  (tags
   (petrinet unfolding modelchecking verification)))
