@@ -40,7 +40,7 @@ module type S = sig
   val union : t -> t -> t
 end
 
-module Make (P : Set.OrderedType) (T : Set.OrderedType)  = struct
+module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
   type place1 = P.t
   type trans1 = T.t
 

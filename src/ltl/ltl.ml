@@ -204,7 +204,8 @@ module Make (AP : Set.OrderedType) = struct
                   | _ -> true)
                 cl)
             states
-        else PowerFormulaSet.empty)
+        else
+          PowerFormulaSet.empty)
       (PowerFormulaSet.filter (FormulaSet.mem f) states)
       (FormulaSet.fold
          (function
@@ -250,21 +251,22 @@ module Make (AP : Set.OrderedType) = struct
         powerapset []
     in
     FormulaPTNet.of_sets
-      (Utils.apples_of_pears
-         (module FormulaPTNet.PlaceSet)
+      (Utils.SetUtils.lift
          (module FormulaGNBA.NumberedNba.StateSet)
+         (module FormulaPTNet.PlaceSet)
          b.states)
       (FormulaPTNet.TransSet.of_list (List.mapi (fun i r -> (i, r.label)) flow))
       (fun (i, apset) ->
         let r = List.nth flow i in
         if APSet.equal apset r.label then
           FormulaPTNet.PlaceSet.singleton r.source
-        else FormulaPTNet.PlaceSet.empty)
+        else
+          FormulaPTNet.PlaceSet.empty)
       (fun t ->
         let r = List.nth flow (fst t) in
         FormulaPTNet.PlaceSet.singleton r.target)
-      (Utils.apples_of_pears
-         (module FormulaPTNet.PlaceSet)
+      (Utils.SetUtils.lift
          (module FormulaGNBA.NumberedNba.StateSet)
+         (module FormulaPTNet.PlaceSet)
          b.init)
 end

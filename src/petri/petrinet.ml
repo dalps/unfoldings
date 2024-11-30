@@ -1,3 +1,5 @@
+open Utils.SetUtils
+
 module type S = Petrinet_sig.S
 
 module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
@@ -119,11 +121,11 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
   let postset_p n p =
     TransSet.filter (fun t -> PlaceSet.mem p ((preset_t n) t)) n.transitions
 
-  let nodeset_of_placeset pset =
-    PlaceSet.fold (fun p -> NodeSet.add (Node.of_place p)) pset NodeSet.empty
+  let nodeset_of_placeset =
+    lift_map Node.of_place (module PlaceSet) (module NodeSet)
 
-  let nodeset_of_transset tset =
-    TransSet.fold (fun t -> NodeSet.add (Node.of_trans t)) tset NodeSet.empty
+  let nodeset_of_transset =
+    lift_map Node.of_trans (module TransSet) (module NodeSet)
 
   let preset_x n x =
     if Node.is_place x then nodeset_of_transset (preset_p n (Node.place_of x))
@@ -135,7 +137,7 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
 
   let enables m t n = PlaceSet.subset ((preset_t n) t) m
 
-  let fire t n = 
+  let fire t n =
     if enables n.marking t n then
       set_marking
         (PlaceSet.union

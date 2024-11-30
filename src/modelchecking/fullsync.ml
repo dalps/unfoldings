@@ -20,7 +20,7 @@ module Make (Net : Petrinet.S) = struct
     Graph.Imperative.Digraph.ConcreteBidirectionalLabeled (Node) (Edge)
 
   let apset_of_transet =
-    Utils.apples_of_pears (module APSet) (module Net.TransSet)
+    Utils.SetUtils.lift (module Net.TransSet) (module APSet)
 
   let sync ts nba =
     let open FormulaGNBA.NumberedNba in

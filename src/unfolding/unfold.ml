@@ -1,19 +1,19 @@
 open Petrilib
+open Utils
 
 let debug = false
 
-module Make (Net : Petrinet.S) = struct
-  module PTNet = Net
-  module OccurrenceNet = Occurrence_net.Make (Net.Place) (Net.Trans)
-  open OccurrenceNet
+module Make (P : Petrinet.S) = struct
+  module PTNet = P
+  module O = Occurrence_net.Make (P.Place) (P.Trans)
+  module OccurrenceNet = O
+  open O
 
   let tokens_of_places step states history =
     PlaceSet.of_list (List.map (Token.build ~name:step history) states)
 
-  let places_of_tokens ps =
-    PlaceSet.fold
-      (fun p acc -> Net.PlaceSet.add (Token.label p) acc)
-      ps Net.PlaceSet.empty
+  let places_of_tokens =
+    SetUtils.lift_map Token.label (module PlaceSet) (module P.PlaceSet)
 
   let places_labeled_as st places =
     PlaceSet.filter (fun p -> Token.label p = st) places
@@ -24,36 +24,36 @@ module Make (Net : Petrinet.S) = struct
     add_trans e n';
     PlaceSet.iter (fun p -> add_to_trans_arc p e n') preset;
     let places_of_postset =
-      tokens_of_places step (Net.PlaceSet.elements postset) (Event.history e)
+      tokens_of_places step (P.PlaceSet.elements postset) (Event.history e)
     in
     add_places places_of_postset n';
     PlaceSet.iter (fun p -> add_to_place_arc e p n') places_of_postset;
     n'
 
-  let unfold_init (net : Net.t) =
+  let unfold_init (net : P.t) =
     let n0 = init () in
     let initial_marking =
-      Net.PlaceSet.fold
+      P.PlaceSet.fold
         (fun s acc -> PlaceSet.add (Token.build [] s) acc)
-        (Net.marking net) PlaceSet.empty
+        (P.marking net) PlaceSet.empty
     in
     add_places initial_marking n0;
     set_marking initial_marking n0;
     n0
 
   module UnfoldResult = struct
-    type t = { event : Event.t; prefix : OccurrenceNet.t }
+    type t = { event : Event.t; prefix : O.t }
 
     let compare = compare
   end
 
   let unfold1 n step net =
     let candidates t n =
-      let inputs_of_t = Net.preset_t net t in
+      let inputs_of_t = P.preset_t net t in
       (* for each input place, get all conditions that are labeled by it. The
          lenght of the output list equals the number of inputs *)
       let options =
-        Net.PlaceSet.fold
+        P.PlaceSet.fold
           (fun input acc -> places_labeled_as input (places n) :: acc)
           inputs_of_t []
       in
@@ -78,18 +78,18 @@ module Make (Net : Petrinet.S) = struct
       (* keep only the reachable markings *)
       combine options |> List.filter (fun c -> is_reachable c n)
     in
-    Net.TransSet.fold
+    P.TransSet.fold
       (fun t acc ->
         List.filter_map
           (fun c ->
             let e = Event.build step (past_word_of_preset c n t) t in
             if not (TransSet.mem e (transitions n)) then
-              let n' = extend ~step e (Net.postset_t net t) n c in
+              let n' = extend ~step e (P.postset_t net t) n c in
               Some { UnfoldResult.event = e; UnfoldResult.prefix = n' }
             else None)
           (candidates t n)
         @ acc)
-      (Net.transitions net) []
+      (P.transitions net) []
 
   module Extensions = struct
     module Elt = struct
@@ -190,21 +190,21 @@ module Make (Net : Petrinet.S) = struct
     set_marking (marking u0) res;
     res
 
-  type strategy = PTNet.trans list -> PTNet.trans list -> int
+  type strategy = P.trans list -> P.trans list -> int
 
   module type SearchScheme = sig
     (* assumption: e is feasible *)
-    val is_terminal : Event.t -> t -> strategy -> PTNet.trans list -> bool
+    val is_terminal : Event.t -> t -> strategy -> P.trans list -> bool
 
     (* assumption: e is feasible *)
-    val is_successful : Event.t -> t -> strategy -> PTNet.trans list -> bool
+    val is_successful : Event.t -> t -> strategy -> P.trans list -> bool
   end
 
   module TestResult = struct
     type t = {
       res : bool;
-      prefix : OccurrenceNet.t;
-      history : Net.Trans.t list;
+      prefix : O.t;
+      history : P.Trans.t list;
       terms : TransSet.t;
     }
   end

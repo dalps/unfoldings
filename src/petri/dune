@@ -1,6 +1,6 @@
 (library
  (name petrilib)
- (libraries ocamlgraph plotlib))
+ (libraries ocamlgraph plotlib utils))
 
 (ocamllex lexer)
 

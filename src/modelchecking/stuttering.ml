@@ -21,14 +21,18 @@ module Make (Net : Petrinet.S) = struct
     Graph.Imperative.Digraph.ConcreteBidirectionalLabeled (Node) (Edge)
 
   let apset_of_placeset =
-    Utils.apples_of_pears (module APSet) (module Net.PlaceSet)
+    Utils.SetUtils.lift (module Net.PlaceSet) (module APSet)
+
   let f_state_set s f = APSet.inter (apset_of_placeset s) (ap_of_formula f)
 
   let f_state_list s f =
     let ap_of_f = ap_of_formula f in
     List.fold_right
       (fun si ->
-        if APSet.mem si ap_of_f then ( @ ) [ `P si ] else ( @ ) [ `Bottom ])
+        if APSet.mem si ap_of_f then
+          ( @ ) [ `P si ]
+        else
+          ( @ ) [ `Bottom ])
       s []
 
   let f_step_set_of (m, t, m') f = (f_state_set m f, t, f_state_set m' f)
@@ -81,7 +85,7 @@ module Make (Net : Petrinet.S) = struct
   open NetGNBA
 
   let apset_of_transset =
-    Utils.apples_of_pears (module NetGNBA.AlphaSet) (module Net.TransSet)
+    Utils.SetUtils.lift (module Net.TransSet) (module NetGNBA.AlphaSet)
 
   let gnba_of_formula net f =
     let open TesterLtl in
@@ -176,7 +180,8 @@ module Make (Net : Petrinet.S) = struct
                      TransSet.union
                        (if Net.Trans.compare t e.t = 0 then
                           TransSet.singleton (t, `U e)
-                        else TransSet.empty))
+                        else
+                          TransSet.empty))
                    nba_trans TransSet.empty))
             s2 TransSet.empty))
       (fun (t, u) ->
@@ -218,8 +223,10 @@ module Make (Net : Petrinet.S) = struct
     let notf = Ltl.Not f in
     let open SyncNet in
     let prd =
-      if stutter then sync ~stutter:(is_stuttering net notf) net nba
-      else sync net nba
+      if stutter then
+        sync ~stutter:(is_stuttering net notf) net nba
+      else
+        sync net nba
     in
     let r =
       Tester.test prd compare
@@ -232,15 +239,20 @@ module Make (Net : Petrinet.S) = struct
               (transitions prd)))
         Int.max_int
     in
-    if not r.res then Ok true else Error (List.map fst r.history)
+    if not r.res then
+      Ok true
+    else
+      Error (List.map fst r.history)
 
   let test ?(stutter = false) net f =
     let notf = Ltl.Not f in
     let open SyncNet in
     let nba = nba_of_formula net notf in
     let prd =
-      if stutter then sync ~stutter:(is_stuttering net notf) net nba
-      else sync net nba
+      if stutter then
+        sync ~stutter:(is_stuttering net notf) net nba
+      else
+        sync net nba
     in
     let r =
       Tester.test prd compare
@@ -253,6 +265,9 @@ module Make (Net : Petrinet.S) = struct
               (transitions prd)))
         Int.max_int
     in
-    if not r.res then Ok true else Error (List.map fst r.history)
+    if not r.res then
+      Ok true
+    else
+      Error (List.map fst r.history)
   (* Theorem 8.19, pag. 137 *)
 end

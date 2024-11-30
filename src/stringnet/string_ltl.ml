@@ -1,11 +1,11 @@
 open Ltllib
 open Ltl
 open Modelchecklib
-open Petrilib.Utils
 open String_product
 module StringLtl = Ltl.Make (String)
 module StringFullsync = Fullsync.Make (StringPTNetProduct)
 module StringNetfullsync = Stuttering.Make (StringPTNetProduct)
+open Utils.SetUtils
 
 module UnfoldTester =
   Stuttering.Make (StringProductUnfolder.Unfolder.OccurrenceNet)

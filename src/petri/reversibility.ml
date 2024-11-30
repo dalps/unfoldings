@@ -24,7 +24,10 @@ module Make (I : Occurrence_net.S) = struct
 
     let compare_event e1 e2 =
       let n = compare (I.Event.history e1) (I.Event.history e2) in
-      if n = 0 then compare (I.Event.label e1) (I.Event.label e2) else n
+      if n = 0 then
+        compare (I.Event.label e1) (I.Event.label e2)
+      else
+        n
 
     let rec compare e1' e2' =
       match (e1', e2') with
@@ -52,7 +55,7 @@ module Make (I : Occurrence_net.S) = struct
   let reverse e n = add_edges (postset_t n e, `Rev e, preset_t n e) n
 
   let reversible (n : I.t) =
-    let ps = Utils.apples_of_pears (module PlaceSet) (module I.PlaceSet) in
+    let ps = Utils.SetUtils.lift (module I.PlaceSet) (module PlaceSet) in
     let ts =
       I.TransSet.fold
         (fun e -> TransSet.add (`E e))

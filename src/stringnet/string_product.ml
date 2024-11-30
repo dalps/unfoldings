@@ -5,7 +5,7 @@ module StringPTNetProduct = Product.Make (StringPTNet)
 module StringProductUnfolder = Executability.Make (StringPTNetProduct)
 open StringProductUnfolder
 open Product
-open Utils
+open Utils.SetUtils
 
 module Parser = Parse.Make (struct
   module N = StringPTNet
