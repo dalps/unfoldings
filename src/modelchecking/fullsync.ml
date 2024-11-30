@@ -19,8 +19,7 @@ module Make (Net : Petrinet.S) = struct
   module TG =
     Graph.Imperative.Digraph.ConcreteBidirectionalLabeled (Node) (Edge)
 
-  let apset_of_transet =
-    Utils.SetUtils.lift (module Net.TransSet) (module APSet)
+  let apset_of_transet = Net.TransSet.lift (module APSet)
 
   let sync ts nba =
     let open FormulaGNBA.NumberedNba in

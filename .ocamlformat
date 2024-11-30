@@ -1,3 +1,4 @@
 break-string-literals=never
 module-item-spacing=preserve
 break-cases=toplevel
+if-then-else=vertical

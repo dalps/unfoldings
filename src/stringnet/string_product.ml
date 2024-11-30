@@ -17,7 +17,10 @@ end)
 let string_of_globaltrans t =
   let n = List.length t in
   spr "%s%s%s"
-    (if n > 1 then "(" else "")
+    (if n > 1 then
+       "("
+     else
+       "")
     (String.concat ","
        (List.fold_right
           (fun lt ->
@@ -26,7 +29,10 @@ let string_of_globaltrans t =
               | `T s -> s
               | `Idle -> "ϵ"))
           t []))
-    (if n > 1 then ")" else "")
+    (if n > 1 then
+       ")"
+     else
+       "")
 
 let string_of_history w =
   spr "[%s]" (String.concat ";" (List.map string_of_globaltrans w))
@@ -52,8 +58,7 @@ let name_of_event e =
 
 let label_of_event e =
   let open Unfolder.OccurrenceNet.Event in
-  spr "%d transition: %s\n history: %s"
-    (name e)
+  spr "%d transition: %s\n history: %s" (name e)
     (string_of_globaltrans (label e))
     (string_of_history (history e))
 
@@ -71,17 +76,16 @@ let string_of_event e =
 
 let string_of_token = label_of_token
 
-let string_of_placeset =
-  string_of_set (module StringPTNetProduct.PlaceSet) Fun.id
+let string_of_placeset = StringPTNetProduct.PlaceSet.to_string ~elt:Fun.id
 
 let string_of_transset =
-  string_of_set (module StringPTNetProduct.TransSet) string_of_globaltrans
+  StringPTNetProduct.TransSet.to_string ~elt:string_of_globaltrans
 
 let string_of_eventset =
-  string_of_set (module Unfolder.OccurrenceNet.TransSet) string_of_event
+  Unfolder.OccurrenceNet.TransSet.to_string ~elt:string_of_event
 
 let string_of_tokenset =
-  string_of_set (module Unfolder.OccurrenceNet.PlaceSet) name_of_token
+  Unfolder.OccurrenceNet.PlaceSet.to_string ~elt:name_of_token
 
 let print_eventset eset = print_endline (string_of_eventset eset)
 
@@ -134,8 +138,10 @@ let sl_compare w w' =
   in
   let string_of_tword w = String.concat "" (List.map string_of_t w) in
   let len_diff = List.length w - List.length w' in
-  if len_diff = 0 then String.compare (string_of_tword w) (string_of_tword w')
-  else len_diff
+  if len_diff = 0 then
+    String.compare (string_of_tword w) (string_of_tword w')
+  else
+    len_diff
 
 let projections w =
   let len = List.length (List.hd w) in
@@ -145,7 +151,10 @@ let projections w =
       print_endline "All global transitions must have the same length.";
     cond);
   let rec helper i projs =
-    if i = len then projs else helper (i + 1) (projs @ [ projection i w ])
+    if i = len then
+      projs
+    else
+      helper (i + 1) (projs @ [ projection i w ])
   in
   helper 0 []
 
@@ -155,5 +164,8 @@ let d_compare cmp w w' =
       let diff = cmp wk wk' in
       (* Compute the difference between the k-th projections, with k = 1..n;
          once it is not 0, carry it over the next steps as the final result. *)
-      if res <> 0 then res else diff)
+      if res <> 0 then
+        res
+      else
+        diff)
     0 (projections w) (projections w')

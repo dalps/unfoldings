@@ -20,8 +20,7 @@ module Make (Net : Petrinet.S) = struct
   module TG =
     Graph.Imperative.Digraph.ConcreteBidirectionalLabeled (Node) (Edge)
 
-  let apset_of_placeset =
-    Utils.SetUtils.lift (module Net.PlaceSet) (module APSet)
+  let apset_of_placeset = Net.PlaceSet.lift (module APSet)
 
   let f_state_set s f = APSet.inter (apset_of_placeset s) (ap_of_formula f)
 
@@ -84,8 +83,7 @@ module Make (Net : Petrinet.S) = struct
   module NetGNBA = Gnba.Make (FormulaSet) (Net.Trans)
   open NetGNBA
 
-  let apset_of_transset =
-    Utils.SetUtils.lift (module Net.TransSet) (module NetGNBA.AlphaSet)
+  let apset_of_transset = Net.TransSet.lift (module NetGNBA.AlphaSet)
 
   let gnba_of_formula net f =
     let open TesterLtl in

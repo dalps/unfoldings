@@ -55,7 +55,7 @@ module Make (I : Occurrence_net.S) = struct
   let reverse e n = add_edges (postset_t n e, `Rev e, preset_t n e) n
 
   let reversible (n : I.t) =
-    let ps = Utils.SetUtils.lift (module I.PlaceSet) (module PlaceSet) in
+    let ps = I.PlaceSet.lift (module PlaceSet) in
     let ts =
       I.TransSet.fold
         (fun e -> TransSet.add (`E e))

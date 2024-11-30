@@ -12,8 +12,7 @@ module Make (P : Petrinet.S) = struct
   let tokens_of_places step states history =
     PlaceSet.of_list (List.map (Token.build ~name:step history) states)
 
-  let places_of_tokens =
-    SetUtils.lift_map Token.label (module PlaceSet) (module P.PlaceSet)
+  let places_of_tokens = PlaceSet.lift_map Token.label (module P.PlaceSet)
 
   let places_labeled_as st places =
     PlaceSet.filter (fun p -> Token.label p = st) places
@@ -33,9 +32,7 @@ module Make (P : Petrinet.S) = struct
   let unfold_init (net : P.t) =
     let n0 = init () in
     let initial_marking =
-      P.PlaceSet.fold
-        (fun s acc -> PlaceSet.add (Token.build [] s) acc)
-        (P.marking net) PlaceSet.empty
+      P.PlaceSet.lift_map (Token.build []) (module PlaceSet) (P.marking net)
     in
     add_places initial_marking n0;
     set_marking initial_marking n0;
@@ -48,47 +45,36 @@ module Make (P : Petrinet.S) = struct
   end
 
   let unfold1 n step net =
+    let module PowerPlaceSet = SetUtils.Make (PlaceSet) in
     let candidates t n =
-      let inputs_of_t = P.preset_t net t in
-      (* for each input place, get all conditions that are labeled by it. The
-         lenght of the output list equals the number of inputs *)
-      let options =
-        P.PlaceSet.fold
-          (fun input acc -> places_labeled_as input (places n) :: acc)
-          inputs_of_t []
-      in
-      (* compute all possible combinations of the conditions found in the
-         previous step, drawing one from each set of options. The output of
-         this step is again a list of PlaceSets; each set of this list has
-         cardinality equal to the number of input places *)
-      let combine1 ps result =
-        PlaceSet.fold
-          (fun p acc1 ->
-            List.fold_left
-              (fun acc2 set -> PlaceSet.add p set :: acc2)
-              acc1 result)
-          ps []
-      in
-      let rec combine = function
-        | [] -> []
-        | [ o ] ->
-            PlaceSet.fold (fun p -> List.cons (PlaceSet.singleton p)) o []
-        | o :: os -> combine1 o (combine os)
-      in
-      (* keep only the reachable markings *)
-      combine options |> List.filter (fun c -> is_reachable c n)
+      (* Consider the input places of the transition in question *)
+      P.preset_t net t
+      (* Map every input place to the conditions that are labeled by it *)
+      |> P.PlaceSet.lift_map
+           (fun input -> places_labeled_as input (places n))
+           (module PowerPlaceSet)
+      (* Compute all possible combinations of the conditions found in the
+         previous step, picking one place from each set of inputs.
+
+        The output of this step is again a set of [PlaceSet]s,
+        wherein the cardinality of every is the of input places of the transition.
+      *)
+      |> PlaceSet.combinations (module PowerPlaceSet)
+      (* Keep only the reachable markings *)
+      |> PowerPlaceSet.filter (fun c -> is_reachable c n)
+      (* This is _very_ inefficient :/ *)
     in
+
     P.TransSet.fold
       (fun t acc ->
-        List.filter_map
-          (fun c ->
-            let e = Event.build step (past_word_of_preset c n t) t in
-            if not (TransSet.mem e (transitions n)) then
-              let n' = extend ~step e (P.postset_t net t) n c in
-              Some { UnfoldResult.event = e; UnfoldResult.prefix = n' }
-            else
-              None)
-          (candidates t n)
+        (candidates t n |> PowerPlaceSet.elements
+        |> List.filter_map (fun c ->
+               let e = Event.build step (past_word_of_preset c n t) t in
+               if not (TransSet.mem e (transitions n)) then
+                 let n' = extend ~step e (P.postset_t net t) n c in
+                 Some { UnfoldResult.event = e; UnfoldResult.prefix = n' }
+               else
+                 None))
         @ acc)
       (P.transitions net) []
 
@@ -127,7 +113,7 @@ module Make (P : Petrinet.S) = struct
       in
 
       (* Combine with previous elements (Leftovers) *)
-      let pool = EltSet.union pool ext.pool in
+      let pool = EltSet.union pool ext.pool in (* performance dips if you swap arguments *)
 
       let pool = EltSet.filter (fun e -> cond (Elt.untag e)) pool in
 

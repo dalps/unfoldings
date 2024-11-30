@@ -1,3 +1,5 @@
+open Utils
+
 module type S = sig
   type place
   type trans
@@ -19,9 +21,9 @@ module type S = sig
 
   module Place : Set.OrderedType with type t = place
   module Trans : Set.OrderedType with type t = trans
-  module PlaceSet : Set.S with type elt = place
-  module TransSet : Set.S with type elt = trans
-  module NodeSet : Set.S with type elt = Node.t
+  module PlaceSet : SetUtils.S with type elt = place
+  module TransSet : SetUtils.S with type elt = trans
+  module NodeSet : SetUtils.S with type elt = Node.t
 
   val bottom : trans -> PlaceSet.t
 

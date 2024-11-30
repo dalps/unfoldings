@@ -599,7 +599,7 @@ open StringOccurrenceNet
 
 let m0 = R.marking rev_onet
 
-let conv_pl = Utils.SetUtils.lift (module R.PlaceSet) (module PlaceSet)
+let conv_pl = R.PlaceSet.lift (module PlaceSet)
 let conv_tr ts =
   R.TransSet.fold
     (fun t -> TransSet.add (R.ReversibleEvent.event_of_t t))
