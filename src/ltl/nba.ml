@@ -1,6 +1,8 @@
+open Utils
+
 module Make (State : Set.OrderedType) (Alpha : Set.OrderedType) = struct
-  module StateSet = Set.Make (State)
-  module AlphaSet = Set.Make (Alpha)
+  module StateSet = SetUtils.Make (State)
+  module AlphaSet = SetUtils.Make (Alpha)
 
   module Node = struct
     type t = State.t
@@ -45,10 +47,16 @@ module Make (State : Set.OrderedType) (Alpha : Set.OrderedType) = struct
   let bottom _ _ = StateSet.empty
 
   let bind_states f q a post q' a' =
-    if q' = q && a' = a then StateSet.union post (f q a) else f q' a'
+    if q' = q && a' = a then
+      StateSet.union post (f q a)
+    else
+      f q' a'
 
   let bind_state f q a r q' a' =
-    if q' = q && a' = a then StateSet.add r (f q a) else f q' a'
+    if q' = q && a' = a then
+      StateSet.add r (f q a)
+    else
+      f q' a'
 
   let bind_f f f' q a = StateSet.union (f q a) (f' q a)
   let delta q a post = bind_states bottom q a (StateSet.of_list post)
@@ -89,7 +97,7 @@ module Make (State : Set.OrderedType) (Alpha : Set.OrderedType) = struct
       (module CustomStyle)
       (module struct
         include Plotter.DefaultStyle
-        
+
         let graph_attributes _ = [ `Overlap false ]
 
         let edge_label ((_, x, _) as e) =
@@ -99,7 +107,9 @@ module Make (State : Set.OrderedType) (Alpha : Set.OrderedType) = struct
         let edge_attributes _ = [ `Dir `Forward ]
 
         let vertex_attributes v =
-          if StateSet.mem v n.fin then [ `Shape `Doublecircle ]
-          else [ `Shape `Circle ]
+          if StateSet.mem v n.fin then
+            [ `Shape `Doublecircle ]
+          else
+            [ `Shape `Circle ]
       end)
 end

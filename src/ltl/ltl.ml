@@ -1,4 +1,5 @@
 open Petrilib
+open Utils
 
 type 'a formula =
   | True
@@ -33,7 +34,7 @@ let string_of_formula string_of_ap f =
   helper f
 
 module Make (AP : Set.OrderedType) = struct
-  module APSet = Set.Make (AP)
+  module APSet = SetUtils.Make (AP)
 
   module Formula = struct
     type t = AP.t formula
@@ -46,7 +47,7 @@ module Make (AP : Set.OrderedType) = struct
       | f1, f2 -> Stdlib.compare f1 f2
   end
 
-  module FormulaSet = Set.Make (Formula)
+  module FormulaSet = SetUtils.Make (Formula)
 
   let rec length = function
     | True | False | AP _ -> 0
@@ -95,26 +96,13 @@ module Make (AP : Set.OrderedType) = struct
     | U (U (f1, f2), f2') when Formula.compare f2 f2' = 0 -> expand (U (f1, f2))
     | U (f1, f2) -> U (expand f1, expand f2)
 
-  module PowerAPSet = Set.Make (APSet)
-  module PowerFormulaSet = Set.Make (FormulaSet)
-
-  let rec power_apset apset =
-    match APSet.elements apset with
-    | [] -> PowerAPSet.singleton APSet.empty
-    | a :: aps' ->
-        let p = power_apset (APSet.of_list aps') in
-        PowerAPSet.union p (PowerAPSet.map (fun x -> APSet.add a x) p)
-
-  let rec power_formulaset apset =
-    match FormulaSet.elements apset with
-    | [] -> PowerFormulaSet.singleton FormulaSet.empty
-    | a :: aps' ->
-        let p = power_formulaset (FormulaSet.of_list aps') in
-        PowerFormulaSet.union p
-          (PowerFormulaSet.map (fun x -> FormulaSet.add a x) p)
+  module PowerAPSet = SetUtils.Make (APSet)
+  module PowerFormulaSet = SetUtils.Make (FormulaSet)
 
   let labels_of_formula ap f =
-    PowerAPSet.filter (fun apset -> eval [ apset ] f) (power_apset ap)
+    PowerAPSet.filter
+      (fun apset -> eval [ apset ] f)
+      (APSet.powerset (module PowerAPSet) ap)
 
   let closure g =
     let rec helper f =
@@ -173,7 +161,7 @@ module Make (AP : Set.OrderedType) = struct
                  => FormulaSet.mem g1 b
           | _ -> true))
           cl)
-      (power_formulaset cl)
+      (FormulaSet.powerset (module PowerFormulaSet) cl)
 
   module FormulaGNBA = Gnba.Make (FormulaSet) (APSet)
 
@@ -185,7 +173,8 @@ module Make (AP : Set.OrderedType) = struct
     in
     let formulas_of_ap = formulas_of ap in
     let open FormulaGNBA in
-    of_sets states (power_apset ap)
+    of_sets states
+      (APSet.powerset (module PowerAPSet) ap)
       (fun b a ->
         if
           FormulaSet.equal
@@ -237,7 +226,7 @@ module Make (AP : Set.OrderedType) = struct
 
   let petrinet_of_formula ap f =
     let b = nba_of_formula ap f in
-    let powerapset = power_apset ap in
+    let powerapset = APSet.powerset (module PowerAPSet) ap in
     (* awful construction *)
     let flow =
       PowerAPSet.fold
@@ -251,8 +240,7 @@ module Make (AP : Set.OrderedType) = struct
         powerapset []
     in
     FormulaPTNet.of_sets
-      (Utils.SetUtils.lift
-         (module FormulaGNBA.NumberedNba.StateSet)
+      (FormulaGNBA.NumberedNba.StateSet.lift
          (module FormulaPTNet.PlaceSet)
          b.states)
       (FormulaPTNet.TransSet.of_list (List.mapi (fun i r -> (i, r.label)) flow))
@@ -265,8 +253,7 @@ module Make (AP : Set.OrderedType) = struct
       (fun t ->
         let r = List.nth flow (fst t) in
         FormulaPTNet.PlaceSet.singleton r.target)
-      (Utils.SetUtils.lift
-         (module FormulaGNBA.NumberedNba.StateSet)
+      (FormulaGNBA.NumberedNba.StateSet.lift
          (module FormulaPTNet.PlaceSet)
          b.init)
 end

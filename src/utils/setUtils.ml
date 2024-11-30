@@ -24,7 +24,69 @@ let string_of_set (type e t)
   | [] -> empty
   | l -> spr "{%s}" (String.concat ", " (List.map string_of_elt l))
 
+module Make (Ord : Set.OrderedType) = struct
+  module Self = Set.Make (Ord)
+  include Self
+
+  let lift_map (type e tgt) (f : elt -> e)
+      (module Target : Set.S with type elt = e and type t = tgt) =
+    lift_map f (module Self) (module Target)
+
+  let lift (type tgt)
+      (module Target : Set.S with type elt = elt and type t = tgt) =
+    lift_map Fun.id (module Target)
+
+  (* bind : 'a t -> ('a -> 'b t) -> 'b t *)
+  let bind (type e tgt)
+      (module Target : Set.S with type elt = e and type t = tgt) result next =
+    Self.fold (fun x acc -> Target.union (next x) acc) result Target.empty
+
+  let return = singleton
+
+  let ( let* ) = bind
+
+  let ( let+ ) (type e tgt)
+      (module Target : Set.S with type elt = e and type t = tgt) s f =
+    lift_map f (module Target) s
+
+  let ( and+ ) (type e tgt both)
+      (module Target : Set.S with type elt = e and type t = tgt)
+      (module Both : Set.S with type elt = elt * e and type t = both) a b =
+    let xs = Self.to_seq a in
+    let ys = Target.to_seq b in
+    Seq.zip xs ys |> Both.of_seq
+
+  let powerset_bad (type tgt) (module P : Set.S with type elt = t and type t = tgt)
+      =
+    let rec go s =
+      match Self.elements s with
+      | [] -> P.singleton Self.empty
+      | x :: xs ->
+          let p = go (Self.of_list xs) in
+          P.union p (P.map (Self.add x) p)
+    in
+    go
+
+  let powerset (type tgt) (module P : Set.S with type elt = t and type t = tgt)
+      s =
+    fold
+      (fun x acc -> P.union acc (P.map (Self.add x) acc))
+      s (P.singleton Self.empty)
+end
+
 (*
+
+let get_set_monad (type a) (module Elt : Set.OrderedType with type t = a) :
+    (module Monad) =
+  (module struct
+    module S = Set.Make (Elt)
+
+    type t = S.t
+
+    let return = S.singleton
+
+  end)
+
 module type StringRepr = sig
   type t
   val to_string : t -> string

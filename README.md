@@ -6,7 +6,7 @@ This project aims to implement the great ideas and algorithms presented in the b
 
 ## Example
 
-You can model-check in the toplevel with the provided [examples Petri nets](examples/):
+You can play with the model-checker in the toplevel using the [examples](examples/):
 
 ```ocaml
 open Stringnetlib;;

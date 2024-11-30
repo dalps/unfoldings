@@ -1,4 +1,4 @@
-open Utils.SetUtils
+open Utils
 
 module type S = Petrinet_sig.S
 
@@ -33,9 +33,9 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
 
   module Place = P
   module Trans = T
-  module PlaceSet = Set.Make (P)
-  module TransSet = Set.Make (T)
-  module NodeSet = Set.Make (Node)
+  module PlaceSet = SetUtils.Make (P)
+  module TransSet = SetUtils.Make (T)
+  module NodeSet = SetUtils.Make (Node)
 
   type t = {
     mutable places : PlaceSet.t;
@@ -46,8 +46,16 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
   }
 
   let bottom _ = PlaceSet.empty
-  let bind_pset f t pset t' = if t' = t then PlaceSet.union pset (f t) else f t'
-  let bind_p f t p t' = if t' = t then PlaceSet.add p (f t) else f t'
+  let bind_pset f t pset t' =
+    if t' = t then
+      PlaceSet.union pset (f t)
+    else
+      f t'
+  let bind_p f t p t' =
+    if t' = t then
+      PlaceSet.add p (f t)
+    else
+      f t'
   let bind_f f f' t = PlaceSet.union (f t) (f' t)
 
   let ( --> ) pre post t = (PlaceSet.of_list pre, t, PlaceSet.of_list post)
@@ -113,7 +121,11 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
     PlaceSet.iter (fun p' -> add_to_place_arc t p' n) m'
 
   let set_marking m n =
-    n.marking <- (if PlaceSet.subset m n.places then m else n.marking)
+    n.marking <-
+      (if PlaceSet.subset m n.places then
+         m
+       else
+         n.marking)
 
   let preset_p n p =
     TransSet.filter (fun t -> PlaceSet.mem p ((postset_t n) t)) n.transitions
@@ -121,19 +133,21 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
   let postset_p n p =
     TransSet.filter (fun t -> PlaceSet.mem p ((preset_t n) t)) n.transitions
 
-  let nodeset_of_placeset =
-    lift_map Node.of_place (module PlaceSet) (module NodeSet)
+  let nodeset_of_placeset = PlaceSet.lift_map Node.of_place (module NodeSet)
 
-  let nodeset_of_transset =
-    lift_map Node.of_trans (module TransSet) (module NodeSet)
+  let nodeset_of_transset = TransSet.lift_map Node.of_trans (module NodeSet)
 
   let preset_x n x =
-    if Node.is_place x then nodeset_of_transset (preset_p n (Node.place_of x))
-    else nodeset_of_placeset ((preset_t n) (Node.trans_of x))
+    if Node.is_place x then
+      nodeset_of_transset (preset_p n (Node.place_of x))
+    else
+      nodeset_of_placeset ((preset_t n) (Node.trans_of x))
 
   let postset_x n x =
-    if Node.is_place x then nodeset_of_transset (postset_p n (Node.place_of x))
-    else nodeset_of_placeset ((postset_t n) (Node.trans_of x))
+    if Node.is_place x then
+      nodeset_of_transset (postset_p n (Node.place_of x))
+    else
+      nodeset_of_placeset ((postset_t n) (Node.trans_of x))
 
   let enables m t n = PlaceSet.subset ((preset_t n) t) m
 
@@ -242,7 +256,8 @@ module Make (P : Set.OrderedType) (T : Set.OrderedType) = struct
     let l0 = LabelMap.singleton m0 `New in
     (* assumes n.marking is the initial marking *)
     let rec helper i l =
-      if i > max_steps then print_endline "Exceeded step limit!"
+      if i > max_steps then
+        print_endline "Exceeded step limit!"
       else
         let feasibles = LabelMap.filter (fun _ label -> label = `New) l in
         let opt = LabelMap.choose_opt feasibles in

@@ -99,7 +99,7 @@ let%test "" = (
 
 let f = U (AP "a", And (Not (AP "a"), AP "b"))
 let cl = closure f
-let pcl = power_formulaset cl
+let pcl = FormulaSet.powerset (module PowerFormulaSet) cl
 
 let%test "" = (PowerFormulaSet.cardinal pcl = 256)
 
@@ -369,8 +369,8 @@ open String_ltl.StringNetfullsync
 open Result
 (* using ~stutter:true makes unfolding faster, but it's risky when f is not X-free *)
 
-let test_product prod = List.for_all 
-  (fun (outcome, ltl) -> 
+let test_product prod = List.for_all
+  (fun (outcome, ltl) ->
     let select o = if o then Result.is_ok else Result.is_error in
       select outcome @@ test prod ltl
       (* && select (not outcome) @@ test prod (Not ltl) *)
@@ -391,7 +391,7 @@ let prod7_tests = [
   true, F (If (AP "u1", X (AP "u2"))); (* more sensible *)
   true, F (Or (Not (AP "u1"), X (AP "u2"))); (* if equivalence *)
   true, F (G (If (AP "u1", X (AP "u2")))); (* all infinite runs alternate between u1 and u2 forever after (if ever) executing <c,ϵ> *)
-    
+
   true, F (AP "t1"); (* obvious *)
   false, F (AP "t2"); (* violated by the infinite run that never executes <c,ϵ> *)
 

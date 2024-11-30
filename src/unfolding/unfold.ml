@@ -86,7 +86,8 @@ module Make (P : Petrinet.S) = struct
             if not (TransSet.mem e (transitions n)) then
               let n' = extend ~step e (P.postset_t net t) n c in
               Some { UnfoldResult.event = e; UnfoldResult.prefix = n' }
-            else None)
+            else
+              None)
           (candidates t n)
         @ acc)
       (P.transitions net) []
@@ -106,8 +107,8 @@ module Make (P : Petrinet.S) = struct
         compare (Event.history r1.event) (Event.history r2.event)
     end
 
-    module UnfoldResultSet = Set.Make (UnfoldResult)
-    module EltSet = Set.Make (Elt)
+    module UnfoldResultSet = SetUtils.Make (UnfoldResult)
+    module EltSet = SetUtils.Make (Elt)
 
     type s = { mutable pool : EltSet.t }
 
@@ -136,7 +137,8 @@ module Make (P : Petrinet.S) = struct
         let result =
           match e with
           | Extension r ->
-              if debug then Printf.printf "%d [Fresh]\n" step;
+              if debug then
+                Printf.printf "%d [Fresh]\n" step;
               r
           | Leftover r ->
               if debug then
@@ -174,13 +176,15 @@ module Make (P : Petrinet.S) = struct
         ext.pool <- EltSet.union ext.pool new_leftovers;
 
         Some result)
-      else None
+      else
+        None
   end
 
   let unfold steps net =
     let u0 = unfold_init net in
     let rec helper ext n i net =
-      if i > steps then n
+      if i > steps then
+        n
       else
         match Extensions.update (fun _ -> true) n i ext net with
         | None -> n
@@ -241,7 +245,8 @@ module Make (P : Petrinet.S) = struct
                 let terms' =
                   if SS.is_terminal r.event r.prefix stgy goals then
                     TransSet.add r.event terms
-                  else terms
+                  else
+                    terms
                 in
                 unfold ext (step + 1) r.prefix terms'
       in

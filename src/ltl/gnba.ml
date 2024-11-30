@@ -1,7 +1,9 @@
+open Utils
+
 module Make (State : Set.OrderedType) (Alpha : Set.OrderedType) = struct
-  module StateSet = Set.Make (State) (* PowerFormulaSet *)
-  module AlphaSet = Set.Make (Alpha)
-  module PowerStateSet = Set.Make (StateSet)
+  module StateSet = SetUtils.Make (State) (* PowerFormulaSet *)
+  module AlphaSet = SetUtils.Make (Alpha)
+  module PowerStateSet = SetUtils.Make (StateSet)
 
   module Node = struct
     type t = State.t
