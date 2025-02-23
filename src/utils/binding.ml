@@ -1,3 +1,4 @@
+
 module type Applicative_syntax = sig
   type 'a t
 
@@ -13,11 +14,16 @@ module type Monad_syntax = sig
   val ( and* ) : 'a t -> 'b t -> ('a * 'b) t
 end
 
+module type Monad = sig
+  type 'a t
+  val return : 'a -> 'a t
+end
+
 module OptionMonad : Monad_syntax = struct
   type 'a t = 'a Option.t
 
   let ( let+ ) x f = Option.map f x
-    
+
   let prod a b =
     match a, b with
     | None, _ | _, None -> None
@@ -25,7 +31,7 @@ module OptionMonad : Monad_syntax = struct
 
   let ( and+ ) = prod
   let return = Option.some;;
-  
+
   let ( let* ) = Option.bind
   let ( and* ) = prod
 end
@@ -45,7 +51,7 @@ module ZipSeq : Applicative_syntax = struct
 
   let ( let+ ) f s = map s f
   let ( and+ ) a b = prod a b
-  
+
   (* [and+] occurs in the body expression of [let+], so the
    sequences will be zipped before being mapped *)
 end

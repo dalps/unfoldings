@@ -5,7 +5,7 @@ open String_product
 
 let prod2 =
   "product {
-    {
+    net {
       places: s1, s2, s3, s4;
       transitions: t1, t2, t3, t4, t5;
 
@@ -14,10 +14,10 @@ let prod2 =
       t3: s2 --> s4;
       t4: s3 --> s4;
       t5: s4 --> s1;
-      
+
       tokens: s1
     }
-    {
+    net {
       places: r1, r2, r3;
       transitions: u1, u2, u3;
 
@@ -27,13 +27,13 @@ let prod2 =
 
       tokens: r1
     }
-  } {
+  } by {
     t1, idle;
     t2, idle;
     t5, idle;
-    t3, u2; 
-    t4, u2; 
-    idle, u1; 
+    t3, u2;
+    t4, u2;
+    idle, u1;
     idle, u3
   }
 "

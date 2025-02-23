@@ -15,7 +15,6 @@ Plot.plot_unfold u ~filename:"prod1.unfold"
 
 (* Parse an LTL formula *)
 
-open String_ltl
 module FormulaParser = Ltllib.Parse.Make (struct
   module AP = StringPTNetProduct.Place
   module LTL = Ltllib.Ltl.Make (AP)
