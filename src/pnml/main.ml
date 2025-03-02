@@ -13,6 +13,9 @@ type pnet = {
 
 type want = pnet list
 
+let pr = Printf.printf
+let spr = Printf.sprintf
+
 let id ic oc =
   let i = Xmlm.make_input (`Channel ic) in
   let o = Xmlm.make_output (`Channel oc) in
@@ -39,9 +42,9 @@ let id ic oc =
 let robot_model =
   "/home/dalpi/unfoldings/models/RobotManipulation/PT/robot-manipulation-1.pnml"
 
-let robot_ic () = open_in robot_model;;
+let robot_ic () = open_in robot_model
 
-id (robot_ic ()) stdout
+(* id (robot_ic ()) stdout *)
 
 type tree = E of Xmlm.tag * tree list | D of string
 
@@ -57,85 +60,129 @@ let out_tree o t =
   in
   Xmlm.output_doc_tree fragment o t
 
-let t = in_tree (Xmlm.make_input ~strip:true (`Channel (robot_ic ())))
+(* let t = in_tree (Xmlm.make_input ~strip:true (`Channel (robot_ic ()))) *)
 
-let in_pnet src : pnet list =
+type 'a parse_result = ('a, string * Xmlm.pos) result
+
+let ok a = Ok a
+let error i = Error ("", Xmlm.pos i)
+let error_msg msg i = Error (msg, Xmlm.pos i)
+
+let accept s i =
+  if Xmlm.input i = s then
+    ok ()
+  else
+    error i
+
+let want_tag name i : (string * string) list parse_result =
+  match Xmlm.input i with
+  | `El_start ((_, n), attr) when n = name ->
+      pr "got %s\n" name;
+      ok @@ List.map (fun ((_, name), value) -> (name, value)) attr
+  | `El_start ((_, n), _) -> error_msg (spr "want: %s, got: %s" name n) i
+  | _ -> error i
+
+let end_tag i = accept `El_end i
+
+(* list combinator for elements of the same type *)
+let rec i_seq el acc i =
+  let open CCResult in
+  match Xmlm.peek i with
+  | `El_start _ ->
+      let* e = el i in
+      i_seq el (e :: acc) i
+  | `El_end -> ok (List.rev acc)
+  | _ -> error_msg "bad sequence" i
+
+let i_data n i =
+  let open CCResult in
+  let* _ = want_tag n i in
+  let* d =
+    match Xmlm.peek i with
+    | `Data d ->
+        ignore (Xmlm.input i);
+        ok d
+    | `El_end -> ok ""
+    | _ -> error_msg "expected data, found element" i
+  in
+  let* _ = end_tag i in
+  ok d
+
+let i_el = i_data
+
+let i_maybe el name i =
+  let open CCResult in
+  match Xmlm.peek i with
+  | `El_start ((_, n), _) when n = name ->
+      let* r = el n i in
+      ok (Some r)
+  | _ -> ok None
+
+let in_pnet src : pnet list parse_result =
+  let open CCResult in
   let i = Xmlm.make_input ~strip:true src in
   let _mk_tag n = (("", n), []) in
   (* check out the Xmlm.tag type *)
-  let error () = invalid_arg "parse error" in
-  let accept s i =
-    if Xmlm.input i = s then
-      ()
-    else
-      error ()
+  let i_name i : string parse_result =
+    let* _ = want_tag "name" i in
+    let* text = i_data "text" i in
+    let* _ = end_tag i in
+    ok text
   in
-  let want_tag name i : (string * string) list =
-    match Xmlm.input i with
-    | `El_start ((_, n), attr) when n = name ->
-        List.map (fun ((_, name), value) -> (name, value)) attr
-    | _ -> error ()
-  in
-  let end_tag () = accept `El_end i in
-  (* list combinator for elements of the same type *)
-  let rec i_seq el acc i =
-    match Xmlm.peek i with
-    | `El_start _ -> i_seq el (el i :: acc) i
-    | `El_end -> List.rev acc
-    | _ -> error ()
-  in
-  let i_data n i =
-    ignore (want_tag n i);
-    let d =
+  let i_place i : place parse_result =
+    let* attrs = want_tag "place" i in
+    let id = List.assoc "id" attrs in
+    let* text = i_name i in
+    pr "got place name: %s\n" text;
+    let* tokens =
       match Xmlm.peek i with
-      | `Data d ->
-          ignore (Xmlm.input i);
-          d
-      | `El_end -> ""
-      | _ -> error ()
+      | `El_start ((_, "initialMarking"), _) ->
+          (* wasted 15 min cuz I was matching the empty namespace *)
+          let* _ = want_tag "initialMarking" i in
+          pr "got marking";
+          let* s = i_data "text" i in
+          let* _ = end_tag i in
+          ok (int_of_string s)
+      | _ -> ok 0
     in
-    end_tag ();
-    d
+    let* _ = end_tag i in
+    ok { id; text; tokens }
   in
-  let i_place i : place =
-    let attrs = want_tag "place" i in
-    let id = List.assq "id" attrs in
-    want_tag "name" i |> ignore;
-    let text = i_data "text" i in
-    end_tag ();
-    end_tag ();
-    let tokens = 0 in
-    { id; text; tokens }
+  let i_transition i : transition parse_result =
+    let* attrs = want_tag "transition" i in
+    let id = List.assoc "id" attrs in
+    let* text = i_name i in
+    let* _ = end_tag i in
+    ok { id; text }
   in
-  let i_transition i : transition =
-    let attrs = want_tag "transition" i in
-    let id = List.assq "id" attrs in
-    want_tag "name" i |> ignore;
-    let text = i_data "text" i in
-    end_tag ();
-    end_tag ();
-    { id; text }
-  in
-  let i_arc i : arc =
-    let attrs = want_tag "arc" i in
-    let id = List.assq "id" attrs in
-    let source = List.assq "source" attrs in
-    let target = List.assq "target" attrs in
-    end_tag ();
-    { id; source; target }
+  let i_arc i : arc parse_result =
+    let* attrs = want_tag "arc" i in
+    let id = List.assoc "id" attrs in
+    let source = List.assoc "source" attrs in
+    let target = List.assoc "target" attrs in
+    let* _ = end_tag i in
+    ok { id; source; target }
   in
   let i_page_item i =
     match Xmlm.peek i with
-    | `El_start ((_, "place"), _) -> `place (i_place i)
-    | `El_start ((_, "transition"), _) -> `trans (i_transition i)
-    | `El_start ((_, "arc"), _) -> `arc (i_arc i)
-    | _ -> error ()
+    | `El_start ((_, "place"), _) ->
+        let* p = i_place i in
+        ok @@ `place p
+    | `El_start ((_, "transition"), _) ->
+        let* t = i_transition i in
+        ok @@ `trans t
+    | `El_start ((_, "arc"), _) ->
+        let* a = i_arc i in
+        ok @@ `arc a
+    | _ -> error i
   in
-  let i_page i : place list * transition list * arc list =
-    want_tag "page" i |> ignore;
+  let i_page i : (place list * transition list * arc list) parse_result =
+    let* _ = want_tag "page" i in
     (* we can ignore the id *)
-    let items = i_seq i_page_item [] i in
-    end_tag ();
+    let* _ = i_name i in
+    pr "ignoring page name\n";
+    let* items = i_seq i_page_item [] i in
+    let* _ = end_tag i in
     let ps, mixed =
       List.partition_map
         (function
@@ -151,20 +198,26 @@ let in_pnet src : pnet list =
           | `arc a -> Right a)
         mixed
     in
-    (ps, ts, arcs)
+    ok (ps, ts, arcs)
   in
-  let i_net i : pnet =
-    let attrs = want_tag "net" i in
-    let id = List.assq "id" attrs in
-    let places, transitions, flow = i_page i in
+  let i_net i : pnet parse_result =
+    let* attrs = want_tag "net" i in
+    CCList.pp (CCPair.pp CCString.pp CCString.pp) Format.std_formatter attrs;
+    let id = List.assoc "id" attrs in
+    pr "ID: %s\n" id;
+    let* places, transitions, flow = i_page i in
     (* handle other elements *)
-    end_tag ();
-    { id; places; transitions; flow }
+    let* _ = i_name i in
+    let* _ = end_tag i in
+    ok { id; places; transitions; flow }
   in
-  let i_pnml i =
-    want_tag "pnml" i |> ignore;
-    let nets = i_seq i_net [] i in
-    end_tag ();
-    nets
-  in
-  i_pnml i
+  let* _ = accept (`Dtd None) i in
+  let* _ = want_tag "pnml" i in
+  let* nets = i_seq i_net [] i in
+  let* _ = end_tag i in
+  if not (Xmlm.eoi i) then
+    error i
+  else
+    ok nets
+
+let nets = in_pnet (`Channel (robot_ic ()))

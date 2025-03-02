@@ -1,3 +1,5 @@
 (library
  (name pnmllib)
- (libraries xmlm))
+ (libraries xmlm containers utils)
+ (preprocess
+  (pps ppx_expect)))
